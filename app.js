@@ -24,7 +24,7 @@ cube.name = "heli";
 scene.add( cube );
 
 // Initiate Helicopter
-const player = new Helicopter(cube);
+const player = new Helicopter(cube, "box", 14000);
 
 // Grid for Reference
 const gridSize = 100,

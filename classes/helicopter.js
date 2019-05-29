@@ -11,13 +11,18 @@ const THREE = require('THREE');
 
 class Helicopter {
 
-	constructor(heli = undefined){
+	constructor(heli = undefined, model = undefined, weight = 14000){
 		this.heli = heli;
-		this.model = undefined;
-		this.mass = undefined;
+		this.model = model;
+		this.weight = weight;
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
+		this.maxAY = 2000;
+		this.gravAOffset = 200;
+		this.gravVOffset = 0.15;
+		this.aY = 0;
+		this.aX = 0;
 		this.vY = 0;
 		this.vX = 0;
 		this.roll = 0; // X Axis
@@ -27,41 +32,40 @@ class Helicopter {
 		this.maxYaw = 10;
 		this.maxPitch = 90;
 
-		// Debuging
-		// this.debuggingStats();
-
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
 		// WASDQE Keys for Rotations
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
-					this.vX = this.vX <= -0.1 ? this.vX : this.vX -= 0.01;
+					this.aX = this.aX <= -1400 ? this.aX : this.aX -= 100;
+					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowUp": // Main Rotor Thrust Increase
-					this.vY = this.vY >= 0.1 ? this.vY : this.vY += 0.01;
+					this.aY = this.aY >= 2000 ? this.aY : this.aY += 100;
+					this.vY = this.aY <= this.gravAOffset ? 
+						((this.aY/this.weight) * -1) + this.gravVOffset : (this.aY/this.weight) * -1;
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
-					this.vX = this.vX >= 0.1 ? this.vX : this.vX += 0.01;
+					this.aX = this.aX >= 1400 ? this.aX : this.aX += 100;
+					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
-					this.vY = this.vY <= -0.1 ? this.vY : this.vY -= 0.01;
+					this.aY = this.aY <= 0 ? this.aY : this.aY -= 100;
+					this.vY = this.aY <= this.gravAOffset ? 
+						((this.aY/this.weight) * -1) + this.gravVOffset : (this.aY/this.weight) * -1;
 					break;
 				case " ": // Reset Rotors - Hover
+					// Need to Tween in Future
 					setTimeout(() => {
+						this.aX = 0;
+						this.aY = this.gravAOffset;
 						this.vX = 0;
 						this.vY = 0;
 						this.roll = 0;
 						this.yaw = 0;
 						this.pitch = 0;
 					}, 250);
-					// Implement A Tween?
-					// while(this.vX != 0 && this.vY != 0){
-					// 	setTimeout(() => {
-					// 		this.vX = this.vX > 0 ? this.vX -= 0.01 : this.vX += 0.01;
-					// 		this.vY = this.vY > 0 ? this.vY -= 0.01 : this.vY += 0.01;
-					// 	}, 50);
-					// }
 					break;
 				case "w":  // Angle Heli Down
 					this.pitch -= 2;
@@ -102,6 +106,14 @@ class Helicopter {
 		this.yaw += newYaw;
 	}
 
+	changeAccelerationY(newAcceleration){
+		this.aY += newAcceleration;
+	}
+
+	changeAccelerationX(newAcceleration){
+		this.aX += newVelocity;
+	}
+
 	changeVelocityY(newVelocity){
 		this.vY += newVelocity;
 	}
@@ -118,41 +130,39 @@ class Helicopter {
 	} 
 
 	updateRotation(){
-		// SET AS YXZ
-		this.heli.rotation.y = this.getRadians(this.yaw);
+		// SET AS YXZ & Axis Method
+		this.heli.rotation.y = this.getRadians(this.vX * (this.yaw/this.maxYaw));
 		this.heli.rotation.x = this.getRadians(this.pitch);
 		this.heli.rotation.z = this.getRadians(this.roll);
 	}
 
 	updatePosition(){
-		// Arcade Style
+		// Arcade Style & Translate Method
 		let x,y,z;
 
-		// X Axis
 		x = this.roll == 0 ? 0 :
 			this.roll > 0 ? 
 				this.vX * (this.roll/this.maxRoll) :
 				this.vX * (this.roll/this.maxRoll) * -1;
 
-		// Y Axis
-		y = this.yaw == 0 ? this.vY :
+		y = this.weight/this.vY == 0 ? 0 :
 			this.yaw > 0 ?
 				this.vY * ((90 - this.yaw)/90) :
 				this.vY * ((90 - this.yaw)/90) * -1;
 
-		// Z Axis
 		z = this.pitch == 0 ? 0 :
 			this.pitch > 0 ?
 				this.vY * ((90 - this.pitch)/this.maxPitch) :
 				this.vY * ((90 - this.pitch)/this.maxPitch) * -1
 
-		
+		this.x = this.heli.position.x;
+		this.y = this.heli.position.y;
+		this.z = this.heli.position.z;
+
 		this.heli.translateX(x);
-		this.heli.translateY(y);
+		this.y <= 0 && y <= 0 ? // Ground Check Factoring 0 Level
+			this.heli.translateY(0) : this.heli.translateY(y);
 		this.heli.translateZ(z);
-		this.x += x;
-		this.y += y;
-		this.z += z;
 	}
 
 	getRadians(deg){
@@ -162,15 +172,17 @@ class Helicopter {
 	debuggingStats(){
 		let html = `<ul>
 						<li>Model: ${this.model}</li>
-						<li>Mass: ${this.mass}</li>
-						<li>x: ${this.x}</li>
-						<li>y: ${this.y}</li>
-						<li>z: ${this.z}</li>
+						<li>Weight: ${this.weight}</li>
+						<li>X: ${this.x}</li>
+						<li>Y: ${this.y}</li>
+						<li>Z: ${this.z}</li>
+						<li>aY: ${this.aY}</li>
+						<li>aX: ${this.aX}</li>
 						<li>vY: ${this.vY}</li>
 						<li>vX: ${this.vX}</li>
-						<li>roll: ${this.roll}</li>
-						<li>yaw: ${this.yaw}</li>
-						<li>pitch: ${this.pitch}</li>
+						<li>Roll: ${this.roll}</li>
+						<li>Yaw: ${this.yaw}</li>
+						<li>Pitch: ${this.pitch}</li>
 					</ul>`;
 
 		document.getElementById("debugging-stats").innerHTML = html;
