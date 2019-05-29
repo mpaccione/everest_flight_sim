@@ -1,8 +1,8 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
 // Imports
 const THREE = require('three');
-// const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./classes/helicopter');
+// const OrbitControls = require('three-orbit-controls')(THREE);
 
 // View
 const scene = new THREE.Scene(),
@@ -11,13 +11,40 @@ const scene = new THREE.Scene(),
 	  // controls = new OrbitControls(camera);
 	  // loader = new THREE.TGALoader();
 
+// Cube to Simulate Helicopter
+const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
+	  cube = new THREE.Mesh( geometry, material );
+
+cube.rotation.order = "YXZ";
+cube.name = "heli";
+scene.add( cube );
+
+// Initiate Helicopter
+const player = new Helicopter(cube);
+
+// Grid for Reference
+const gridSize = 100,
+	  gridDivisions = 10,
+	  gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
+
+scene.add(gridHelper);
+
+// Camera
+camera.name = "camera";
+camera.position.z = 60;
+camera.position.y = 60;
+camera.position.x = 0;
+camera.lookAt(cube.position);
+
 // Debugging
 window.scene = scene;
 window.camera = camera;
+document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 // loader.setPath('./src/skybox/ely_peaks/')
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor(0xffffff, 0.5);
+renderer.setClearColor(0xffffff, 0.15);
 document.body.appendChild( renderer.domElement );
 
 // Skybox
@@ -36,33 +63,7 @@ document.body.appendChild( renderer.domElement );
 // sky.name = "skybox";
 // scene.add(sky);
 
-// Grid for Reference
-const gridSize = 100,
-	  gridDivisions = 10,
-	  gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
-
-scene.add(gridHelper);
-
-// Cube to Simulate Helicopter
-const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
-	  cube = new THREE.Mesh( geometry, material );
-
-cube.rotation.order = "YXZ";
-cube.name = "heli";
-
-scene.add( cube );
-camera.name = "camera";
-camera.position.z = 60;
-camera.position.y = 60;
-camera.position.x = 0;
-camera.lookAt(cube.position);
-
-
-// Initiate Helicopter
-const player = new Helicopter(cube);
-
-
+// Animation Loop
 const animate = function () {
 	requestAnimationFrame( animate );
 
@@ -103,7 +104,7 @@ class Helicopter {
 		this.pitch = 0; // Z Axis
 
 		// Debuging
-		console.log(this.heli);
+		// this.debuggingStats();
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -111,16 +112,16 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": 
-					this.vX -= 0.1;
+					this.vX = this.vX >= -0.1 ? this.vX : this.vX -= 0.01;
 					break;
 				case "ArrowUp":
-					this.vY += 0.1;
+					this.vY = this.vY >= 0.1 ? this.vY : this.vY += 0.01;
 					break;
 				case "ArrowRight": 
-					this.vX += 0.1;
+					this.vX = this.vX >= 0.1 ? this.vX : this.vX += 0.01;
 					break;
 				case "ArrowDown": 
-					this.vY -= 0.1;
+					this.vY = this.vY >= -0.1 ? this.vY : this.vY -= 0.01;
 					break;
 				case "w": 
 					this.pitch += 2;
@@ -208,9 +209,27 @@ class Helicopter {
 		return deg * Math.PI / 180;
 	}
 
+	debuggingStats(){
+		let html = `<ul>
+						<li>Model: ${this.model}</li>
+						<li>Mass: ${this.mass}</li>
+						<li>x: ${this.x}</li>
+						<li>y: ${this.y}</li>
+						<li>z: ${this.z}</li>
+						<li>vY: ${this.vY}</li>
+						<li>vX: ${this.vX}</li>
+						<li>roll: ${this.roll}</li>
+						<li>yaw: ${this.yaw}</li>
+						<li>pitch: ${this.pitch}</li>
+					</ul>`;
+
+		document.getElementById("debugging-stats").innerHTML = html;
+	}
+
 	update(){
 		this.updateRotation();
 		this.updatePosition();
+		this.debuggingStats();
 	}
 
 

@@ -25,7 +25,7 @@ class Helicopter {
 		this.pitch = 0; // Z Axis
 
 		// Debuging
-		console.log(this.heli);
+		// this.debuggingStats();
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -33,16 +33,16 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": 
-					this.vX -= 0.1;
+					this.vX = this.vX >= -0.1 ? this.vX : this.vX -= 0.01;
 					break;
 				case "ArrowUp":
-					this.vY += 0.1;
+					this.vY = this.vY >= 0.1 ? this.vY : this.vY += 0.01;
 					break;
 				case "ArrowRight": 
-					this.vX += 0.1;
+					this.vX = this.vX >= 0.1 ? this.vX : this.vX += 0.01;
 					break;
 				case "ArrowDown": 
-					this.vY -= 0.1;
+					this.vY = this.vY >= -0.1 ? this.vY : this.vY -= 0.01;
 					break;
 				case "w": 
 					this.pitch += 2;
@@ -130,9 +130,27 @@ class Helicopter {
 		return deg * Math.PI / 180;
 	}
 
+	debuggingStats(){
+		let html = `<ul>
+						<li>Model: ${this.model}</li>
+						<li>Mass: ${this.mass}</li>
+						<li>x: ${this.x}</li>
+						<li>y: ${this.y}</li>
+						<li>z: ${this.z}</li>
+						<li>vY: ${this.vY}</li>
+						<li>vX: ${this.vX}</li>
+						<li>roll: ${this.roll}</li>
+						<li>yaw: ${this.yaw}</li>
+						<li>pitch: ${this.pitch}</li>
+					</ul>`;
+
+		document.getElementById("debugging-stats").innerHTML = html;
+	}
+
 	update(){
 		this.updateRotation();
 		this.updatePosition();
+		this.debuggingStats();
 	}
 
 

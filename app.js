@@ -1,7 +1,7 @@
 // Imports
 const THREE = require('three');
-// const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./classes/helicopter');
+// const OrbitControls = require('three-orbit-controls')(THREE);
 
 // View
 const scene = new THREE.Scene(),
@@ -10,13 +10,40 @@ const scene = new THREE.Scene(),
 	  // controls = new OrbitControls(camera);
 	  // loader = new THREE.TGALoader();
 
+// Cube to Simulate Helicopter
+const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
+	  cube = new THREE.Mesh( geometry, material );
+
+cube.rotation.order = "YXZ";
+cube.name = "heli";
+scene.add( cube );
+
+// Initiate Helicopter
+const player = new Helicopter(cube);
+
+// Grid for Reference
+const gridSize = 100,
+	  gridDivisions = 10,
+	  gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
+
+scene.add(gridHelper);
+
+// Camera
+camera.name = "camera";
+camera.position.z = 60;
+camera.position.y = 60;
+camera.position.x = 0;
+camera.lookAt(cube.position);
+
 // Debugging
 window.scene = scene;
 window.camera = camera;
+document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 // loader.setPath('./src/skybox/ely_peaks/')
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor(0xffffff, 0.5);
+renderer.setClearColor(0xffffff, 0.15);
 document.body.appendChild( renderer.domElement );
 
 // Skybox
@@ -35,33 +62,7 @@ document.body.appendChild( renderer.domElement );
 // sky.name = "skybox";
 // scene.add(sky);
 
-// Grid for Reference
-const gridSize = 100,
-	  gridDivisions = 10,
-	  gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
-
-scene.add(gridHelper);
-
-// Cube to Simulate Helicopter
-const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
-	  cube = new THREE.Mesh( geometry, material );
-
-cube.rotation.order = "YXZ";
-cube.name = "heli";
-
-scene.add( cube );
-camera.name = "camera";
-camera.position.z = 60;
-camera.position.y = 60;
-camera.position.x = 0;
-camera.lookAt(cube.position);
-
-
-// Initiate Helicopter
-const player = new Helicopter(cube);
-
-
+// Animation Loop
 const animate = function () {
 	requestAnimationFrame( animate );
 
