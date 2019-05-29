@@ -201,7 +201,7 @@ class Helicopter {
 		let x = this.vX * Math.cos(this.yaw) || 0,
 			y =	this.vY * Math.cos(this.pitch) || 0,
 			z = this.vY * Math.sin(this.pitch) || 0;
-			
+
 		this.heli.position.x += x;
 		this.heli.position.y += y;
 		this.heli.position.z += z;
@@ -236,7 +236,6 @@ class Helicopter {
 		this.updatePosition();
 		this.debuggingStats();
 	}
-
 
 }
 
