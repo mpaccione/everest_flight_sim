@@ -127,6 +127,9 @@ class Helicopter {
 					setTimeout(() => {
 						this.vX = 0;
 						this.vY = 0;
+						this.roll = 0;
+						this.yaw = 0;
+						this.pitch = 0;
 					}, 250);
 					// Implement A Tween?
 					// while(this.vX != 0 && this.vY != 0){
@@ -200,8 +203,14 @@ class Helicopter {
 	updatePosition(){
 		let x = this.vX * Math.cos(this.yaw) || 0,
 			y =	this.vY * Math.cos(this.pitch) || 0,
-			z = this.vY * Math.sin(this.pitch) || 0;
+			z = 0;
 
+		if (this.pitch > 0) {
+			z = Math.abs(this.vY * Math.cos(this.pitch)) * -1;
+		} else if (this.pitch < 0){
+			z = Math.abs(this.vY * Math.cos(this.pitch));
+		}
+		
 		this.heli.position.x += x;
 		this.heli.position.y += y;
 		this.heli.position.z += z;
@@ -238,6 +247,7 @@ class Helicopter {
 	}
 
 }
+
 
 module.exports = Helicopter;
 },{"THREE":3}],3:[function(require,module,exports){
