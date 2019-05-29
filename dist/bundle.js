@@ -13,12 +13,8 @@ const scene = new THREE.Scene(),
 
 // Cube to Simulate Helicopter
 const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, vertexColors: THREE.FaceColors } ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } ),
 	  cube = new THREE.Mesh( geometry, material );
-
-geometry.faces[10].color.setHex(0xFF0000);
-geometry.faces[11].color.setHex(0xFF0000);
-geometry.colorsNeedUpdate = true;
 
 cube.rotation.order = "YXZ";
 cube.name = "heli";
@@ -102,6 +98,7 @@ class Helicopter {
 		this.y = 0;
 		this.z = 0;
 		this.maxAY = 2000;
+		this.maxAX = 400;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
 		this.aY = 0;
@@ -113,7 +110,7 @@ class Helicopter {
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 60;
 		this.maxYaw = 10;
-		this.maxPitch = 90;
+		this.maxPitch = 45;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -121,16 +118,16 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
-					this.aX = this.aX <= -1400 ? this.aX : this.aX -= 100;
+					this.aX = this.aX <= 0 ? this.aX : this.aX -= 100;
 					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowUp": // Main Rotor Thrust Increase
-					this.aY = this.aY >= 2000 ? this.aY : this.aY += 100;
+					this.aY = this.aY >= this.maxAY ? this.aY : this.aY += 100;
 					this.vY = this.aY <= this.gravAOffset ? 
 						((this.aY/this.weight) * -1) + this.gravVOffset : (this.aY/this.weight) * -1;
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
-					this.aX = this.aX >= 1400 ? this.aX : this.aX += 100;
+					this.aX = this.aX >= this.maxAX ? this.aX : this.aX += 100;
 					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
@@ -151,22 +148,28 @@ class Helicopter {
 					}, 250);
 					break;
 				case "w":  // Angle Heli Down
-					this.pitch -= 2;
+					this.pitch = this.pitch > -this.maxPitch ? 
+						this.pitch -= 2 : this.pitch;
 					break;
 				case "s":  // Angle Heli Up
-					this.pitch += 2;
+					this.pitch = this.pitch < this.maxPitch ? 
+						this.pitch += 2 : this.pitch;
 					break;
 				case "a": // Roll Heli Left
-					this.roll += 2;
+					this.roll = this.roll < this.maxRoll ?
+						this.roll += 2 : this.roll;
 					break;
 				case "d": // Roll Heli Right
-					this.roll -= 2;
+					this.roll = this.roll > -this.maxRoll ?
+						this.roll -= 2 : this.roll;
 					break;
 				case "q": // Turn Heli Right
-					this.yaw += 2;
+					this.yaw = this.yaw < this.maxYaw ?
+						this.yaw += 2 : this.yaw;
 					break;
 				case "e": // Turn Heli Left
-					this.yaw -= 2;
+					this.yaw = this.yaw > -this.maxYaw ?
+						this.yaw -= 2 : this.yaw;
 					break;
 			}
 			console.log(e);
@@ -205,16 +208,9 @@ class Helicopter {
 		this.vX += newVelocity;
 	}
 
-	updateVectors(){
-		// Arcade - Non Sim
-		// Use Velocity of Main Rotors with Roll and Pitch
-
-		// Use Velocity of Tail Rotors with Yaw
-	} 
-
 	updateRotation(){
 		// SET AS YXZ & Axis Method
-		this.heli.rotation.y = this.getRadians(this.vX * (this.yaw/this.maxYaw));
+		this.heli.rotation.y += this.getRadians((this.vX*100) * (this.yaw/this.maxYaw));
 		this.heli.rotation.x = this.getRadians(this.pitch);
 		this.heli.rotation.z = this.getRadians(this.roll);
 	}
@@ -229,14 +225,14 @@ class Helicopter {
 				this.vX * (this.roll/this.maxRoll) * -1;
 
 		y = this.weight/this.vY == 0 ? 0 :
-			this.yaw > 0 ?
-				this.vY * ((90 - this.yaw)/90) :
-				this.vY * ((90 - this.yaw)/90) * -1;
+			this.pitch > 0 ?
+				this.vY * ((90 - this.pitch)/90) :
+				this.vY * ((90 - this.pitch)/90) * -1;
 
 		z = this.pitch == 0 ? 0 :
 			this.pitch > 0 ?
-				this.vY * ((90 - this.pitch)/this.maxPitch) :
-				this.vY * ((90 - this.pitch)/this.maxPitch) * -1
+				this.vY * ((this.pitch - 90)/this.maxPitch) :
+				this.vY * ((this.pitch - 90)/this.maxPitch);
 
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
@@ -261,7 +257,7 @@ class Helicopter {
 						<li>Z: ${this.z}</li>
 						<li>aY: ${this.aY}</li>
 						<li>aX: ${this.aX}</li>
-						<li>vY: ${this.vY}</li>
+						<li>vY: ${this.vY}</li> 
 						<li>vX: ${this.vX}</li>
 						<li>Roll: ${this.roll}</li>
 						<li>Yaw: ${this.yaw}</li>
