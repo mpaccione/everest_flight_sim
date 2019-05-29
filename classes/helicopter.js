@@ -61,8 +61,8 @@ class Helicopter {
 					break;
 			}
 
-			this.updateCameraRotation();
-			this.updateCameraPosition();
+			this.updateRotation();
+			// this.updatePosition();
 			console.log(e);
 		}, false);
 
@@ -94,13 +94,15 @@ class Helicopter {
 		// Use Velocity of Tail Rotors with Yaw
 	} 
 
-	updateCameraRotation(){
-		this.camera.rotation.y = this.getRadians(this.yaw)
-		this.camera.rotation.x = this.getRadians(this.roll)
-		this.camera.rotation.z = this.getRadians(this.pitch)
+	updateRotation(){
+		// SET AS YXZ
+		this.camera.rotation.y = this.getRadians(this.yaw);
+		this.camera.rotation.x = this.getRadians(this.pitch);
+		this.camera.rotation.z = this.getRadians(this.roll);
+		console.log(this.camera);
 	}
 
-	updateCameraPosition(){
+	updatePosition(){
 
 		let x = this.vX * Math.cos(this.yaw),
 			y =	this.vY * Math.sin(this.pitch),
@@ -121,4 +123,4 @@ class Helicopter {
 
 }
 
-module.exports  = Helicopter;
+module.exports = Helicopter;

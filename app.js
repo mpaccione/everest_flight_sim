@@ -1,16 +1,18 @@
 // Imports
 const THREE = require('three');
-const OrbitControls = require('three-orbit-controls')(THREE);
+// const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./classes/helicopter');
 
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 ),
-	  renderer = new THREE.WebGLRenderer(),
-	  controls = new OrbitControls(camera);
+	  renderer = new THREE.WebGLRenderer();
+	  // controls = new OrbitControls(camera);
 	  // loader = new THREE.TGALoader();
 
+// Debugging
 window.scene = scene;
+window.camera = camera;
 
 // loader.setPath('./src/skybox/ely_peaks/')
 renderer.setSize( window.innerWidth, window.innerHeight );
@@ -33,19 +35,31 @@ document.body.appendChild( renderer.domElement );
 // sky.name = "skybox";
 // scene.add(sky);
 
+// Grid for Reference
+const gridSize = 100,
+	  gridDivisions = 10,
+	  gridHelper = new THREE.GridHelper(gridSize, gridDivisions);
 
+scene.add(gridHelper);
 
-// Animation for Initial Camera Scene
+// Cube to Simulate Helicopter
 const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
 	  cube = new THREE.Mesh( geometry, material );
 
+cube.rotation.order = "YXZ";
+cube.name = "heli";
+
 scene.add( cube );
-camera.position.z = 5;
-camera.rotation.order = "YXZ";
+camera.name = "camera";
+camera.position.z = 10;
+camera.position.y = 10;
+camera.position.x = 0;
+camera.lookAt(cube.position);
+
 
 // Initiate Helicopter
-const player = new Helicopter(camera);
+const player = new Helicopter(cube);
 
 
 const animate = function () {
