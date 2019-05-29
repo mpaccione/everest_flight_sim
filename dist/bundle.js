@@ -111,35 +111,48 @@ class Helicopter {
 		// WASDQE Keys for Rotations
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
-				case "ArrowLeft": 
+				case "ArrowLeft": // Tail Rotor Thrust Negative
 					this.vX = this.vX <= -0.1 ? this.vX : this.vX -= 0.01;
 					break;
-				case "ArrowUp":
+				case "ArrowUp": // Main Rotor Thrust Increase
 					this.vY = this.vY >= 0.1 ? this.vY : this.vY += 0.01;
 					break;
-				case "ArrowRight": 
+				case "ArrowRight": // Tail Rotor Thrust Positive
 					this.vX = this.vX >= 0.1 ? this.vX : this.vX += 0.01;
 					break;
-				case "ArrowDown": 
+				case "ArrowDown": // Main Rotor Thrust Decrease
 					this.vY = this.vY <= -0.1 ? this.vY : this.vY -= 0.01;
 					break;
-				case "w": 
-					this.pitch += 2;
+				case " ": // Reset Rotors - Hover
+					setTimeout(() => {
+						this.vX = 0;
+						this.vY = 0;
+					}, 250);
+					// Implement A Tween?
+					// while(this.vX != 0 && this.vY != 0){
+					// 	setTimeout(() => {
+					// 		this.vX = this.vX > 0 ? this.vX -= 0.01 : this.vX += 0.01;
+					// 		this.vY = this.vY > 0 ? this.vY -= 0.01 : this.vY += 0.01;
+					// 	}, 50);
+					// }
 					break;
-				case "s": 
+				case "w":  // Angle Heli Down
 					this.pitch -= 2;
 					break;
-				case "a": 
+				case "s":  // Angle Heli Up
+					this.pitch += 2;
+					break;
+				case "a": // Roll Heli Left
 					this.roll -= 2;
 					break;
-				case "d":
+				case "d": // Roll Heli Right
 					this.roll += 2;
 					break;
-				case "q": 
-					this.yaw -= 2;
-					break;
-				case "e": 
+				case "q": // Turn Heli Right
 					this.yaw += 2;
+					break;
+				case "e": // Turn Heli Left
+					this.yaw -= 2;
 					break;
 			}
 			console.log(e);
@@ -182,27 +195,19 @@ class Helicopter {
 		this.heli.rotation.y = this.getRadians(this.yaw);
 		this.heli.rotation.x = this.getRadians(this.pitch);
 		this.heli.rotation.z = this.getRadians(this.roll);
-		console.log(this.heli);
 	}
 
 	updatePosition(){
-
 		let x = this.vX * Math.cos(this.yaw) || 0,
-			y =	this.vY * Math.sin(this.pitch) || 0,
-			z = this.vY * Math.cos(this.pitch) || 0,
-			newPosition = new THREE.Vector3(x,y,z);
-
-		console.log("position vector3")
-		console.log("x: "+x);
-		console.log("y: "+y);
-		console.log("z: "+z);
-		console.log(newPosition);
-
+			y =	this.vY * Math.cos(this.pitch) || 0,
+			z = this.vY * Math.sin(this.pitch) || 0;
+			
 		this.heli.position.x += x;
 		this.heli.position.y += y;
 		this.heli.position.z += z;
-		console.log(this.heli);
-		console.log(this.camera);
+		this.x += x;
+		this.y += y;
+		this.z += z;
 	}
 
 	getRadians(deg){
