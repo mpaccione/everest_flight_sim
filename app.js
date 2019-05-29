@@ -52,8 +52,8 @@ cube.name = "heli";
 
 scene.add( cube );
 camera.name = "camera";
-camera.position.z = 10;
-camera.position.y = 10;
+camera.position.z = 60;
+camera.position.y = 60;
 camera.position.x = 0;
 camera.lookAt(cube.position);
 
@@ -64,6 +64,8 @@ const player = new Helicopter(cube);
 
 const animate = function () {
 	requestAnimationFrame( animate );
+
+	player.update()
 
 	// cube.rotation.x += 0.01;
 	// cube.rotation.y += 0.01;

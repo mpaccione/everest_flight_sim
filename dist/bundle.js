@@ -53,8 +53,8 @@ cube.name = "heli";
 
 scene.add( cube );
 camera.name = "camera";
-camera.position.z = 10;
-camera.position.y = 10;
+camera.position.z = 60;
+camera.position.y = 60;
 camera.position.x = 0;
 camera.lookAt(cube.position);
 
@@ -65,6 +65,8 @@ const player = new Helicopter(cube);
 
 const animate = function () {
 	requestAnimationFrame( animate );
+
+	player.update()
 
 	// cube.rotation.x += 0.01;
 	// cube.rotation.y += 0.01;
@@ -87,8 +89,8 @@ const THREE = require('THREE');
 
 class Helicopter {
 
-	constructor(cam = undefined){
-		this.camera = cam;
+	constructor(heli = undefined){
+		this.heli = heli;
 		this.model = undefined;
 		this.mass = undefined;
 		this.x = 0;
@@ -100,22 +102,25 @@ class Helicopter {
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 
+		// Debuging
+		console.log(this.heli);
+
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
 		// WASDQE Keys for Rotations
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": 
-					this.vX -= 5;
+					this.vX -= 0.1;
 					break;
 				case "ArrowUp":
-					this.vY += 10;
+					this.vY += 0.1;
 					break;
 				case "ArrowRight": 
-					this.vX += 5;
+					this.vX += 0.1;
 					break;
 				case "ArrowDown": 
-					this.vY -= 10;
+					this.vY -= 0.1;
 					break;
 				case "w": 
 					this.pitch += 2;
@@ -136,9 +141,6 @@ class Helicopter {
 					this.yaw += 2;
 					break;
 			}
-
-			this.updateRotation();
-			// this.updatePosition();
 			console.log(e);
 		}, false);
 
@@ -159,8 +161,12 @@ class Helicopter {
 		this.yaw += newYaw;
 	}
 
-	changeVelocity(newVelocity){
-		this.v += newVelocity;
+	changeVelocityY(newVelocity){
+		this.vY += newVelocity;
+	}
+
+	changeVelocityX(newVelocity){
+		this.vX += newVelocity;
 	}
 
 	updateVectors(){
@@ -172,29 +178,40 @@ class Helicopter {
 
 	updateRotation(){
 		// SET AS YXZ
-		this.camera.rotation.y = this.getRadians(this.yaw);
-		this.camera.rotation.x = this.getRadians(this.pitch);
-		this.camera.rotation.z = this.getRadians(this.roll);
-		console.log(this.camera);
+		this.heli.rotation.y = this.getRadians(this.yaw);
+		this.heli.rotation.x = this.getRadians(this.pitch);
+		this.heli.rotation.z = this.getRadians(this.roll);
+		console.log(this.heli);
 	}
 
 	updatePosition(){
 
-		let x = this.vX * Math.cos(this.yaw),
-			y =	this.vY * Math.sin(this.pitch),
-			z = this.vY * Math.cos(this.pitch);
+		let x = this.vX * Math.cos(this.yaw) || 0,
+			y =	this.vY * Math.sin(this.pitch) || 0,
+			z = this.vY * Math.cos(this.pitch) || 0,
+			newPosition = new THREE.Vector3(x,y,z);
 
-		this.camera.position.set(new THREE.Vector3(x,y,z));
+		console.log("position vector3")
+		console.log("x: "+x);
+		console.log("y: "+y);
+		console.log("z: "+z);
+		console.log(newPosition);
+
+		this.heli.position.x += x;
+		this.heli.position.y += y;
+		this.heli.position.z += z;
+		console.log(this.heli);
+		console.log(this.camera);
 	}
 
 	getRadians(deg){
 		return deg * Math.PI / 180;
 	}
 
-	// updateVectorX(){
-	// 	this.v * Math.cos(this.roll)
-
-	// }
+	update(){
+		this.updateRotation();
+		this.updatePosition();
+	}
 
 
 }
