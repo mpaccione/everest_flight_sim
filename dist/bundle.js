@@ -112,7 +112,7 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": 
-					this.vX = this.vX >= -0.1 ? this.vX : this.vX -= 0.01;
+					this.vX = this.vX <= -0.1 ? this.vX : this.vX -= 0.01;
 					break;
 				case "ArrowUp":
 					this.vY = this.vY >= 0.1 ? this.vY : this.vY += 0.01;
@@ -121,7 +121,7 @@ class Helicopter {
 					this.vX = this.vX >= 0.1 ? this.vX : this.vX += 0.01;
 					break;
 				case "ArrowDown": 
-					this.vY = this.vY >= -0.1 ? this.vY : this.vY -= 0.01;
+					this.vY = this.vY <= -0.1 ? this.vY : this.vY -= 0.01;
 					break;
 				case "w": 
 					this.pitch += 2;
