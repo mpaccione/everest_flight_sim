@@ -12,9 +12,13 @@ const scene = new THREE.Scene(),
 	  // loader = new THREE.TGALoader();
 
 // Cube to Simulate Helicopter
-const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
+const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, vertexColors: THREE.FaceColors } ),
 	  cube = new THREE.Mesh( geometry, material );
+
+geometry.faces[10].color.setHex(0xFF0000);
+geometry.faces[11].color.setHex(0xFF0000);
+geometry.colorsNeedUpdate = true;
 
 cube.rotation.order = "YXZ";
 cube.name = "heli";
@@ -34,7 +38,7 @@ scene.add(gridHelper);
 camera.name = "camera";
 camera.position.z = 60;
 camera.position.y = 60;
-camera.position.x = 0;
+camera.position.x = 15;
 camera.lookAt(cube.position);
 
 // Debugging
@@ -102,6 +106,9 @@ class Helicopter {
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
+		this.maxRoll = 60;
+		this.maxYaw = 10;
+		this.maxPitch = 90;
 
 		// Debuging
 		// this.debuggingStats();
@@ -146,10 +153,10 @@ class Helicopter {
 					this.pitch += 2;
 					break;
 				case "a": // Roll Heli Left
-					this.roll -= 2;
+					this.roll += 2;
 					break;
 				case "d": // Roll Heli Right
-					this.roll += 2;
+					this.roll -= 2;
 					break;
 				case "q": // Turn Heli Right
 					this.yaw += 2;
@@ -201,19 +208,31 @@ class Helicopter {
 	}
 
 	updatePosition(){
-		let x = this.vX * Math.cos(this.yaw) || 0,
-			y =	this.vY * Math.cos(this.pitch) || 0,
-			z = 0;
+		// Arcade Style
+		let x,y,z;
 
-		if (this.pitch > 0) {
-			z = Math.abs(this.vY * Math.cos(this.pitch)) * -1;
-		} else if (this.pitch < 0){
-			z = Math.abs(this.vY * Math.cos(this.pitch));
-		}
+		// X Axis
+		x = this.roll == 0 ? 0 :
+			this.roll > 0 ? 
+				this.vX * (this.roll/this.maxRoll) :
+				this.vX * (this.roll/this.maxRoll) * -1;
+
+		// Y Axis
+		y = this.yaw == 0 ? this.vY :
+			this.yaw > 0 ?
+				this.vY * ((90 - this.yaw)/90) :
+				this.vY * ((90 - this.yaw)/90) * -1;
+
+		// Z Axis
+		z = this.pitch == 0 ? 0 :
+			this.pitch > 0 ?
+				this.vY * ((90 - this.pitch)/this.maxPitch) :
+				this.vY * ((90 - this.pitch)/this.maxPitch) * -1
+
 		
-		this.heli.position.x += x;
-		this.heli.position.y += y;
-		this.heli.position.z += z;
+		this.heli.translateX(x);
+		this.heli.translateY(y);
+		this.heli.translateZ(z);
 		this.x += x;
 		this.y += y;
 		this.z += z;
@@ -247,7 +266,6 @@ class Helicopter {
 	}
 
 }
-
 
 module.exports = Helicopter;
 },{"THREE":3}],3:[function(require,module,exports){

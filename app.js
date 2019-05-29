@@ -11,9 +11,13 @@ const scene = new THREE.Scene(),
 	  // loader = new THREE.TGALoader();
 
 // Cube to Simulate Helicopter
-const geometry = new THREE.BoxGeometry( 1, 1, 1 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, } ),
+const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, vertexColors: THREE.FaceColors } ),
 	  cube = new THREE.Mesh( geometry, material );
+
+geometry.faces[10].color.setHex(0xFF0000);
+geometry.faces[11].color.setHex(0xFF0000);
+geometry.colorsNeedUpdate = true;
 
 cube.rotation.order = "YXZ";
 cube.name = "heli";
@@ -33,7 +37,7 @@ scene.add(gridHelper);
 camera.name = "camera";
 camera.position.z = 60;
 camera.position.y = 60;
-camera.position.x = 0;
+camera.position.x = 15;
 camera.lookAt(cube.position);
 
 // Debugging
