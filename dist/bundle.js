@@ -7,8 +7,8 @@ const Terrain = require('./src/classes/terrain');
 
 // View
 const scene = new THREE.Scene(),
-	  // camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 ),
-	  camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 ),
+	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 100000 ),
+	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 100000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Debugging
@@ -37,7 +37,7 @@ scene.add(terrainObj);
 // Camera
 camera.name = "camera";
 camera.position.z = -50;
-camera.position.y = 10;
+camera.position.y = terrain.returnCameraStartPosY();
 camera.position.x = 0;
 
 // Lighting
@@ -50,7 +50,7 @@ window.camera = camera;
 document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor( 0xffffff, 0.15 );
+renderer.setClearColor( 0xffffff, 0.8 );
 document.body.appendChild( renderer.domElement );
 
 // Animation Loop
@@ -50467,8 +50467,6 @@ class Terrain {
 
 class ProceduralTerrain extends Terrain {
 
-	// NOTE: MUST INCLUDE IMPROVEDNOISE SHADER IN INDEX.HTML
-
 	constructor( worldWidth = 256, worldDepth = 256 ){
 		super();
 		this.worldWidth = worldWidth;
@@ -50536,11 +50534,6 @@ class ProceduralTerrain extends Terrain {
 		context.fillRect( 0, 0, width, height );
 
 		for ( let i = 0, j = 0, l = imageData.length; i < l; i += 4, j ++ ) {
-			// vector3.set(
-			// 	x: this.data[ j - 2 ] - this.data[ j + 2 ],
-			// 	y: 2,
-			// 	z: this.data[ j - width * 2 ] - this.data[ j + width * 2 ]
-			// )
 			vector3.x = this.data[ j - 2 ] - this.data[ j + 2 ];
 			vector3.y = 2;
 			vector3.z = this.data[ j - width * 2 ] - this.data[ j + width * 2 ];

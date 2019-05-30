@@ -6,8 +6,8 @@ const Terrain = require('./src/classes/terrain');
 
 // View
 const scene = new THREE.Scene(),
-	  // camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 ),
-	  camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 1, 1000 ),
+	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 100000 ),
+	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 100000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Debugging
@@ -36,7 +36,7 @@ scene.add(terrainObj);
 // Camera
 camera.name = "camera";
 camera.position.z = -50;
-camera.position.y = 10;
+camera.position.y = terrain.returnCameraStartPosY();
 camera.position.x = 0;
 
 // Lighting
@@ -49,7 +49,7 @@ window.camera = camera;
 document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor( 0xffffff, 0.15 );
+renderer.setClearColor( 0xffffff, 0.8 );
 document.body.appendChild( renderer.domElement );
 
 // Animation Loop
