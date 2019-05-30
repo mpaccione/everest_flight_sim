@@ -14,18 +14,6 @@ const scene = new THREE.Scene(),
 const controls = new OrbitControls(camera);
 controls.enableKeys = false; // Prevent Conflict with Player Controls
 
-// Cube to Simulate Helicopter
-const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } ),
-	  rect = new THREE.Mesh( geometry, material );
-
-rect.rotation.order = "YXZ";
-rect.name = "heli";
-scene.add( rect );
-
-// Initiate Helicopter
-const player = new Helicopter(rect, "Wireframe", 14000);
-
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain,
 	  terrainObj = terrain.returnTerrainObj();
@@ -36,12 +24,35 @@ scene.add(terrainObj);
 // Camera
 camera.name = "camera";
 camera.position.z = -50;
-camera.position.y = terrain.returnCameraStartPosY();
-camera.position.x = 0;
+// camera.position.y = terrain.returnCameraStartPosY();
+// camera.position.x = 0;
 
 // Lighting
 const ambientLight = new THREE.AmbientLight( 0x404040 );
 scene.add(ambientLight)
+
+// Rect to Simulate Helicopter
+const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
+	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } ),
+	  rect = new THREE.Mesh( geometry, material );
+
+rect.position.x = 0;
+rect.position.y = terrain.returnCameraStartPosY();
+rect.position.z = 0;
+rect.rotation.order = "YXZ";
+rect.name = "heli";
+
+// Link Camera and Helicopter
+const heliCam = new THREE.Group(),
+	  player = new Helicopter(heliCam, "Wireframe", 14000);
+
+heliCam.add(camera);
+heliCam.add(rect);
+heliCam.position.x = 0;
+heliCam.position.y = terrain.returnCameraStartPosY();
+heliCam.position.z = 0;
+console.log(heliCam);
+scene.add(heliCam);
 
 // Debugging
 window.scene = scene;
