@@ -22,16 +22,17 @@ class Helicopter {
 		this.maxAX = 400;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
-		this.aY = 0;
 		this.aX = 0;
-		this.vY = 0;
+		this.aY = 0;
 		this.vX = 0;
+		this.vY = 0;
+		this.vZ = 0;
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 60;
 		this.maxYaw = 10;
-		this.maxPitch = 45;
+		this.maxPitch = 60;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -40,21 +41,15 @@ class Helicopter {
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					this.aX = this.aX <= 0 ? this.aX : this.aX -= 100;
-					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowUp": // Main Rotor Thrust Increase
 					this.aY = this.aY >= this.maxAY ? this.aY : this.aY += 100;
-					this.vY = this.aY <= this.gravAOffset ? 
-						((this.aY/this.weight) * -1) + this.gravVOffset : (this.aY/this.weight) * -1;
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					this.aX = this.aX >= this.maxAX ? this.aX : this.aX += 100;
-					this.vX = this.aX/this.weight;
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
 					this.aY = this.aY <= 0 ? this.aY : this.aY -= 100;
-					this.vY = this.aY <= this.gravAOffset ? 
-						((this.aY/this.weight) * -1) + this.gravVOffset : (this.aY/this.weight) * -1;
 					break;
 				case " ": // Reset Rotors - Hover
 					// Need to Tween in Future
@@ -129,6 +124,39 @@ class Helicopter {
 		this.vX += newVelocity;
 	}
 
+	updateVelocities(){
+		// Initial Y velocity from accel & gravity
+		this.vY = this.aY <= this.gravAOffset ? (this.aY/this.weight) - this.gravVOffset : (this.aY/this.weight);
+		// Refactor Y Velocity based on roll / pitch
+		if (this.roll != 0 && this.pitch == 0) {
+			this.vY = this.vY - (this.vY * (this.roll/this.maxRoll));
+		} else if (this.roll == 0 && this.pitch != 0) {
+			this.vY = this.vY - (this.vY * (this.pitch/this.maxPitch));
+		} else {
+			// Get Y Velocity when rolling AND pitching
+			this.vY = this.pitch > this.roll ? 
+				this.vY - (this.vY * (this.pitch/this.maxPitch)) : 
+				this.vY - (this.vY * (this.roll/this.maxRoll));
+		}
+
+		// X Velocity is Y Velocity fraction using roll degree
+		this.vX = this.roll == 0 ? 0 : (this.aY/this.weight) * (this.roll/this.maxRoll);
+		// Get X Velocity when rolling AND pitching
+		if (this.roll != 0 && this.pitch != 0) {
+			let totalNonYVelocity = this.pitch > this.roll ? 
+				this.vY * (this.pitch/this.maxPitch) : 
+				this.vY * (this.roll/this.maxRoll);
+
+			this.vX = totalNonYVelocity * (this.roll/this.maxRoll);
+			this.vZ = totalNonYVelocity * (this.pitch/this.maxPitch); 
+		}
+
+		// Set Z Velocity if no roll, if roll Z is set above
+		if (this.roll == 0) {
+			this.vZ = this.pitch == 0 ? 0 : (this.aY/this.weight) * (this.pitch/this.maxPitch);
+		}
+	}
+
 	updateRotation(){
 		// SET AS YXZ & Axis Method
 		this.heli.rotation.y += this.getRadians((this.vX*100) * (this.yaw/this.maxYaw));
@@ -138,31 +166,14 @@ class Helicopter {
 
 	updatePosition(){
 		// Arcade Style & Translate Method
-		let x,y,z;
-
-		x = this.roll == 0 ? 0 :
-			this.roll > 0 ? 
-				this.vX * (this.roll/this.maxRoll) :
-				this.vX * (this.roll/this.maxRoll) * -1;
-
-		y = this.weight/this.vY == 0 ? 0 :
-			this.pitch > 0 ?
-				this.vY * ((90 - this.pitch)/90) :
-				this.vY * ((90 - this.pitch)/90) * -1;
-
-		z = this.pitch == 0 ? 0 :
-			this.pitch > 0 ?
-				this.vY * ((this.pitch - 90)/this.maxPitch) :
-				this.vY * ((this.pitch - 90)/this.maxPitch);
+		this.heli.translateX(this.vX);
+		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
+			this.heli.translateY(0) : this.heli.translateY(this.vY);
+		this.heli.translateZ(this.vZ);
 
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
 		this.z = this.heli.position.z;
-
-		this.heli.translateX(x);
-		this.y <= 0 && y <= 0 ? // Ground Check Factoring 0 Level
-			this.heli.translateY(0) : this.heli.translateY(y);
-		this.heli.translateZ(z);
 	}
 
 	getRadians(deg){
@@ -173,13 +184,18 @@ class Helicopter {
 		let html = `<ul>
 						<li>Model: ${this.model}</li>
 						<li>Weight: ${this.weight}</li>
+						<br>
 						<li>X: ${this.x}</li>
 						<li>Y: ${this.y}</li>
 						<li>Z: ${this.z}</li>
-						<li>aY: ${this.aY}</li>
+						<br>
 						<li>aX: ${this.aX}</li>
-						<li>vY: ${this.vY}</li> 
+						<li>aY: ${this.aY}</li>
+						<br>
 						<li>vX: ${this.vX}</li>
+						<li>vY: ${this.vY}</li> 
+						<li>vZ: ${this.vZ}</li> 
+						<br>
 						<li>Roll: ${this.roll}</li>
 						<li>Yaw: ${this.yaw}</li>
 						<li>Pitch: ${this.pitch}</li>
@@ -189,6 +205,7 @@ class Helicopter {
 	}
 
 	update(){
+		this.updateVelocities();
 		this.updateRotation();
 		this.updatePosition();
 		this.debuggingStats();
