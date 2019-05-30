@@ -12,7 +12,7 @@ const THREE = require('THREE'),
 
 class Helicopter {
 
-	constructor(heli = undefined, model = undefined, weight = 14000){
+	constructor(heli = undefined, model = undefined, weight = 14000, debug = false, mipMapObj = false){
 		this.heli = heli;
 		this.model = model;
 		this.weight = weight;
@@ -35,11 +35,15 @@ class Helicopter {
 		this.maxRoll = 90;
 		this.maxYaw = 1;
 		this.maxPitch = 90;
+		// Auxillary Props
+		this.mipMapObj = mipMapObj;
+		this.debug = debug;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
 		// WASDQE Keys for Rotations
 		window.addEventListener("keydown", (e) => {
+			console.log("keydown");
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
@@ -237,6 +241,13 @@ class Helicopter {
 		this.heli.rotation.y += this.getRadians(this.vR);
 		this.heli.rotation.x = this.getRadians(this.pitch);
 		this.heli.rotation.z = this.getRadians(this.roll);
+		// Have MipMap Camera Duplicate Angles
+		// Negative Values ??? Something to potentially debug
+		if (this.mipMapObj != false) {
+			this.mipMapObj.rotation.y += this.getRadians(this.vR);
+			this.mipMapObj.rotation.x = -this.getRadians(this.pitch);
+			this.mipMapObj.rotation.z = -this.getRadians(this.roll);			
+		}
 	}
 
 	updatePosition(){
@@ -245,7 +256,7 @@ class Helicopter {
 		// Arcade Style & Translate Method
 		this.heli.translateX(this.vX*multiplier);
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.translateY(0) : this.heli.translateY(this.vY* multiplier);
+			this.heli.translateY(0) : this.heli.translateY(this.vY*multiplier);
 		this.heli.translateZ(this.vZ*multiplier);
 
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
@@ -288,7 +299,9 @@ class Helicopter {
 		this.updateVelocities();
 		this.updateRotation();
 		this.updatePosition();
-		this.debuggingStats();
+		if (this.debug == true){
+			this.debuggingStats();
+		}
 		TWEEN.update();
 	}
 

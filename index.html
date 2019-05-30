@@ -4,11 +4,14 @@
 		<title>Everest Flight Simulator</title>
 	</head>
 	<body>
-		<canvas id="threeCanvas"></canvas>
+		<div id="three-mini"></div>
+		<div id="three"></div>
+		<div id="debugging-stats"></div>
 	</body>
 </html>
 <style type="text/css">
-	html,body,canvas {
+	html, body,
+	#three, #three canvas {
 		height: 100%;
 		width: 100%;
 		margin: 0px;
@@ -16,15 +19,25 @@
 		position: relative;
 		overflow: hidden;
 	}
-	canvas {
+	#three canvas {
 		position: absolute;
+	}
+	#three-mini {
+		position: fixed;
+		z-index: 9;
+		top: 10px;
+		left: 10px;
+		border: 1px solid white;
+		background-color: lightgray;
+		height: 200px;
+		width: 200px;
 	}
 	#debugging-stats {
 		background-color: transparent;
-		padding: 25px;
+		padding-left: 1px;
 		position: fixed;
 		color: white;
-		top: 10px;
+		top: 210px;
 		left: 10px;
 		z-index: 9;
 	}
