@@ -1,6 +1,6 @@
 // Imports
 const THREE = require('three');
-const Helicopter = require('./classes/helicopter');
+const Helicopter = require('./src/classes/helicopter');
 
 // View
 const scene = new THREE.Scene(),
