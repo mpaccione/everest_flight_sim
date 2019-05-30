@@ -17,7 +17,7 @@ rect.name = "heli";
 scene.add( rect );
 
 // Initiate Helicopter
-const player = new Helicopter(rect, "box", 14000);
+const player = new Helicopter(rect, "Wireframe", 14000);
 
 // Grid for Reference
 const gridSize = 100,

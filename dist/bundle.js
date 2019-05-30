@@ -18,7 +18,7 @@ rect.name = "heli";
 scene.add( rect );
 
 // Initiate Helicopter
-const player = new Helicopter(rect, "box", 14000);
+const player = new Helicopter(rect, "Wireframe", 14000);
 
 // Grid for Reference
 const gridSize = 100,
@@ -84,9 +84,9 @@ class Helicopter {
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
-		this.maxRoll = 60;
+		this.maxRoll = 45;
 		this.maxYaw = 10;
-		this.maxPitch = 60;
+		this.maxPitch = 45;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -109,7 +109,7 @@ class Helicopter {
 					// Need to Tween in Future
 					setTimeout(() => {
 						this.aX = 0;
-						this.aY = this.gravAOffset;
+						this.aY = this.gravAOffset+0.1;
 						this.vX = 0;
 						this.vY = 0;
 						this.roll = 0;
@@ -179,8 +179,17 @@ class Helicopter {
 	}
 
 	updateVelocities(){
+		let gravSim = this.aY/this.weight;
+
 		// Initial Y velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? (this.aY/this.weight) - this.gravVOffset : (this.aY/this.weight);
+		this.vY = this.aY <= this.gravAOffset ? gravSim - this.gravVOffset : gravSim;
+		// X Velocity is Y Velocity fraction using roll degree
+		this.vX = this.roll == 0 ? 0 : -gravSim * (this.roll/this.maxRoll);
+		// Set Z Velocity if no roll, if roll Z is set above
+		if (this.roll == 0) {
+			this.vZ = this.pitch == 0 ? 0 : gravSim * (this.pitch/this.maxPitch);
+		}
+
 		// Refactor Y Velocity based on roll / pitch
 		if (this.roll != 0 && this.pitch == 0) {
 			this.vY = this.vY - (this.vY * (this.roll/this.maxRoll));
@@ -193,8 +202,6 @@ class Helicopter {
 				this.vY - (this.vY * (this.roll/this.maxRoll));
 		}
 
-		// X Velocity is Y Velocity fraction using roll degree
-		this.vX = this.roll == 0 ? 0 : (this.aY/this.weight) * (this.roll/this.maxRoll);
 		// Get X Velocity when rolling AND pitching
 		if (this.roll != 0 && this.pitch != 0) {
 			let totalNonYVelocity = this.pitch > this.roll ? 
@@ -203,11 +210,6 @@ class Helicopter {
 
 			this.vX = totalNonYVelocity * (this.roll/this.maxRoll);
 			this.vZ = totalNonYVelocity * (this.pitch/this.maxPitch); 
-		}
-
-		// Set Z Velocity if no roll, if roll Z is set above
-		if (this.roll == 0) {
-			this.vZ = this.pitch == 0 ? 0 : (this.aY/this.weight) * (this.pitch/this.maxPitch);
 		}
 	}
 
