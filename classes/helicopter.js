@@ -30,9 +30,9 @@ class Helicopter {
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
-		this.maxRoll = 45;
+		this.maxRoll = 90;
 		this.maxYaw = 10;
-		this.maxPitch = 45;
+		this.maxPitch = 90;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -138,14 +138,14 @@ class Helicopter {
 
 		// Refactor Y Velocity based on roll / pitch
 		if (this.roll != 0 && this.pitch == 0) {
-			this.vY = this.vY - (this.vY * (this.roll/this.maxRoll));
+			this.vY = this.vY + -Math.abs((this.vY * (this.roll/this.maxRoll)));
 		} else if (this.roll == 0 && this.pitch != 0) {
-			this.vY = this.vY - (this.vY * (this.pitch/this.maxPitch));
+			this.vY = this.vY + -Math.abs((this.vY * (this.pitch/this.maxPitch)));
 		} else {
 			// Get Y Velocity when rolling AND pitching
 			this.vY = this.pitch > this.roll ? 
-				this.vY - (this.vY * (this.pitch/this.maxPitch)) : 
-				this.vY - (this.vY * (this.roll/this.maxRoll));
+				this.vY + -Math.abs((this.vY * (this.pitch/this.maxPitch))) : 
+				this.vY + -Math.abs((this.vY * (this.roll/this.maxRoll)));
 		}
 
 		// Get X Velocity when rolling AND pitching
@@ -172,6 +172,8 @@ class Helicopter {
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
 			this.heli.translateY(0) : this.heli.translateY(this.vY);
 		this.heli.translateZ(this.vZ);
+
+		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
