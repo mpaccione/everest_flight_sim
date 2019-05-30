@@ -50348,7 +50348,7 @@ class Helicopter {
 		this.y = 0;
 		this.z = 0;
 		this.maxAY = 2000;
-		this.maxAX = 6;
+		this.maxAX = 3;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
 		this.aX = 0;
@@ -50370,16 +50370,36 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
-					this.aX = this.aX <= 0 ? this.aX : this.aX -= 1;
+					if (this.aX > 0) {
+						let start = { aX: this.aX },
+							end = { aX: this.aX-1 };
+
+						this.flightTween(start, end, this, "aX");
+					}
 					break;
 				case "ArrowUp": // Main Rotor Thrust Increase
-					this.aY = this.aY >= this.maxAY ? this.aY : this.aY += 100;
+					if (this.aY < this.maxAY) {
+						let start = { aY: this.aY },
+							end = { aY: this.aY+100 };
+
+						this.flightTween(start, end, this, "aY");
+					}
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
-					this.aX = this.aX >= this.maxAX ? this.aX : this.aX += 1;
+					if (this.aX < this.maxAX) {
+						let start = { aX: this.aX },
+							end = { aX: this.aX+1 };
+					
+						this.flightTween(start, end, this, "aX");					
+					}
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
-					this.aY = this.aY <= 0 ? this.aY : this.aY -= 100;
+					if (this.aY > 0) {
+						let start = { aY: this.aY },
+							end = { aY: this.aY-100 };
+
+						this.flightTween(start, end, this, "aY");
+					}
 					break;
 				case " ": // Reset Rotors - Hover
 					let start = {
@@ -50400,10 +50420,10 @@ class Helicopter {
 							yaw: 0,
 							pitch: 0
 						},
-						hover = new TWEEN.Tween(start)
-									.to(end, 1000)
-									.easing(TWEEN.Easing.Quadratic.Out)
-									.onUpdate((tween) => {
+						hover = new TWEEN.Tween( start )
+									.to( end, 1000 )
+									.easing( TWEEN.Easing.Quadratic.Out )
+									.onUpdate( (tween) => {
 										this.aX = tween.aX;
 										this.aY = tween.aY;
 										this.vX = tween.vX;
@@ -50411,49 +50431,79 @@ class Helicopter {
 										this.roll = tween.roll;
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
-									}).start();
+									} ).start();
 					break;
 				case "w":  // Angle Heli Down
-					this.pitch = this.pitch > -this.maxPitch ? 
-						this.pitch -= 2 : this.pitch;
+					if (this.pitch > -this.maxPitch) {
+						let start = { pitch: this.pitch },
+							end = { pitch: this.pitch-2 };
+
+						this.flightTween(start, end, this, "pitch");
+					}
 					break;
 				case "s":  // Angle Heli Up
-					this.pitch = this.pitch < this.maxPitch ? 
-						this.pitch += 2 : this.pitch;
+					if (this.pitch < this.maxPitch) {
+						let start = { pitch: this.pitch },
+							end = { pitch: this.pitch+2 };
+
+						this.flightTween(start, end, this, "pitch");
+					}				
 					break;
 				case "a": // Roll Heli Left
-					this.roll = this.roll < this.maxRoll ?
-						this.roll += 2 : this.roll;
+					if (this.roll < this.maxRoll) {
+						let start = { roll: this.roll },
+							end = { roll: this.roll+2 };
+
+						this.flightTween(start, end, this, "roll");
+					}
 					break;
 				case "d": // Roll Heli Right
-					this.roll = this.roll > -this.maxRoll ?
-						this.roll -= 2 : this.roll;
+					if (this.roll > -this.maxRoll) {
+						let start = { roll: this.roll },
+							end = { roll: this.roll-2 };
+						
+						this.flightTween(start, end, this, "roll");
+					}
 					break;
 				case "q": // Turn Heli Right
-					this.yaw = this.yaw < this.maxYaw ?
-						this.yaw += 0.1 : this.yaw;
+					if (this.yaw < this.maxYaw) {
+						let start = { yaw: this.yaw },
+							end = { yaw: this.yaw+0.1 };
+
+						this.flightTween(start, end, this, "yaw");
+					}
 					break;
 				case "e": // Turn Heli Left
-					this.yaw = this.yaw > -this.maxYaw ?
-						this.yaw -= 0.1 : this.yaw;
+					if (this.yaw > -this.maxYaw) {
+						let start = { yaw: this.yaw },
+							end = { yaw: this.yaw-0.1 };
+
+						this.flightTween(start, end, this, "yaw");
+					}
 					break;
 			}
 		}, false);
 
 	}
 
+	flightTween(start, end, that, propName){
+		const flightTween = new TWEEN.Tween( start )
+								 .to( end, 250 )
+								 .easing( TWEEN.Easing.Quadratic.Out )
+								 .onUpdate( (tween) => {
+									that[propName] = tween[propName];
+								 } ).start();
+	}
+
 	changePitch(newPitch){
-		// + Up || - Down
 		this.pitch += newPitch;
 	}
 
 	changeRoll(newRoll){
-		// + Right || - Left
 		this.roll += newRoll;
 	}
 
 	changeYaw(newYaw){
-		// + Right || - Left
 		this.yaw += newYaw;
 	}
 
