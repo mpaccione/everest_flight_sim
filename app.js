@@ -6,7 +6,7 @@ const Terrain = require('./src/classes/terrain');
 
 // View
 const scene = new THREE.Scene(),
-	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 100000 ),
+	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 100000 ),
 	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 100000 ),
 	  renderer = new THREE.WebGLRenderer();
 
@@ -24,8 +24,6 @@ scene.add(terrainObj);
 // Camera
 camera.name = "camera";
 camera.position.z = -50;
-// camera.position.y = terrain.returnCameraStartPosY();
-// camera.position.x = 0;
 
 // Lighting
 const ambientLight = new THREE.AmbientLight( 0x404040 );
@@ -51,7 +49,6 @@ heliCam.add(rect);
 heliCam.position.x = 0;
 heliCam.position.y = terrain.returnCameraStartPosY();
 heliCam.position.z = 0;
-console.log(heliCam);
 scene.add(heliCam);
 
 // Debugging
