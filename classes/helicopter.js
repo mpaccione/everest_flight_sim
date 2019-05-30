@@ -19,7 +19,7 @@ class Helicopter {
 		this.y = 0;
 		this.z = 0;
 		this.maxAY = 2000;
-		this.maxAX = 400;
+		this.maxAX = 6;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
 		this.aX = 0;
@@ -27,11 +27,12 @@ class Helicopter {
 		this.vX = 0;
 		this.vY = 0;
 		this.vZ = 0;
+		this.vR = 0;
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 90;
-		this.maxYaw = 10;
+		this.maxYaw = 1;
 		this.maxPitch = 90;
 
 		// Set Controls
@@ -40,13 +41,13 @@ class Helicopter {
 		window.addEventListener("keydown", (e) => {
 			switch(e.key){
 				case "ArrowLeft": // Tail Rotor Thrust Negative
-					this.aX = this.aX <= 0 ? this.aX : this.aX -= 100;
+					this.aX = this.aX <= 0 ? this.aX : this.aX -= 1;
 					break;
 				case "ArrowUp": // Main Rotor Thrust Increase
 					this.aY = this.aY >= this.maxAY ? this.aY : this.aY += 100;
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
-					this.aX = this.aX >= this.maxAX ? this.aX : this.aX += 100;
+					this.aX = this.aX >= this.maxAX ? this.aX : this.aX += 1;
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
 					this.aY = this.aY <= 0 ? this.aY : this.aY -= 100;
@@ -81,14 +82,13 @@ class Helicopter {
 					break;
 				case "q": // Turn Heli Right
 					this.yaw = this.yaw < this.maxYaw ?
-						this.yaw += 2 : this.yaw;
+						this.yaw += 0.1 : this.yaw;
 					break;
 				case "e": // Turn Heli Left
 					this.yaw = this.yaw > -this.maxYaw ?
-						this.yaw -= 2 : this.yaw;
+						this.yaw -= 0.1 : this.yaw;
 					break;
 			}
-			console.log(e);
 		}, false);
 
 	}
@@ -125,43 +125,45 @@ class Helicopter {
 	}
 
 	updateVelocities(){
-		let gravSim = this.aY/this.weight;
+		let gravSimY = this.aY/this.weight,
+			gravSimX = this.aX/this.weight, // Not realistic but need to have similar ratio as vertical multiplier
+			pitchRatio = this.pitch/this.maxPitch,
+			rollRatio = this.roll/this.maxRoll,
+			yawRatio = this.yaw/this.maxYaw;
 
-		// Initial Y velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSim - this.gravVOffset : gravSim;
+		// Y velocity from accel & gravity
+		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
 		// X Velocity is Y Velocity fraction using roll degree
-		this.vX = this.roll == 0 ? 0 : -gravSim * (this.roll/this.maxRoll);
-		// Set Z Velocity if no roll, if roll Z is set above
+		this.vX = this.roll == 0 ? 0 : -gravSimY * rollRatio;
+		// Z Velocity if no roll, if roll Z is set below
 		if (this.roll == 0) {
-			this.vZ = this.pitch == 0 ? 0 : gravSim * (this.pitch/this.maxPitch);
+			this.vZ = this.pitch == 0 ? 0 : gravSimY * pitchRatio;
 		}
+		// Rotational Velocity
+		this.vR = this.aX * yawRatio;
 
 		// Refactor Y Velocity based on roll / pitch
 		if (this.roll != 0 && this.pitch == 0) {
-			this.vY = this.vY + -Math.abs((this.vY * (this.roll/this.maxRoll)));
+			this.vY = this.vY + -Math.abs((this.vY * rollRatio));
 		} else if (this.roll == 0 && this.pitch != 0) {
-			this.vY = this.vY + -Math.abs((this.vY * (this.pitch/this.maxPitch)));
+			this.vY = this.vY + -Math.abs((this.vY * pitchRatio));
 		} else {
 			// Get Y Velocity when rolling AND pitching
-			this.vY = this.pitch > this.roll ? 
-				this.vY + -Math.abs((this.vY * (this.pitch/this.maxPitch))) : 
-				this.vY + -Math.abs((this.vY * (this.roll/this.maxRoll)));
+			this.vY = this.pitch > this.roll ? this.vY + -Math.abs((this.vY * pitchRatio)) : this.vY + -Math.abs((this.vY * rollRatio));
 		}
 
 		// Get X Velocity when rolling AND pitching
 		if (this.roll != 0 && this.pitch != 0) {
-			let totalNonYVelocity = this.pitch > this.roll ? 
-				this.vY * (this.pitch/this.maxPitch) : 
-				this.vY * (this.roll/this.maxRoll);
+			let totalNonYVelocity = this.pitch > this.roll ? this.vY * pitchRatio : this.vY * rollRatio;
 
-			this.vX = totalNonYVelocity * (this.roll/this.maxRoll);
-			this.vZ = totalNonYVelocity * (this.pitch/this.maxPitch); 
+			this.vX = totalNonYVelocity * rollRatio;
+			this.vZ = totalNonYVelocity * pitchRatio; 
 		}
 	}
 
 	updateRotation(){
 		// SET AS YXZ & Axis Method
-		this.heli.rotation.y += this.getRadians((this.vX*100) * (this.yaw/this.maxYaw));
+		this.heli.rotation.y += this.getRadians(this.vR);
 		this.heli.rotation.x = this.getRadians(this.pitch);
 		this.heli.rotation.z = this.getRadians(this.roll);
 	}
@@ -199,6 +201,7 @@ class Helicopter {
 						<li>vX: ${this.vX}</li>
 						<li>vY: ${this.vY}</li> 
 						<li>vZ: ${this.vZ}</li> 
+						<li>vR: ${this.vR}</li> 
 						<br>
 						<li>Roll: ${this.roll}</li>
 						<li>Yaw: ${this.yaw}</li>
