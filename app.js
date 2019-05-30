@@ -1,6 +1,6 @@
 // Imports
 const THREE = require('three');
-const OrbitControls = require('three-orbit-controls')(THREE);
+// const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
 
@@ -11,8 +11,8 @@ const scene = new THREE.Scene(),
 	  renderer = new THREE.WebGLRenderer();
 
 // Debugging
-const controls = new OrbitControls(camera);
-controls.enableKeys = false; // Prevent Conflict with Player Controls
+// const controls = new OrbitControls(camera);
+// controls.enableKeys = false; // Prevent Conflict with Player Controls
 
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain,
