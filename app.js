@@ -6,7 +6,6 @@ const Helicopter = require('./src/classes/helicopter');
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000000 ),
-	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 1000000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Group
