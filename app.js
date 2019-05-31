@@ -2,11 +2,15 @@
 const THREE = require('three');
 const GLTFLoader = require('three-gltf-loader');
 const Helicopter = require('./src/classes/helicopter');
+const OrbitControls = require('three-orbit-controls')(THREE);
 
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000000 ),
-	  renderer = new THREE.WebGLRenderer();
+	  renderer = new THREE.WebGLRenderer(),
+	  controls = new OrbitControls(camera);
+
+controls.keys = false;
 
 // Group
 const miniHeliGroup = new THREE.Group();

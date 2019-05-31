@@ -240,8 +240,8 @@ class Helicopter {
 	updateRotation(){
 		// SET AS YXZ & Axis Method
 		this.heli.rotation.y += this.getRadians(this.vR);
-		this.heli.rotation.x = this.getRadians(this.pitch);
-		this.heli.rotation.z = this.getRadians(this.roll);
+		this.heli.rotation.x = this.getRadians(this.pitch); // Swapped - Bug, don't change
+		this.heli.rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
 	}
 
 	updatePosition(){
@@ -249,9 +249,9 @@ class Helicopter {
 		const multiplier = 30;
 		// Arcade Style & Translate Method
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.translateY(0) : this.heli.translateY(this.vY* multiplier);
-		this.heli.translateZ(this.vZ*multiplier);
-		this.heli.translateX(this.vX*multiplier);
+			this.heli.position.y += 0 : this.heli.position.y += (this.vY* multiplier);
+		this.heli.position.z += (this.vZ*multiplier);
+		this.heli.position.x += (-this.vX*multiplier);
 		// Debugging Below?
 		// this.heli.translateX(this.vZ*multiplier);
 		// this.heli.translateZ(this.vX*multiplier);
