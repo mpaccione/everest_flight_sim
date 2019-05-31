@@ -54507,7 +54507,7 @@ class Helicopter {
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 35;
 		this.maxYaw = 1;
-		this.maxPitch = 45;
+		this.maxPitch = 35;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -54670,8 +54670,8 @@ class Helicopter {
 
 	updateVelocities(){
 		// Convert Degrees to Radians
-		const rollRads = this.getRadians( 90-this.roll ),
-			  pitchRads = this.getRadians( 90-this.pitch ),
+		const rollRads = this.getRadians( 150-this.roll ), // Normally 90-this.roll, changed for better playability
+			  pitchRads = this.getRadians( 150-this.pitch ), // Normally 90-this.pitch, changed for better playability
 			  gravSimY = this.aY/this.weight,
 			  yawRatio = this.yaw/this.maxYaw;
 
