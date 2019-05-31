@@ -54859,27 +54859,18 @@ class Helicopter {
 	updateRotation(){
 		// SET AS YXZ & Axis Method
 		this.heli.rotation.y += this.getRadians(this.vR);
-		this.heli.rotation.x = this.getRadians(this.roll);
-		this.heli.rotation.z = this.getRadians(this.pitch);
-		// Have MipMap Camera Duplicate Angles
-		// Negative Values ??? Something to potentially debug
-		if (this.mipMapObj != false) {
-			this.mipMapObj.rotation.y += -this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = this.getRadians(this.roll);
-			this.mipMapObj.rotation.z = -this.getRadians(this.pitch);			
-		}
+		this.heli.rotation.x = this.getRadians(this.pitch); // Swapped - Bug, don't change
+		this.heli.rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
 	}
 
 	updatePosition(){
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		// Ground Check Factoring 0 Level
-		if ( this.y >= 0 ) {
-			this.heli.translateX(this.vX*multiplier);
-			this.heli.translateY(this.vY*multiplier);
-			this.heli.translateZ(this.vZ*multiplier);
-		}
+		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
+			this.heli.position.y += 0 : this.heli.position.y += (this.vY* multiplier);
+		this.heli.position.z += (this.vZ*multiplier);
+		this.heli.position.x += (-this.vX*multiplier);
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
