@@ -32,9 +32,9 @@ class Helicopter {
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
-		this.maxRoll = 90;
+		this.maxRoll = 45;
 		this.maxYaw = 1;
-		this.maxPitch = 90;
+		this.maxPitch = 45;
 		// Auxillary Props
 		this.mipMapObj = mipMapObj;
 		this.debug = debug;
