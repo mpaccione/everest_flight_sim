@@ -197,8 +197,8 @@ class Helicopter {
 
 	updateVelocities(){
 		// Convert Degrees to Radians
-		const rollRads = this.getRadians( 150-this.roll ), // Normally 90-this.roll, changed for better playability
-			  pitchRads = this.getRadians( 150-this.pitch ), // Normally 90-this.pitch, changed for better playability
+		const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
+			  pitchRads = this.pitch < 0 ? this.getRadians( 150-this.pitch ) : this.getRadians( 150+this.pitch ), // Hypothetically 90-this.pitch, changed for better playability
 			  gravSimY = this.aY/this.weight,
 			  yawRatio = this.yaw/this.maxYaw;
 
@@ -207,33 +207,31 @@ class Helicopter {
 
 		// Y Velocity from accel & gravity
 		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
+
+		const vYOriginal = this.vY;
 		
 		// X & Z Velocity
 		if ( this.roll != 0 && this.pitch != 0 ) {
 			// Get Higher Degree of the two, use resultant Y Velocity for second equation
 			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
 				// Calc Roll Vector with Trigonometry, 
-				// Calculate non vertical vector first to use original Y Velocity
-				this.vX = this.vY * Math.cos(rollRads);
-				this.vY = this.vY * Math.sin(rollRads);
-				// Use Resultant Y to Calculate Pitch Vector
-				this.vZ = this.vY * Math.cos(pitchRads);
+				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
+				this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
+				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
 			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
 				// Calc Pitch Vector with Trigonometry
-				// Calculate non vertical vector first to use original Y Velocity
-				this.vZ = this.vY * Math.cos(pitchRads);
-				this.vY = this.vY * Math.sin(pitchRads);
-				// Use Resultant Y to Calculate Roll Vector
-				this.vX = this.vY * Math.cos(rollRads);
+				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
+				this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
+				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
 			}
 		} else if ( this.roll != 0 ) {
 			// Calc Roll Vector with Trigonometry
-			this.vX = this.vY * Math.cos(rollRads);
-			this.vY = this.vY * Math.sin(rollRads);
+			this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
+			this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
 		} else if ( this.pitch != 0 ) {
 			// Calc Pitch Vector with Trigonometry
-			this.vZ = this.vY * Math.cos(pitchRads);
-			this.vY = this.vY * Math.sin(pitchRads);
+			this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
+			this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
 		}
 	}
 
@@ -249,12 +247,11 @@ class Helicopter {
 		const multiplier = 30;
 		// Arcade Style & Translate Method
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.position.y += 0 : this.heli.position.y += (this.vY* multiplier);
-		this.heli.position.z += (this.vZ*multiplier);
-		this.heli.position.x += (-this.vX*multiplier);
-		// Debugging Below?
-		// this.heli.translateX(this.vZ*multiplier);
-		// this.heli.translateZ(this.vX*multiplier);
+			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
+		// Invert Velocity Based on Roll Value
+		this.heli.position.x += this.roll > 0 ? -this.vX*multiplier : this.vX*multiplier;
+		// Invert Velocity Based on Pitch Value
+		this.heli.position.z += this.pitch > 0 ? this.vZ*multiplier : -this.vZ*multiplier;
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
