@@ -215,39 +215,44 @@ class Helicopter {
 	}
 
 	updateVelocities(){
-		let gravSimY = this.aY/this.weight,
-			gravSimX = this.aX/this.weight, // Not realistic but need to have similar ratio as vertical multiplier
-			pitchRatio = this.pitch/this.maxPitch,
-			rollRatio = this.roll/this.maxRoll,
-			yawRatio = this.yaw/this.maxYaw;
+		// Convert Degrees to Radians
+		const rollRads = this.getRadians( 90-this.roll ),
+			  pitchRads = this.getRadians( 90-this.pitch ),
+			  gravSimY = this.aY/this.weight,
+			  yawRatio = this.yaw/this.maxYaw;
 
-		// Y velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
-		// X Velocity is Y Velocity fraction using roll degree
-		this.vX = this.roll == 0 ? 0 : -gravSimY * rollRatio;
-		// Z Velocity if no roll, if roll Z is set below
-		if (this.roll == 0) {
-			this.vZ = this.pitch == 0 ? 0 : gravSimY * pitchRatio;
-		}
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Refactor Y Velocity based on roll / pitch
-		if (this.roll != 0 && this.pitch == 0) {
-			this.vY = this.vY + -Math.abs((this.vY * rollRatio));
-		} else if (this.roll == 0 && this.pitch != 0) {
-			this.vY = this.vY + -Math.abs((this.vY * pitchRatio));
-		} else {
-			// Get Y Velocity when rolling AND pitching
-			this.vY = this.pitch > this.roll ? this.vY + -Math.abs((this.vY * pitchRatio)) : this.vY + -Math.abs((this.vY * rollRatio));
-		}
-
-		// Get X Velocity when rolling AND pitching
-		if (this.roll != 0 && this.pitch != 0) {
-			let totalNonYVelocity = this.pitch > this.roll ? this.vY * pitchRatio : this.vY * rollRatio;
-
-			this.vX = totalNonYVelocity * rollRatio;
-			this.vZ = totalNonYVelocity * pitchRatio; 
+		// Y Velocity from accel & gravity
+		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
+		
+		// X & Z Velocity
+		if ( this.roll != 0 && this.pitch != 0 ) {
+			// Get Higher Degree of the two, use resultant Y Velocity for second equation
+			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+				// Calc Roll Vector with Trigonometry, 
+				// Calculate non vertical vector first to use original Y Velocity
+				this.vX = this.vY * Math.cos(rollRads);
+				this.vY = this.vY * Math.sin(rollRads);
+				// Use Resultant Y to Calculate Pitch Vector
+				this.vZ = this.vY * Math.cos(pitchRads);
+			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+				// Calc Pitch Vector with Trigonometry
+				// Calculate non vertical vector first to use original Y Velocity
+				this.vZ = this.vY * Math.cos(pitchRads);
+				this.vY = this.vY * Math.sin(pitchRads);
+				// Use Resultant Y to Calculate Roll Vector
+				this.vX = this.vY * Math.cos(rollRads);
+			}
+		} else if ( this.roll != 0 ) {
+			// Calc Roll Vector with Trigonometry
+			this.vX = this.vY * Math.cos(rollRads);
+			this.vY = this.vY * Math.sin(rollRads);
+		} else if ( this.pitch != 0 ) {
+			// Calc Pitch Vector with Trigonometry
+			this.vZ = this.vY * Math.cos(pitchRads);
+			this.vY = this.vY * Math.sin(pitchRads);
 		}
 	}
 
