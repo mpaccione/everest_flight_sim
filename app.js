@@ -1,5 +1,6 @@
 // Imports
 const THREE = require('three');
+const GLTFLoader = require('three-gltf-loader');
 const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
@@ -10,36 +11,44 @@ const Terrain = require('./src/classes/terrain');
 
 // View
 const miniScene = new THREE.Scene(),
-	  miniCamera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 100000 ),
-	  miniRenderer = new THREE.WebGLRenderer();
+	  miniCamera = new THREE.OrthographicCamera( 600 / - 2, 600 / 2, 600 / 2, 600 / - 2, 0.1, 20000 )
+	  // miniCamera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.1, 2000 ),
+	  miniRenderer = new THREE.WebGLRenderer(),
+	  miniModelLoader = new GLTFLoader();
 
-// Rect to Simulate Helicopter
-const miniGeometry = new THREE.BoxGeometry( 2, 1, 4 ),
-	  miniMaterial = new THREE.MeshBasicMaterial( { color: 0xffffff, wireframe: true } ),
-	  miniRect = new THREE.Mesh( miniGeometry, miniMaterial );
+// Group
+const miniHeliGroup = new THREE.Group();
 
-// miniRect.position.set = 0;
-// miniRect.position.y = 0;
-// miniRect.position.z = 0;
-miniRect.rotation.order = "YXZ";
-miniRect.name = "miniHeli";
+let miniModel;
+
+// Load Helicopter Model
+miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
+	miniModel = gltf.scene;
+	miniModel.name = "miniHeli"
+	miniModel.rotation.y = 90 * Math.PI / 180; // Radians
+    miniModel.position.set( 0, 0, 0 );
+
+    let miniModelMesh = miniModel.children[0].children[0].children[0],
+    	miniModelMeshArr = [ miniModelMesh.children[0], miniModelMesh.children[1], miniModelMesh.children[2] ];
+
+    for (var i = miniModelMeshArr.length - 1; i >= 0; i--) {
+    	miniModelMeshArr[i].material.wireframe = true;
+    }
+
+	miniHeliGroup.add( miniModel );
+} )
 
 // Camera
 miniCamera.name = "miniCamera";
-miniCamera.position.set(0,0,-5);
-// miniCamera.lookAt(miniRect);
-
-// Group
-const miniHeliRect = new THREE.Group();
+miniCamera.position.set( 0, 0, -10000 );
 
 // Debugging
 const controls = new OrbitControls(miniCamera);
 controls.enableKeys = false; // Prevent Conflict with Player Controls
 
-// miniHeliRect.add(miniCamera);
-miniHeliRect.add(miniRect);
-miniHeliRect.add(new THREE.AxesHelper(2.25));
-miniScene.add(miniHeliRect);
+// miniHeliRect.add(miniRect);
+miniHeliGroup.add(new THREE.AxesHelper(1000));
+miniScene.add(miniHeliGroup);
 miniScene.add(miniCamera);
 
 ////////////////
@@ -79,7 +88,7 @@ rect.name = "heli";
 
 // Link Camera and Helicopter
 const heliCam = new THREE.Group(),
-	  player = new Helicopter(heliCam, "Wireframe", 14000, true, miniHeliRect);
+	  player = new Helicopter(heliCam, "Wireframe", 14000, true, miniHeliGroup);
 
 heliCam.add(camera);
 heliCam.add(rect);
