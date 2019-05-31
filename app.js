@@ -23,7 +23,10 @@ miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
     let miniModelMesh = miniModel.children[0].children[0].children[0],
     	miniModelMeshArr = [ miniModelMesh.children[0], miniModelMesh.children[1], miniModelMesh.children[2] ];
 
+    console.log(miniModelMeshArr);
+
     for (var i = miniModelMeshArr.length - 1; i >= 0; i--) {
+    	miniModelMeshArr[i].name = "mesh"+i;		
     	miniModelMeshArr[i].material.wireframe = true;
     }
 
@@ -44,9 +47,8 @@ scene.add(gridHelper);
 
 // Camera
 camera.name = "camera";
-camera.position.z = 6000;
-camera.position.y = 6000;
-// camera.position.x = 1500;
+camera.position.z = 5000;
+camera.position.y = 5000;
 camera.lookAt(miniHeliGroup.position);
 
 // Debugging
@@ -55,7 +57,7 @@ window.camera = camera;
 document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor(0xffffff, 0.15);
+renderer.setClearColor(0xffffff, 0.9);
 document.body.appendChild( renderer.domElement );
 
 // Animation Loop
