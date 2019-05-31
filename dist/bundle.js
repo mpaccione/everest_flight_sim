@@ -54633,7 +54633,7 @@ class Helicopter {
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 45;
-		this.maxYaw = 1;
+		this.maxYaw = 0.4;
 		this.maxPitch = 45;
 		// Auxillary Props
 		this.mipMapObj = mipMapObj;
@@ -54648,7 +54648,7 @@ class Helicopter {
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX-1 };
+							end = { aX: this.aX-0.1 };
 
 						this.flightTween(start, end, this, "aX");
 					}
@@ -54664,7 +54664,7 @@ class Helicopter {
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					if (this.aX < this.maxAX) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX+1 };
+							end = { aX: this.aX+0.1 };
 					
 						this.flightTween(start, end, this, "aX");					
 					}
@@ -54815,53 +54815,58 @@ class Helicopter {
 	}
 
 	updateVelocities(){
-		let gravSimY = this.aY/this.weight,
-			gravSimX = this.aX/this.weight, // Not realistic but need to have similar ratio as vertical multiplier
-			pitchRatio = this.pitch/this.maxPitch,
-			rollRatio = this.roll/this.maxRoll,
-			yawRatio = this.yaw/this.maxYaw;
+		// Convert Degrees to Radians
+		const rollRads = this.getRadians( 90-this.roll ),
+			  pitchRads = this.getRadians( 90-this.pitch ),
+			  gravSimY = this.aY/this.weight,
+			  yawRatio = this.yaw/this.maxYaw;
 
-		// Y velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
-		// X Velocity is Y Velocity fraction using roll degree
-		this.vX = this.roll == 0 ? 0 : -gravSimY * rollRatio;
-		// Z Velocity if no roll, if roll Z is set below
-		if (this.roll == 0) {
-			this.vZ = this.pitch == 0 ? 0 : gravSimY * pitchRatio;
-		}
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Refactor Y Velocity based on roll / pitch
-		if (this.roll != 0 && this.pitch == 0) {
-			this.vY = this.vY + -Math.abs((this.vY * rollRatio));
-		} else if (this.roll == 0 && this.pitch != 0) {
-			this.vY = this.vY + -Math.abs((this.vY * pitchRatio));
-		} else {
-			// Get Y Velocity when rolling AND pitching
-			this.vY = this.pitch > this.roll ? this.vY + -Math.abs((this.vY * pitchRatio)) : this.vY + -Math.abs((this.vY * rollRatio));
-		}
-
-		// Get X Velocity when rolling AND pitching
-		if (this.roll != 0 && this.pitch != 0) {
-			let totalNonYVelocity = this.pitch > this.roll ? this.vY * pitchRatio : this.vY * rollRatio;
-
-			this.vX = totalNonYVelocity * rollRatio;
-			this.vZ = totalNonYVelocity * pitchRatio; 
+		// Y Velocity from accel & gravity
+		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
+		
+		// X & Z Velocity
+		if ( this.roll != 0 && this.pitch != 0 ) {
+			// Get Higher Degree of the two, use resultant Y Velocity for second equation
+			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+				// Calc Roll Vector with Trigonometry, 
+				// Calculate non vertical vector first to use original Y Velocity
+				this.vX = this.vY * Math.cos(rollRads);
+				this.vY = this.vY * Math.sin(rollRads);
+				// Use Resultant Y to Calculate Pitch Vector
+				this.vZ = this.vY * Math.cos(pitchRads);
+			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+				// Calc Pitch Vector with Trigonometry
+				// Calculate non vertical vector first to use original Y Velocity
+				this.vZ = this.vY * Math.cos(pitchRads);
+				this.vY = this.vY * Math.sin(pitchRads);
+				// Use Resultant Y to Calculate Roll Vector
+				this.vX = this.vY * Math.cos(rollRads);
+			}
+		} else if ( this.roll != 0 ) {
+			// Calc Roll Vector with Trigonometry
+			this.vX = this.vY * Math.cos(rollRads);
+			this.vY = this.vY * Math.sin(rollRads);
+		} else if ( this.pitch != 0 ) {
+			// Calc Pitch Vector with Trigonometry
+			this.vZ = this.vY * Math.cos(pitchRads);
+			this.vY = this.vY * Math.sin(pitchRads);
 		}
 	}
 
 	updateRotation(){
 		// SET AS YXZ & Axis Method
 		this.heli.rotation.y += this.getRadians(this.vR);
-		this.heli.rotation.x = this.getRadians(this.pitch);
-		this.heli.rotation.z = this.getRadians(this.roll);
+		this.heli.rotation.x = this.getRadians(this.roll);
+		this.heli.rotation.z = this.getRadians(this.pitch);
 		// Have MipMap Camera Duplicate Angles
 		// Negative Values ??? Something to potentially debug
 		if (this.mipMapObj != false) {
 			this.mipMapObj.rotation.y += -this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = this.getRadians(this.pitch);
-			this.mipMapObj.rotation.z = -this.getRadians(this.roll);			
+			this.mipMapObj.rotation.x = this.getRadians(this.roll);
+			this.mipMapObj.rotation.z = -this.getRadians(this.pitch);			
 		}
 	}
 
@@ -54869,13 +54874,13 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.heli.translateX(this.vX*multiplier);
-		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.translateY(0) : this.heli.translateY(this.vY*multiplier);
-		this.heli.translateZ(this.vZ*multiplier);
-
+		// Ground Check Factoring 0 Level
+		if ( this.y >= 0 ) {
+			this.heli.translateX(this.vX*multiplier);
+			this.heli.translateY(this.vY*multiplier);
+			this.heli.translateZ(this.vZ*multiplier);
+		}
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
-
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
 		this.z = this.heli.position.z;

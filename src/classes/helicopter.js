@@ -33,7 +33,7 @@ class Helicopter {
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 45;
-		this.maxYaw = 1;
+		this.maxYaw = 0.4;
 		this.maxPitch = 45;
 		// Auxillary Props
 		this.mipMapObj = mipMapObj;
@@ -48,7 +48,7 @@ class Helicopter {
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX-1 };
+							end = { aX: this.aX-0.1 };
 
 						this.flightTween(start, end, this, "aX");
 					}
@@ -64,7 +64,7 @@ class Helicopter {
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					if (this.aX < this.maxAX) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX+1 };
+							end = { aX: this.aX+0.1 };
 					
 						this.flightTween(start, end, this, "aX");					
 					}
@@ -259,14 +259,14 @@ class Helicopter {
 	updateRotation(){
 		// SET AS YXZ & Axis Method
 		this.heli.rotation.y += this.getRadians(this.vR);
-		this.heli.rotation.x = this.getRadians(this.pitch);
-		this.heli.rotation.z = this.getRadians(this.roll);
+		this.heli.rotation.x = this.getRadians(this.roll);
+		this.heli.rotation.z = this.getRadians(this.pitch);
 		// Have MipMap Camera Duplicate Angles
 		// Negative Values ??? Something to potentially debug
 		if (this.mipMapObj != false) {
 			this.mipMapObj.rotation.y += -this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = this.getRadians(this.pitch);
-			this.mipMapObj.rotation.z = -this.getRadians(this.roll);			
+			this.mipMapObj.rotation.x = this.getRadians(this.roll);
+			this.mipMapObj.rotation.z = -this.getRadians(this.pitch);			
 		}
 	}
 
@@ -274,13 +274,13 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.heli.translateX(this.vX*multiplier);
-		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.translateY(0) : this.heli.translateY(this.vY*multiplier);
-		this.heli.translateZ(this.vZ*multiplier);
-
+		// Ground Check Factoring 0 Level
+		if ( this.y >= 0 ) {
+			this.heli.translateX(this.vX*multiplier);
+			this.heli.translateY(this.vY*multiplier);
+			this.heli.translateZ(this.vZ*multiplier);
+		}
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
-
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
 		this.z = this.heli.position.z;
