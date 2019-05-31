@@ -108,6 +108,21 @@ class Helicopter {
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
 									} ).start();
+						// Fixing Yaw on Reset
+						if (this.mipMapObj != false) {
+							let mipMapStart = {
+									mipMapObjRotationY: this.mipMapObj.rotation.y
+								},
+								mipMapEnd = {
+									mipMapObjRotationY: 0
+								},
+								mipMapTween = new TWEEN.Tween( mipMapStart )
+													.to( mipMapEnd )
+													.easing( TWEEN.Easing.Quadratic.Out )
+													.onUpdate( (tween) => {
+														this.mipMapObj.rotation.y = tween.mipMapObjRotationY
+													} ).start();
+						}
 					break;
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
@@ -244,8 +259,8 @@ class Helicopter {
 		// Have MipMap Camera Duplicate Angles
 		// Negative Values ??? Something to potentially debug
 		if (this.mipMapObj != false) {
-			this.mipMapObj.rotation.y += this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = -this.getRadians(this.pitch);
+			this.mipMapObj.rotation.y += -this.getRadians(this.vR);
+			this.mipMapObj.rotation.x = this.getRadians(this.pitch);
 			this.mipMapObj.rotation.z = -this.getRadians(this.roll);			
 		}
 	}

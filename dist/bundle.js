@@ -198,8 +198,7 @@ const Terrain = require('./src/classes/terrain');
 
 // View
 const miniScene = new THREE.Scene(),
-	  miniCamera = new THREE.OrthographicCamera( 600 / - 2, 600 / 2, 600 / 2, 600 / - 2, 0.1, 20000 )
-	  // miniCamera = new THREE.PerspectiveCamera( 45, window.innerWidth/window.innerHeight, 0.1, 2000 ),
+	  miniCamera = new THREE.OrthographicCamera( 600 / - 2, 600 / 2, 600 / 2, 600 / - 2, 0.1, 20000 ),
 	  miniRenderer = new THREE.WebGLRenderer(),
 	  miniModelLoader = new GLTFLoader();
 
@@ -212,7 +211,7 @@ let miniModel;
 miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
 	miniModel = gltf.scene;
 	miniModel.name = "miniHeli"
-	miniModel.rotation.y = 90 * Math.PI / 180; // Radians
+	miniModel.rotation.y = -90 * Math.PI / 180; // Radians
     miniModel.position.set( 0, 0, 0 );
 
     let miniModelMesh = miniModel.children[0].children[0].children[0],
@@ -233,7 +232,6 @@ miniCamera.position.set( 0, 0, -10000 );
 const controls = new OrbitControls(miniCamera);
 controls.enableKeys = false; // Prevent Conflict with Player Controls
 
-// miniHeliRect.add(miniRect);
 miniHeliGroup.add(new THREE.AxesHelper(1000));
 miniScene.add(miniHeliGroup);
 miniScene.add(miniCamera);
@@ -245,7 +243,6 @@ miniScene.add(miniCamera);
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 100000 ),
-	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 100000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Add Terrain
@@ -54711,6 +54708,21 @@ class Helicopter {
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
 									} ).start();
+						// Fixing Yaw on Reset
+						if (this.mipMapObj != false) {
+							let mipMapStart = {
+									mipMapObjRotationY: this.mipMapObj.rotation.y
+								},
+								mipMapEnd = {
+									mipMapObjRotationY: 0
+								},
+								mipMapTween = new TWEEN.Tween( mipMapStart )
+													.to( mipMapEnd )
+													.easing( TWEEN.Easing.Quadratic.Out )
+													.onUpdate( (tween) => {
+														this.mipMapObj.rotation.y = tween.mipMapObjRotationY
+													} ).start();
+						}
 					break;
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
@@ -54847,8 +54859,8 @@ class Helicopter {
 		// Have MipMap Camera Duplicate Angles
 		// Negative Values ??? Something to potentially debug
 		if (this.mipMapObj != false) {
-			this.mipMapObj.rotation.y += this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = -this.getRadians(this.pitch);
+			this.mipMapObj.rotation.y += -this.getRadians(this.vR);
+			this.mipMapObj.rotation.x = this.getRadians(this.pitch);
 			this.mipMapObj.rotation.z = -this.getRadians(this.roll);			
 		}
 	}
