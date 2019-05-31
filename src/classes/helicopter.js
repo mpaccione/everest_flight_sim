@@ -241,7 +241,7 @@ class Helicopter {
 
 	updatePosition(){
 		// Velocity Multiplier - Scaling speeds to different size landscapes
-		const multiplier = 10;
+		const multiplier = 30;
 		// Arcade Style & Translate Method
 		this.heli.translateX(this.vX*multiplier);
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity

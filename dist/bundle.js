@@ -193,7 +193,6 @@ const Helicopter = require('./src/classes/helicopter');
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000000 ),
-	  // camera = new THREE.OrthographicCamera( window.innerWidth / - 2, window.innerWidth / 2, window.innerHeight / 2, window.innerHeight / - 2, 0.1, 1000000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Group
@@ -53687,7 +53686,7 @@ class Helicopter {
 
 	updatePosition(){
 		// Velocity Multiplier - Scaling speeds to different size landscapes
-		const multiplier = 10;
+		const multiplier = 30;
 		// Arcade Style & Translate Method
 		this.heli.translateX(this.vX*multiplier);
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
