@@ -34,6 +34,54 @@ class ProceduralTerrain extends Terrain {
 		this.data = this.generateHeight( worldWidth, worldDepth );
 	}
 
+	vertexShader(){
+		return `
+		    varying vec3 vUv; 
+
+		    void main() {
+		      vUv = position; 
+
+		      vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+		      gl_Position = projectionMatrix * viewMatrix * modelPosition; 
+		    }
+		`
+	}
+
+	fragmentShader(){
+		return `
+			precision mediump float;
+			varying vec3 vUv;
+
+			vec3 color_from_height( const float height ) {
+			    vec3 terrain_colours[4];
+			    terrain_colours[0] = vec3(0.0,0.0,0.6); 
+			    terrain_colours[1] = vec3(0.1, 0.3, 0.1);
+			    terrain_colours[2] = vec3(0.4, 0.8, 0.4);
+			    terrain_colours[3] = vec3(1.0,1.0,1.0);
+
+			    if (height < 0.0){
+			        return terrain_colours[0];
+			    } else {
+			        float hscaled = height*2.0 - 1e-05; // hscaled should range in [0,2]
+			        int hi = int(hscaled); // hi should range in [0,1]
+			        float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
+			        if (hi == 0)
+			            return mix( terrain_colours[1],terrain_colours[2],hfrac); // blends between the two colours    
+			        else
+			            return mix( terrain_colours[2],terrain_colours[3],hfrac); // blends between the two colours
+			    }
+
+			    return vec3(0.0,0.0,0.0);
+			}
+
+			void main() {
+				vec2 uv = gl_FragCoord.xy / iResolution.xy;
+				vec3 col = color_from_height(uv.y*2.0-1.0);
+				gl_FragColor = vec4(col, 1.0);
+			}
+		`
+	}
+
 	returnCameraStartPosY(){
 		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidth ] * 10 + 500;
 	}
@@ -41,7 +89,11 @@ class ProceduralTerrain extends Terrain {
 	returnTerrainObj(){
 		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
 			  texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
-			  terrain = new THREE.Mesh( terrainGeom, new THREE.MeshBasicMaterial({ map: texture, wireframe: true }) );
+			  // texture = new THREE.ShaderMaterial({
+			  // 	fragmentShader: this.fragmentShader(),
+			  // 	vertexShader: this.vertexShader()
+			  // }),
+			  terrain = new THREE.Mesh( terrainGeom, new THREE.MeshBasicMaterial({ map: texture }) );
 		let   vertices = terrainGeom.attributes.position.array;
 		
 		terrainGeom.rotateX( - Math.PI / 2 );
@@ -96,7 +148,9 @@ class ProceduralTerrain extends Terrain {
 			vector3.y = 2;
 			vector3.z = this.data[ j - width * 2 ] - this.data[ j + width * 2 ];
 			vector3.normalize();
+
 			shade = vector3.dot( sun );
+
 			imageData[ i ] = ( 96 + shade * 128 ) * ( 0.5 + data[ j ] * 0.007 );
 			imageData[ i + 1 ] = ( 32 + shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
 			imageData[ i + 2 ] = ( shade * 96 ) * ( 0.5 + data[ j ] * 0.007 );
@@ -110,9 +164,11 @@ class ProceduralTerrain extends Terrain {
 		canvasScaled = document.createElement( 'canvas' );
 		canvasScaled.width = width * 4;
 		canvasScaled.height = height * 4;
+
 		context = canvasScaled.getContext( '2d' );
 		context.scale( 4, 4 );
 		context.drawImage( canvas, 0, 0 );
+
 		image = context.getImageData( 0, 0, canvasScaled.width, canvasScaled.height );
 		imageData = image.data;
 
@@ -124,6 +180,9 @@ class ProceduralTerrain extends Terrain {
 		}
 
 		context.putImageData( image, 0, 0 );
+
+		console.log("imageData");
+		console.log(imageData);
 
 		console.log("canvasScaled");
 		console.log(canvasScaled);

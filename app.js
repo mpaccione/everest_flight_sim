@@ -15,6 +15,10 @@ const miniScene = new THREE.Scene(),
 	  miniRenderer = new THREE.WebGLRenderer(),
 	  miniModelLoader = new GLTFLoader();
 
+// Debugging - Issue needed to add orbit controls to have model displayed on camera
+const controls = new OrbitControls(miniCamera);
+controls.enableKeys = false; // Prevent Conflict with Player Controls
+
 // Group
 const miniHeliGroup = new THREE.Group();
 
@@ -41,10 +45,6 @@ miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
 miniCamera.name = "miniCamera";
 miniCamera.position.set( 0, 0, -10000 );
 
-// Debugging
-const controls = new OrbitControls(miniCamera);
-controls.enableKeys = false; // Prevent Conflict with Player Controls
-
 miniHeliGroup.add(new THREE.AxesHelper(1000));
 miniScene.add(miniHeliGroup);
 miniScene.add(miniCamera);
@@ -55,14 +55,38 @@ miniScene.add(miniCamera);
 
 // View
 const scene = new THREE.Scene(),
-	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 100000 ),
+	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 20000 ),
 	  renderer = new THREE.WebGLRenderer();
+
+// Fog
+scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
 
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain,
 	  terrainObj = terrain.returnTerrainObj();
 
 scene.add(terrainObj);
+
+// Add SkyBox
+// const tgaLoader = new TGALoader(),
+// 	  materialArray = [],
+//       imgArray = ["peaks_rt.tga", "peaks_lf.tga", "peaks_up.tga", "peaks_dn.tga", "peaks_ft.tga", "peaks_bk.tga"];
+
+// tgaLoader.setPath("./src/skybox/ely_peaks/");
+
+// for ( let i = 0; i < 6; i++ ){
+//     const material = new THREE.MeshBasicMaterial({ map: tgaLoader.load( imgArray[i] ), side: THREE.BackSide });
+//     materialArray.push( material );
+// }
+
+// const skyMat = new THREE.MeshFaceMaterial( materialArray ),
+const skyMat = new THREE.MeshBasicMaterial({ color: 0xfffcce, side: THREE.BackSide }),
+      skyGeo = new THREE.BoxGeometry( 10000, 10000, 10000, 1, 1, 1),
+      sky = new THREE.Mesh( skyGeo, skyMat );
+
+sky.name = "skybox";
+sky.position.set( 0, terrain.returnCameraStartPosY(), 0 );
+scene.add(sky);
 
 // Camera
 camera.name = "camera";
@@ -74,7 +98,7 @@ scene.add(ambientLight)
 
 // Rect to Simulate Helicopter
 const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
-	  material = new THREE.MeshBasicMaterial( { color: 0x00ff00, wireframe: true } ),
+	  material = new THREE.MeshBasicMaterial(),
 	  rect = new THREE.Mesh( geometry, material );
 
 rect.position.x = 0;

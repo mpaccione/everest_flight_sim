@@ -23,8 +23,7 @@
   "dependencies": {
     "@tweenjs/tween.js": "^17.4.0",
     "improved-noise": "0.0.3",
-    "redux": "^4.0.1",
-    "three": "^0.104.0",
+    "three": "^0.105.1",
     "three-gltf-loader": "^1.105.0",
     "three-orbit-controls": "^82.1.0"
   }
