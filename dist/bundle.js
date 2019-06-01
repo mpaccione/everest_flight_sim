@@ -191,6 +191,7 @@ const GLTFLoader = require('three-gltf-loader');
 const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
+const Cockpit = require('./src/classes/cockpit');
 
 /////////////////////////////
 // Mini Orientation Scene //
@@ -305,6 +306,10 @@ heliCam.position.y = terrain.returnCameraStartPosY();
 heliCam.position.z = 0;
 scene.add(heliCam);
 
+// Init Cockpit
+// const cockpit = new Cockpit();
+// cockpit.setup();
+
 ///////////////////////////
 // Adding Both Renderers //
 ///////////////////////////
@@ -329,13 +334,16 @@ miniCanvas.appendChild( miniRenderer.domElement );
 // Animation Loop
 const animate = function () {
 	requestAnimationFrame( animate );
+	// Update Helicopter
 	player.update();
 	renderer.render( scene, camera );
 	miniRenderer.render( miniScene, miniCamera );
+	// Add Cockpit
+	// cockpit.draw();
 };
 
 animate();
-},{"./src/classes/helicopter":9,"./src/classes/terrain":10,"three":8,"three-gltf-loader":6,"three-orbit-controls":7}],3:[function(require,module,exports){
+},{"./src/classes/cockpit":9,"./src/classes/helicopter":10,"./src/classes/terrain":11,"three":8,"three-gltf-loader":6,"three-orbit-controls":7}],3:[function(require,module,exports){
 (function (process){
 /**
  * Tween.js - Licensed under the MIT license
@@ -54723,6 +54731,20 @@ module.exports = function( THREE ) {
 },{}],8:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
 },{"dup":4}],9:[function(require,module,exports){
+class Cockpit {
+
+	constructor(){
+
+	}
+
+	draw(){
+	
+	}
+
+}
+
+module.exports = Cockpit;
+},{}],10:[function(require,module,exports){
 // Helicopter Degrees of Freedom
 // X = -Xb + hθb
 // Y = Yb + hφb
@@ -55051,7 +55073,7 @@ class Helicopter {
 }
 
 module.exports = Helicopter;
-},{"@tweenjs/tween.js":3,"THREE":4}],10:[function(require,module,exports){
+},{"@tweenjs/tween.js":3,"THREE":4}],11:[function(require,module,exports){
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
@@ -55246,109 +55268,8 @@ class ProceduralTerrain extends Terrain {
 
 }
 
-class AnimatedProceduralTerrain extends Terrain {
-
-	// NOTE: MUST INCLUDE FRAGMENT AND VERTEX SHADER IN INDEX.HTML
-
-	constructor( diffuseTexture1Src, diffuseTexture2Src, detailTextureSrc ){
-
-		this.mlib;
-
-		// Height + Normal Map Vars
-		const normalShader = THREE.NormalMapShader,
-			  rx = 256, ry = 256,
-			  pars = { minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat },
-			  heightMap = new THREE.WebGLRenderTarget( rx, ry, pars ),
-			  uniformsNormal = THREE.UniformsUtils.clone( normalShader.uniforms ),
-		// Texture Vars
-			  loadingManager = new THREE.LoadingManager(function(){
-					terrain.visible = true;
-			  }),
-			  textureLoader = new THREE.TextureLoader( loadingManager ),
-			  specularMap = new THREE.WebGLRenderTarget( 2048, 2048, pars ),
-			  diffuseTexture1 = texture.load( diffuseTexture1Src ),
-			  diffuseTexture2 = texture.load( diffuseTexture2Src ),
-			  detailTexture = texture.load( detailTextureSrc ),
-		// Terrain Shader Vars
-			  terrainShader = THREE.ShaderTerrain[ "terrain" ],
-			  vertexShader = document.getElementById( 'vertexShader' ).textContent,
-			  params = [
-				[ 'heightmap', 	document.getElementById( 'fragmentShaderNoise' ).textContent, vertexShader, uniformsNoise, false ],
-				[ 'normal', 	normalShader.fragmentShader, normalShader.vertexShader, uniformsNormal, false ],
-				[ 'terrain', 	terrainShader.fragmentShader, terrainShader.vertexShader, uniformsTerrain, true ]
-			  ],
-			  uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
-
-		// Height + Normal Maps
-		heightMap.texture.generateMipmaps = false;
-		normalMap = new THREE.WebGLRenderTarget( rx, ry, pars );
-		normalMap.texture.generateMipmaps = false;
-		uniformsNoise = {
-			"time": { value: 1.0 },
-			"scale": { value: new THREE.Vector2( 1.5, 1.5 ) },
-			"offset": { value: new THREE.Vector2( 0, 0 ) }
-		};
-		uniformsNormal = THREE.UniformsUtils.clone( normalShader.uniforms );
-		uniformsNormal[ "height" ].value = 0.05;
-		uniformsNormal[ "resolution" ].value.set( rx, ry );
-		uniformsNormal[ "heightMap" ].value = heightMap.texture;
-
-		// Textures
-		specularMap.texture.generateMipmaps = false;
-		specularMap.texture.wrapS = specularMap.texture.wrapT = THREE.RepeatWrapping;
-
-		diffuseTexture1.wrapS = diffuseTexture1.wrapT = THREE.RepeatWrapping;
-		diffuseTexture2.wrapS = diffuseTexture2.wrapT = THREE.RepeatWrapping;
-		detailTexture.wrapS = detailTexture.wrapT = THREE.RepeatWrapping;
-
-		// Terrain Shader
-		uniformsTerrain = THREE.UniformsUtils.clone( terrainShader.uniforms );
-		uniformsTerrain[ 'tNormal' ].value = normalMap.texture;
-		uniformsTerrain[ 'uNormalScale' ].value = 3.5;
-		uniformsTerrain[ 'tDisplacement' ].value = heightMap.texture;
-		uniformsTerrain[ 'tDiffuse1' ].value = diffuseTexture1;
-		uniformsTerrain[ 'tDiffuse2' ].value = diffuseTexture2;
-		uniformsTerrain[ 'tSpecular' ].value = specularMap.texture;
-		uniformsTerrain[ 'tDetail' ].value = detailTexture;
-		uniformsTerrain[ 'enableDiffuse1' ].value = true;
-		uniformsTerrain[ 'enableDiffuse2' ].value = true;
-		uniformsTerrain[ 'enableSpecular' ].value = true;
-		uniformsTerrain[ 'diffuse' ].value.setHex( 0xffffff );
-		uniformsTerrain[ 'specular' ].value.setHex( 0xffffff );
-		uniformsTerrain[ 'shininess' ].value = 30;
-		uniformsTerrain[ 'uDisplacementScale' ].value = 375;
-		uniformsTerrain[ 'uRepeatOverlay' ].value.set( 6, 6 );
-
-		for (let i = 0; i < params.length; i++) {
-			let material = new THREE.ShaderMaterial({
-				uniforms: params[ i ][ 3 ],
-				vertexShader: params[ i ][ 2 ],
-				fragmentShader: params[ i ][ 1 ],
-				lights: params[ i ][ 4 ],
-				fog: true
-			});
-			this.mlib[ params[ i ][ 0 ] ] = material;
-		}
-
-	}
-
-	returnTerrainObj(){
-		let terrainGeom = new THREE.PlaneBufferGeometry( this.width, this.length, this.xVerts, this.yVerts ),
-			terrain;
-
-		THREE.BufferGeometeryUtils.computeTangents( terrainGeom );
-
-		terrain = new THREE.Mesh( terrainGeom, this.mlib[ 'terrain' ] );
-		terrain.position.set( 0, - 125, 0 );
-		terrain.rotation.x = - Math.PI / 2;
-		terrain.visible = false;
-
-		return terrain;
-	}
-
-}
 
 module.exports.BasicTerrain = Terrain;
 module.exports.ProceduralTerrain = ProceduralTerrain;
-module.exports.AnimatedProceduralTerrain = AnimatedProceduralTerrain;
+
 },{"THREE":4,"improved-noise":5}]},{},[2]);

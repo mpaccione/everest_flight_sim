@@ -4,6 +4,7 @@ const GLTFLoader = require('three-gltf-loader');
 const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
+const Cockpit = require('./src/classes/cockpit');
 
 /////////////////////////////
 // Mini Orientation Scene //
@@ -118,6 +119,10 @@ heliCam.position.y = terrain.returnCameraStartPosY();
 heliCam.position.z = 0;
 scene.add(heliCam);
 
+// Init Cockpit
+// const cockpit = new Cockpit();
+// cockpit.setup();
+
 ///////////////////////////
 // Adding Both Renderers //
 ///////////////////////////
@@ -142,9 +147,12 @@ miniCanvas.appendChild( miniRenderer.domElement );
 // Animation Loop
 const animate = function () {
 	requestAnimationFrame( animate );
+	// Update Helicopter
 	player.update();
 	renderer.render( scene, camera );
 	miniRenderer.render( miniScene, miniCamera );
+	// Add Cockpit
+	// cockpit.draw();
 };
 
 animate();
