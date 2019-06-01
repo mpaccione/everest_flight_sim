@@ -274,9 +274,9 @@ class Helicopter {
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
 			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
-		this.heli.position.x += -this.vX*multiplier;
+		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
 		// Invert Velocity Based on Pitch Value
-		this.heli.position.z += this.vZ*multiplier;
+		this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
