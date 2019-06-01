@@ -259,6 +259,12 @@ class Helicopter {
 		this.heli.rotation.y += this.getRadians(this.vR);
 		this.heli.rotation.x = this.getRadians(this.pitch); // Swapped - Bug, don't change
 		this.heli.rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
+		// For Mip Map Orientation
+		if (this.mipMapObj != false) {
+			this.mipMapObj.rotation.y += this.getRadians(this.vR);
+			this.mipMapObj.rotation.x = this.getRadians(-this.pitch); // Swapped - Bug, don't change
+			this.mipMapObj.rotation.z = this.getRadians(-this.roll); // Swapped - Bug, don't change
+		}
 	}
 
 	updatePosition(){
