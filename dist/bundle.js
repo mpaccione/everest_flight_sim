@@ -54699,12 +54699,12 @@ class Helicopter {
 			}
 		} else if ( this.roll != 0 ) {
 			// Calc Roll Vector with Trigonometry
-			this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-			this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
+			this.vX = vYOriginal * Math.cos(rollRads);
+			this.vY = vYOriginal * Math.sin(rollRads);
 		} else if ( this.pitch != 0 ) {
 			// Calc Pitch Vector with Trigonometry
-			this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
-			this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
+			this.vY = vYOriginal * Math.sin(pitchRads);
+			this.vZ = vYOriginal * Math.cos(pitchRads);
 		}
 	}
 
@@ -54722,9 +54722,9 @@ class Helicopter {
 		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
 			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
-		this.heli.position.x += this.roll > 0 ? -this.vX*multiplier : this.vX*multiplier;
+		this.heli.position.x += -this.vX*multiplier;
 		// Invert Velocity Based on Pitch Value
-		this.heli.position.z += this.pitch > 0 ? this.vZ*multiplier : -this.vZ*multiplier;
+		this.heli.position.z += this.vZ*multiplier;
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
