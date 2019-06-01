@@ -6,50 +6,6 @@ const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
 const Cockpit = require('./src/classes/cockpit');
 
-/////////////////////////////
-// Mini Orientation Scene //
-////////////////////////////
-
-// View
-const miniScene = new THREE.Scene(),
-	  miniCamera = new THREE.OrthographicCamera( 600 / - 2, 600 / 2, 600 / 2, 600 / - 2, 0.1, 20000 ),
-	  miniRenderer = new THREE.WebGLRenderer(),
-	  miniModelLoader = new GLTFLoader();
-
-// Debugging - Issue needed to add orbit controls to have model displayed on camera
-const controls = new OrbitControls(miniCamera);
-controls.enableKeys = false; // Prevent Conflict with Player Controls
-
-// Group
-const miniHeliGroup = new THREE.Group();
-
-let miniModel;
-
-// Load Helicopter Model
-miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
-	miniModel = gltf.scene;
-	miniModel.name = "miniHeli"
-	miniModel.rotation.y = -90 * Math.PI / 180; // Radians
-    miniModel.position.set( 0, 0, 0 );
-
-    let miniModelMesh = miniModel.children[0].children[0].children[0],
-    	miniModelMeshArr = [ miniModelMesh.children[0], miniModelMesh.children[1], miniModelMesh.children[2] ];
-
-    for (var i = miniModelMeshArr.length - 1; i >= 0; i--) {
-    	miniModelMeshArr[i].material.wireframe = true;
-    }
-
-	miniHeliGroup.add( miniModel );
-} )
-
-// Camera
-miniCamera.name = "miniCamera";
-miniCamera.position.set( 0, 0, -10000 );
-
-miniHeliGroup.add(new THREE.AxesHelper(1000));
-miniScene.add(miniHeliGroup);
-miniScene.add(miniCamera);
-
 ////////////////
 // Main Scene //
 ////////////////
@@ -110,7 +66,7 @@ rect.name = "heli";
 
 // Link Camera and Helicopter
 const heliCam = new THREE.Group(),
-	  player = new Helicopter(heliCam, "Wireframe", 14000, true, miniHeliGroup);
+	  player = new Helicopter(heliCam, "OH-58 Kiowa", 14000);
 
 heliCam.add(camera);
 heliCam.add(rect);
@@ -120,29 +76,18 @@ heliCam.position.z = 0;
 scene.add(heliCam);
 
 // Init Cockpit
-// const cockpit = new Cockpit();
-// cockpit.setup();
-
-///////////////////////////
-// Adding Both Renderers //
-///////////////////////////
+const cockpit = new Cockpit();
+cockpit.animate();
 
 // Debugging
 window.scene = scene;
 window.camera = camera;
-window.miniScene = miniScene;
-window.miniCamera = miniCamera;
 
-const canvas = document.getElementById("three"),
-	  miniCanvas = document.getElementById("three-mini");
+const canvas = document.getElementById("three");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor( 0xffffff, 0.8 );
 canvas.appendChild( renderer.domElement );
-
-miniRenderer.setSize( 200, 200 );
-miniRenderer.setClearColor( 0xffffff, 0.8 );
-miniCanvas.appendChild( miniRenderer.domElement );
 
 // Animation Loop
 const animate = function () {
@@ -150,9 +95,6 @@ const animate = function () {
 	// Update Helicopter
 	player.update();
 	renderer.render( scene, camera );
-	miniRenderer.render( miniScene, miniCamera );
-	// Add Cockpit
-	// cockpit.draw();
 };
 
 animate();

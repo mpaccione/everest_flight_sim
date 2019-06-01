@@ -4,9 +4,7 @@
 		<title>Everest Flight Simulator</title>
 	</head>
 	<body>
-		<div id="three-mini"></div>
 		<div id="three"></div>
-		<div id="debugging-stats"></div>
 		<div id="cockpit">
 			<div id="hFrame"></div>
 			<div id="vFrame"></div>
@@ -38,26 +36,6 @@
 		height: 200px;
 		width: 200px;
 	}
-	#debugging-stats {
-		background-color: rgba(255, 255, 255, 0.75);
-		border: 1px solid white;
-		padding-left: 9px;
-		width: 191px;
-		position: fixed;
-		color: black;
-		top: 210px;
-		left: 10px;
-		z-index: 9;
-		overflow: hidden;
-	}
-	#debugging-stats ul {
-		padding-left: 0px;
-		list-style-type: none;
-		width: calc(191px - 9px);
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
 	#cockpit {
 		position: fixed;
 		z-index: 9;
@@ -76,6 +54,18 @@
 		background-image: url("./src/img/instrument-panel.png");
 		background-repeat: no-repeat;
 		background-size: contain;
+	}
+/*	#instrument-canvas {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		z-index: 999;
+	}*/
+	#hFrame,
+	#vFrame {
+		background-repeat: repeat;
+		background-size: 100px;
+		background-image: url("./src/img/gunmetal-pattern.jpg");
 	}
 	#hFrame {
 		position: absolute;

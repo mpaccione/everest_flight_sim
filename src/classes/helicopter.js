@@ -12,7 +12,7 @@ const THREE = require('THREE'),
 
 class Helicopter {
 
-	constructor(heli = undefined, model = undefined, weight = 14000, debug = false, mipMapObj = false){
+	constructor(heli = undefined, model = undefined, weight = 14000){
 		this.heli = heli;
 		this.model = model;
 		this.weight = weight;
@@ -35,9 +35,6 @@ class Helicopter {
 		this.maxRoll = 45;
 		this.maxYaw = 0.4;
 		this.maxPitch = 45;
-		// Auxillary Props
-		this.mipMapObj = mipMapObj;
-		this.debug = debug;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -108,21 +105,6 @@ class Helicopter {
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
 									} ).start();
-						// Fixing Yaw on Reset
-						if (this.mipMapObj != false) {
-							let mipMapStart = {
-									mipMapObjRotationY: this.mipMapObj.rotation.y
-								},
-								mipMapEnd = {
-									mipMapObjRotationY: 0
-								},
-								mipMapTween = new TWEEN.Tween( mipMapStart )
-													.to( mipMapEnd )
-													.easing( TWEEN.Easing.Quadratic.Out )
-													.onUpdate( (tween) => {
-														this.mipMapObj.rotation.y = tween.mipMapObjRotationY
-													} ).start();
-						}
 					break;
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
@@ -259,12 +241,6 @@ class Helicopter {
 		this.heli.rotation.y += this.getRadians(this.vR);
 		this.heli.rotation.x = this.getRadians(this.pitch); // Swapped - Bug, don't change
 		this.heli.rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
-		// For Mip Map Orientation
-		if (this.mipMapObj != false) {
-			this.mipMapObj.rotation.y += this.getRadians(this.vR);
-			this.mipMapObj.rotation.x = this.getRadians(-this.pitch); // Swapped - Bug, don't change
-			this.mipMapObj.rotation.z = this.getRadians(-this.roll); // Swapped - Bug, don't change
-		}
 	}
 
 	updatePosition(){
@@ -288,38 +264,33 @@ class Helicopter {
 		return deg * Math.PI / 180;
 	}
 
-	debuggingStats(){
-		let html = `<ul>
-						<li>Model: ${this.model}</li>
-						<li>Weight: ${this.weight}</li>
-						<br>
-						<li>X: ${this.x}</li>
-						<li>Y: ${this.y}</li>
-						<li>Z: ${this.z}</li>
-						<br>
-						<li>aX: ${this.aX}</li>
-						<li>aY: ${this.aY}</li>
-						<br>
-						<li>vX: ${this.vX}</li>
-						<li>vY: ${this.vY}</li> 
-						<li>vZ: ${this.vZ}</li> 
-						<li>vR: ${this.vR}</li> 
-						<br>
-						<li>Roll: ${this.roll}</li>
-						<li>Yaw: ${this.yaw}</li>
-						<li>Pitch: ${this.pitch}</li>
-					</ul>`;
-
-		document.getElementById("debugging-stats").innerHTML = html;
+	updateState(){
+		// Update State
+		window.flightSim = {
+			x: this.x,
+			y: this.y,
+			z: this.z,
+			aX: this.aX,
+			aY: this.aY,
+			maxAX: this.maxAX,
+			maxAY: this.maxAY,
+			vX: this.vX,
+			vY: this.vY,
+			vZ: this.vZ,
+			roll: this.roll,
+			pitch: this.pitch,
+			yaw: this.yaw,
+			maxRoll: this.maxRoll,
+			maxPitch: this.maxPitch,
+			maxYaw: this.maxYaw
+		}
 	}
 
 	update(){
 		this.updateVelocities();
 		this.updateRotation();
 		this.updatePosition();
-		if (this.debug == true){
-			this.debuggingStats();
-		}
+		this.updateState();
 		TWEEN.update();
 	}
 
