@@ -4,9 +4,12 @@
 		<title>Everest Flight Simulator</title>
 	</head>
 	<body>
-		<div id="three-mini"></div>
 		<div id="three"></div>
-		<div id="debugging-stats"></div>
+		<div id="cockpit">
+			<div id="hFrame"></div>
+			<div id="vFrame"></div>
+			<div id="instrument-panel"></div>
+		</div>
 	</body>
 </html>
 <style type="text/css">
@@ -33,30 +36,53 @@
 		height: 200px;
 		width: 200px;
 	}
-	#debugging-stats {
-		background-color: rgba(255, 255, 255, 0.75);
-		border: 1px solid white;
-		padding-left: 9px;
-		width: 191px;
+	#cockpit {
 		position: fixed;
-		color: black;
-		top: 210px;
-		left: 10px;
 		z-index: 9;
-		overflow: hidden;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
 	}
-	#debugging-stats ul {
-		padding-left: 0px;
-		list-style-type: none;
-		width: calc(191px - 9px);
-		overflow: hidden;
-		white-space: nowrap;
-		text-overflow: ellipsis;
+	#instrument-panel {
+		position: absolute;
+		width: 600px;
+		height: 300px;
+		top: calc(100% - 175px);
+		left: 50%;
+		transform: translateX(-50%);
+		background-image: url("./src/img/instrument-panel.png");
+		background-repeat: no-repeat;
+		background-size: contain;
+	}
+/*	#instrument-canvas {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		z-index: 999;
+	}*/
+	#hFrame,
+	#vFrame {
+		background-repeat: repeat;
+		background-size: 100px;
+		background-image: url("./src/img/gunmetal-pattern.jpg");
+	}
+	#hFrame {
+		position: absolute;
+		top: calc(100% - 50px);
+		left: 0;
+		height: 50px;
+		width: 100%;
+		background-color: #30373f;
+	}
+	#vFrame {
+		position: absolute;
+		top: 0px;
+		height: 100%;
+		width: 50px;
+		left: calc(50% - 25px);
+		background-color: #30373f;
 	}
 </style>
-
-<!-- Enable Shaders Below for Animated Procedural Terrain -->
-<!-- <script src="src/shaders/fragmentShaderNoise.js" id="fragmentShaderNoise" type="x-shader/x-fragment"></script>
-<script src="src/shaders/vertexShader.js" id="vertexShader" type="x-shader/x-fragment"></script> -->
 
 <script src="dist/bundle.js"></script>
