@@ -65356,7 +65356,7 @@ class Cockpit {
 		  	x: 299,
 			y: 110
 		});
-		// Knots Animatable
+		// Airspeed Animatable
 		this.knotsLayer = new Konva.Layer();
 		this.knotsNeedle = new Konva.Rect({
 			x: -9,
@@ -65365,12 +65365,23 @@ class Cockpit {
 			height: 2,
 			fill: "#dbe4eb"
 		});
+		// Heading Animatable 
+		this.headingLayer = new Konva.Layer();
+		this.headingTextGroup = new Konva.Group({
+			x: 503, 
+			y: 110
+		});
+		this.headingTickGroup = new Konva.Group({
+			x: 503,
+			y: 110
+		});
 
 		this.drawGauges();
 		this.drawTurnGauge();
 		this.drawAltimeterGauge();
 		this.drawAttitudeGauge();
 		this.drawAirspeedGauge();
+		this.drawHeadingGauge();
 	}
 
 	drawGauges( x, y ){
@@ -65687,7 +65698,110 @@ class Cockpit {
 	}
 
 	drawHeadingGauge(){
-		
+		const headingImgLayer = new Konva.Layer(),
+			  headingImg = new Image();
+
+		headingImg.src ="./src/img/heading-indicator.png";
+
+		// Add Heading Indicator Image
+		headingImg.onload = () => {
+			const img = new Konva.Image({
+				x: 485,
+				y: 91,
+				image: headingImg,
+				width: 35,
+				height: 35
+			});
+
+			headingImgLayer.add(img);
+			this.stage.add(headingImgLayer);
+		}
+
+		// Calculate Outer Text Mathmatically
+		for (var i = 0; i < 12; i++) {
+			// Each Tick is 360/12 = 30 Degrees
+			// Set Text - Offset by 4 Due to Rotation Bug
+			let text = "";
+			switch(i){
+				case 0:
+					text = "12"; // N - 12
+					break;
+				case 1:
+					text = "15"; // 3 - 15
+					break;
+				case 2:
+					text = "6"; // 6 - S
+					break;
+				case 3:
+					text = "21"; // E - 21
+					break;
+				case 4:
+					text = "24"; // 12 - 24
+					break;
+				case 5: 
+					text = "W"; // 15 - W
+					break;
+				case 6: 
+					text = "30"; // S - 30
+					break;
+				case 7:
+					text = "33"; // 21 - 33
+					break;
+				case 8: 
+					text = "N"; // 24 - N
+					break;
+				case 9:
+					text = "3"; // W - 3
+					break;
+				case 10:
+					text = "6"; // 30 - 6
+					break;
+				case 11:
+					text = "E"; // 33 - E 
+			}
+			// Convert to Radians 
+			const radians = 30 * (i+1) * (Math.PI/180),
+				  x = 38 * Math.cos(radians),
+				  y = 38 * Math.sin(radians),
+				  textLabel = new Konva.Text({
+					x: x-4,
+					y: y-4,
+					text: text,
+					fill: '#dbe4eb',
+					fontSize: 8
+				  });
+
+			// textLabel.rotation(-240);
+			this.headingTextGroup.add(textLabel);
+		}
+
+		// Calculate Tick Marks Mathmatically
+		for (var i = 0; i < 36; i++) {
+			// Each Tick is 360/36 = 10 Degrees
+			// Convert to Radians 
+			const radians = 10* (i+1) * (Math.PI/180),
+				  x = 25 * Math.cos(radians),
+				  y = 25 * Math.sin(radians),
+				  tick = new Konva.Rect({
+				  	x: x,
+				  	y: y,
+				  	width: 5,
+				  	height: 1,
+				  	fill: "#dbe4eb"
+				  });
+
+			tick.rotation(10.5*i);
+			this.headingTickGroup.add(tick);
+		}
+
+		// this.headingTextGroup.rotate(-90);
+		// this.headingTickGroup.rotate(-90);
+
+		// this.headingLayer.rotate(-120);
+
+		this.headingLayer.add(this.headingTextGroup);
+		this.headingLayer.add(this.headingTickGroup);
+		this.stage.add(this.headingLayer);
 	}
 
 	drawLabel( x, y, text ){
@@ -65724,7 +65838,6 @@ class Cockpit {
 		const attitudeGaugeAnimation = new Konva.Animation( (frame) => {
 
 		    this.attitudeBGGroup.rotation(window.flightSim.roll);
-		    console.log(this.attitudePitchGroup);
 		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
 
 		}, this.attitudeLayer);
@@ -65738,11 +65851,20 @@ class Cockpit {
 
 		}, this.knotsLayer);
 
+		const headingGaugeAnimation = new Konva.Animation( (frame) => {
+			const degrees = window.flightSim.heliRotation * 360;
+
+		    this.headingTextGroup.rotation(degrees);
+		    this.headingTickGroup.rotation(degrees);
+
+		}, this.headingLayer);
+
 		// Start Animations
 		turnGaugeAnimation.start();
 		altimeterGaugeAnimation.start();
 		attitudeGaugeAnimation.start();
 		airspeedGaugeAnimation.start();
+		headingGaugeAnimation.start();
 
 	}
 
@@ -66035,7 +66157,8 @@ class Helicopter {
 			yaw: this.yaw,
 			maxRoll: this.maxRoll,
 			maxPitch: this.maxPitch,
-			maxYaw: this.maxYaw
+			maxYaw: this.maxYaw,
+			heliRotation: this.heli.rotation.y
 		}
 	}
 

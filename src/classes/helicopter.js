@@ -283,7 +283,8 @@ class Helicopter {
 			yaw: this.yaw,
 			maxRoll: this.maxRoll,
 			maxPitch: this.maxPitch,
-			maxYaw: this.maxYaw
+			maxYaw: this.maxYaw,
+			heliRotation: this.heli.rotation.y
 		}
 	}
 
