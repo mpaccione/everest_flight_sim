@@ -9,6 +9,7 @@ class Cockpit {
 			width: this.container.offsetWidth,
 			height: this.container.offsetHeight
 		});
+		// Roll and Yaw Animatable 
 		this.rollAndYawLayer = new Konva.Layer();
 		this.planeGroup = new Konva.Group({
 			x: 95.5,
@@ -21,9 +22,26 @@ class Cockpit {
 		  	height: 10,
 		  	fill: "black"
 		});
+		// Altimeter Animatable
+		this.altimeterLayer = new Konva.Layer();
+		this.altimeterShortNeedle = new Konva.Rect({
+			x: 0,
+			y: 0,
+			width: 19,
+			height: 4,
+			fill: "#dbe4eb"
+		});
+		this.altimeterLongNeedle = new Konva.Rect({
+			x: 1,
+			y: 0,
+			width: 38,
+			height: 2,
+			fill: "#dbe4eb"
+		});
 
 		this.drawGauges();
 		this.drawRollAndYawGauge();
+		this.drawAltimeterGauge();
 	}
 
 	drawGauges( x, y ){
@@ -97,7 +115,7 @@ class Cockpit {
 			  // Ticks
 			  tickLOne = new Konva.Rect({
 			  	x: -10,
-			  	y: 0,
+			  	y: -6,
 			  	width: 5,
 			  	height: 1,
 			  	fill: "#dbe4eb"
@@ -112,7 +130,7 @@ class Cockpit {
 			  }),
 			  tickROne = new Konva.Rect({
 			  	x: 65,
-			  	y: 0,
+			  	y: -6,
 			  	width: 5,
 			  	height: 1,
 			  	fill: "#dbe4eb"
@@ -157,20 +175,47 @@ class Cockpit {
 		this.planeGroup.offsetX(this.planeGroup.getClientRect().width/2);
 		this.planeGroup.offsetY(this.planeGroup.getClientRect().height/2);
 
-		window.planeGroup = this.planeGroup;
-		console.log(this.planeGroup);
-
 		this.rollAndYawLayer.add(tickGroup);
 		this.rollAndYawLayer.add(this.planeGroup); 
 
 		this.stage.add(this.rollAndYawLayer);
-
-		console.log(this.yawYBar);
-
 	}
 
 	drawAltimeterGauge(){
-	
+		const altimeterTickGroup = new Konva.Group({
+				x: 196, 
+				y: 105
+			  });
+
+		// Calculate Tick Marks Mathmatically
+		for (var i = 0; i < 10; i++) {
+			// Each Tick is 360/10 = 36 Degrees
+			// Convert to Radians 
+			const radians = 36*(i+1) * (Math.PI/180),
+				  x = 38 * Math.cos(radians),
+				  y = 38 * Math.sin(radians),
+				  tick = new Konva.Text({
+					x: x,
+					y: y,
+					text: i,
+					fill: '#dbe4eb',
+					fontSize: 10
+				  });
+
+			tick.rotation(126);
+			altimeterTickGroup.add(tick);
+		}
+
+		altimeterTickGroup.rotation(-126);
+		this.altimeterShortNeedle.rotation(-90);
+		this.altimeterLongNeedle.rotation(-90);
+
+		altimeterTickGroup.add(this.altimeterShortNeedle);
+		altimeterTickGroup.add(this.altimeterLongNeedle);
+		this.altimeterLayer.add(altimeterTickGroup);
+
+		this.stage.add(this.altimeterLayer);
+
 	}
 
 	drawRollAndPitchGauge(){
@@ -186,15 +231,11 @@ class Cockpit {
 	}
 
 	animate(){
-		console.log("K Animate");
-
 		const rollAndYawGaugeAnimation = new Konva.Animation( (frame) => {
 		    const time = frame.time,
 		          timeDiff = frame.timeDiff,
 		          frameRate = frame.frameRate,
 		          yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw);
-
-		    console.log(this.yawYBar.attrs.x + yawSum);
 
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
@@ -202,7 +243,21 @@ class Cockpit {
 		    // update stuff
 		}, this.rollAndYawLayer);
 
+		const altimeterGaugeAnimation = new Konva.Animation( (frame) => {
+			const altitude = window.flightSim.y,
+				  shortNeedleDeg = (altitude / 10000) * 36,
+				  longNeedleDeg = (altitude / 1000) * 36;
+
+			this.altimeterShortNeedle.rotation(shortNeedleDeg);
+			this.altimeterLongNeedle.rotation(longNeedleDeg);
+
+		    // update stuff
+		}, this.altimeterLayer);
+
+		// Start Animations
 		rollAndYawGaugeAnimation.start();
+		altimeterGaugeAnimation.start();
+
 	}
 
 }
