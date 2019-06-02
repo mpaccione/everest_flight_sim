@@ -19,7 +19,7 @@ class Helicopter {
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
-		this.maxAY = 2000;
+		this.maxAY = 1600;
 		this.maxAX = 3;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
@@ -274,6 +274,7 @@ class Helicopter {
 			aY: this.aY,
 			maxAX: this.maxAX,
 			maxAY: this.maxAY,
+			gravAOffset: this.gravAOffset,
 			vX: this.vX,
 			vY: this.vY,
 			vZ: this.vZ,

@@ -65345,10 +65345,20 @@ class Cockpit {
 			height: 2,
 			fill: "#dbe4eb"
 		});
+		// Knots Animatable
+		this.knotsLayer = new Konva.Layer();
+		this.knotsNeedle = new Konva.Rect({
+			x: -9,
+			y: 0,
+			width: 38,
+			height: 2,
+			fill: "#dbe4eb"
+		});
 
 		this.drawGauges();
 		this.drawRollAndYawGauge();
 		this.drawAltimeterGauge();
+		this.drawKnotsGauge();
 	}
 
 	drawGauges( x, y ){
@@ -65530,7 +65540,36 @@ class Cockpit {
 	}
 
 	drawKnotsGauge(){
-		
+		const knotsTickGroup = new Konva.Group({
+				x: 396, 
+				y: 106
+			  });
+
+		// Calculate Tick Marks Mathmatically
+		for (var i = 0; i < 14; i++) {
+			// Each Tick is 360/14 = 25.714 Degrees
+			// Convert to Radians 
+			const radians = 25.714*(i+1) * (Math.PI/180),
+				  x = 38 * Math.cos(radians),
+				  y = 38 * Math.sin(radians),
+				  tick = new Konva.Text({
+					x: x,
+					y: y,
+					text: i*10,
+					fill: '#dbe4eb',
+					fontSize: 8
+				  });
+
+			tick.rotation(126);
+			knotsTickGroup.add(tick);
+		}
+
+		this.knotsNeedle.rotation(-126);
+		knotsTickGroup.rotation(-126);
+
+		knotsTickGroup.add(this.knotsNeedle);
+		this.knotsLayer.add(knotsTickGroup);
+		this.stage.add(this.knotsLayer);
 	}
 
 	drawRPMGauge(){
@@ -65561,9 +65600,20 @@ class Cockpit {
 		    // update stuff
 		}, this.altimeterLayer);
 
+		const knotsGaugeAnimation = new Konva.Animation( (frame) => {
+			const aY = window.flightSim.aY - window.flightSim.gravAOffset,
+				  knotsRatio = 25.714, // Max aY / (14/360)
+				  needleDeg = (aY/100) * knotsRatio;
+
+			this.knotsNeedle.rotation(needleDeg);
+
+		    // update stuff
+		}, this.knotsLayer);
+
 		// Start Animations
 		rollAndYawGaugeAnimation.start();
 		altimeterGaugeAnimation.start();
+		knotsGaugeAnimation.start();
 
 	}
 
@@ -65592,7 +65642,7 @@ class Helicopter {
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
-		this.maxAY = 2000;
+		this.maxAY = 1600;
 		this.maxAX = 3;
 		this.gravAOffset = 200;
 		this.gravVOffset = 0.15;
@@ -65847,6 +65897,7 @@ class Helicopter {
 			aY: this.aY,
 			maxAX: this.maxAX,
 			maxAY: this.maxAY,
+			gravAOffset: this.gravAOffset,
 			vX: this.vX,
 			vY: this.vY,
 			vZ: this.vZ,
