@@ -65317,8 +65317,8 @@ class Cockpit {
 			height: this.container.offsetHeight
 		});
 		this.gaugeTextLayer = new Konva.Layer();
-		// Roll and Yaw Animatable 
-		this.rollAndYawLayer = new Konva.Layer();
+		// Turn Animatable 
+		this.turnLayer = new Konva.Layer();
 		this.planeGroup = new Konva.Group({
 			x: 95.5,
 			y: 110
@@ -65346,6 +65346,16 @@ class Cockpit {
 			height: 2,
 			fill: "#dbe4eb"
 		});
+		// Attitude Animatable
+		this.attitudeLayer = new Konva.Layer();
+		this.attitudeBGGroup = new Konva.Group({
+			x: 299,
+			y: 110
+		});
+		this.attitudePitchGroup = new Konva.Group({
+		  	x: 299,
+			y: 110
+		});
 		// Knots Animatable
 		this.knotsLayer = new Konva.Layer();
 		this.knotsNeedle = new Konva.Rect({
@@ -65357,16 +65367,17 @@ class Cockpit {
 		});
 
 		this.drawGauges();
-		this.drawRollAndYawGauge();
+		this.drawTurnGauge();
 		this.drawAltimeterGauge();
-		this.drawKnotsGauge();
+		this.drawAttitudeGauge();
+		this.drawAirspeedGauge();
 	}
 
 	drawGauges( x, y ){
 		const coordArr = [
 			  	[ 96, 110 ],
 			  	[ 198, 110 ],
-			  	// [ 299, 110 ],
+			  	[ 299, 110 ],
 			  	[ 400, 110 ],
 			  	[ 502, 110 ]
 			  ],
@@ -65388,7 +65399,7 @@ class Cockpit {
 
 		this.drawLabel(87, 162, "Turn");
 		this.drawLabel(181, 162, "Altimeter");
-		this.drawLabel(286, 162, "Atitude");
+		this.drawLabel(286, 162, "Attitude");
 		this.drawLabel(384, 162, "Airspeed");
 		this.drawLabel(488, 162, "Heading");
 
@@ -65396,7 +65407,7 @@ class Cockpit {
 		this.stage.add(this.gaugeTextLayer);
 	}
 
-	drawRollAndYawGauge(){
+	drawTurnGauge(){
 		const tickGroup = new Konva.Group({
 				x: 65.5,
 				y: 110
@@ -65500,10 +65511,10 @@ class Cockpit {
 		this.planeGroup.offsetX(this.planeGroup.getClientRect().width/2);
 		this.planeGroup.offsetY(this.planeGroup.getClientRect().height/2);
 
-		this.rollAndYawLayer.add(tickGroup);
-		this.rollAndYawLayer.add(this.planeGroup); 
+		this.turnLayer.add(tickGroup);
+		this.turnLayer.add(this.planeGroup); 
 
-		this.stage.add(this.rollAndYawLayer);
+		this.stage.add(this.turnLayer);
 	}
 
 	drawAltimeterGauge(){
@@ -65543,11 +65554,106 @@ class Cockpit {
 
 	}
 
-	drawRollAndPitchGauge(){
-		
+	drawAttitudeGauge(){
+		const skyBG = new Konva.Arc({
+				innerRadius: 0,
+				outerRadius: 43,
+				fill: '#9abfe7',
+				angle: 180,
+				rotationDeg: -180
+			  }),
+			  groundBG = new Konva.Arc({
+			  	innerRadius: 0,
+			  	outerRadius: 43,
+			  	fill: '#65514b',
+				angle: 180,
+				rotationDeg: 0
+			  }),
+			  xBarBG = new Konva.Rect({
+			  	x: -42,
+			  	y: -1,
+			  	width: 84,
+			  	height: 2,
+			  	fill: "#dbe4eb"
+			  }),
+			  attitudeBarGroup = new Konva.Group({
+			  	x: 299,
+				y: 110
+			  }),
+			  pitchBarLeft = new Konva.Rect({
+			  	x: -30,
+			  	y: -1.5,
+			  	width: 20,
+			  	height: 3,
+			  	fill: "#f0cf56"
+			  }),
+			  pitchBarRight = new Konva.Rect({
+			  	x: 10,
+			  	y: -1.5,
+			  	width: 20,
+			  	height: 3,
+			  	fill: "#f0cf56"
+			  }),
+			  pitchDot = new Konva.Circle({
+			  	x: 0,
+			  	y: 0,
+			  	radius: 2,
+			  	fill: "#f0cf56"
+			  }),
+			  pitchBGBarOne = new Konva.Rect({
+			  	x: -15,
+			  	y: -18,
+			  	width: 30,
+			  	height: 1,
+			  	fill: "#dbe4eb"
+			  }),
+			  pitchBGBarTwo  = new Konva.Rect({
+			  	x: -10,
+			  	y: -9,
+			  	width: 20,
+			  	height: 1,
+			  	fill: "#dbe4eb"
+			  }),
+			  pitchBGBarThree  = new Konva.Rect({
+			  	x: -10,
+			  	y: 9,
+			  	width: 20,
+			  	height: 1,
+			  	fill: "#dbe4eb"
+			  }),
+			  pitchBGBarFour  = new Konva.Rect({
+			  	x: -15,
+			  	y: 18,
+			  	width: 30,
+			  	height: 1,
+			  	fill: "#dbe4eb"
+			  });
+
+		// attitudeBGGroup is Colored Background
+		// attitudePitchGroup is White Pitch Bars
+		// attitudeBarGroup is Yellow Pitch Reference 
+
+		this.attitudeBGGroup.add(skyBG);
+		this.attitudeBGGroup.add(groundBG);
+		this.attitudeBGGroup.add(xBarBG);
+
+		this.attitudePitchGroup.add(pitchBGBarOne);
+		this.attitudePitchGroup.add(pitchBGBarTwo);
+		this.attitudePitchGroup.add(pitchBGBarThree);
+		this.attitudePitchGroup.add(pitchBGBarFour);
+
+		attitudeBarGroup.add(pitchBarLeft);
+		attitudeBarGroup.add(pitchDot);
+		attitudeBarGroup.add(pitchBarRight);
+
+		this.attitudeLayer.add(this.attitudeBGGroup);
+		this.attitudeLayer.add(attitudeBarGroup);
+		this.attitudeLayer.add(this.attitudePitchGroup)
+
+		this.stage.add(this.attitudeLayer);
 	}
 
-	drawKnotsGauge(){
+	drawAirspeedGauge(){
 		const knotsTickGroup = new Konva.Group({
 				x: 396, 
 				y: 106
@@ -65580,7 +65686,7 @@ class Cockpit {
 		this.stage.add(this.knotsLayer);
 	}
 
-	drawRPMGauge(){
+	drawHeadingGauge(){
 		
 	}
 
@@ -65597,17 +65703,13 @@ class Cockpit {
 	}
 
 	animate(){
-		const rollAndYawGaugeAnimation = new Konva.Animation( (frame) => {
-		    const time = frame.time,
-		          timeDiff = frame.timeDiff,
-		          frameRate = frame.frameRate,
-		          yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw);
+		const turnGaugeAnimation = new Konva.Animation( (frame) => {
+		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw);
 
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
-		    // update stuff
-		}, this.rollAndYawLayer);
+		}, this.turnLayer);
 
 		const altimeterGaugeAnimation = new Konva.Animation( (frame) => {
 			const altitude = window.flightSim.y,
@@ -65617,23 +65719,30 @@ class Cockpit {
 			this.altimeterShortNeedle.rotation(shortNeedleDeg);
 			this.altimeterLongNeedle.rotation(longNeedleDeg);
 
-		    // update stuff
 		}, this.altimeterLayer);
 
-		const knotsGaugeAnimation = new Konva.Animation( (frame) => {
+		const attitudeGaugeAnimation = new Konva.Animation( (frame) => {
+
+		    this.attitudeBGGroup.rotation(window.flightSim.roll);
+		    console.log(this.attitudePitchGroup);
+		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
+
+		}, this.attitudeLayer);
+
+		const airspeedGaugeAnimation = new Konva.Animation( (frame) => {
 			const aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
 				  knotsRatio = 25.714, // Max aY / (14/360)
 				  needleDeg = (aY/100) * knotsRatio;
 
 			this.knotsNeedle.rotation(needleDeg);
 
-		    // update stuff
 		}, this.knotsLayer);
 
 		// Start Animations
-		rollAndYawGaugeAnimation.start();
+		turnGaugeAnimation.start();
 		altimeterGaugeAnimation.start();
-		knotsGaugeAnimation.start();
+		attitudeGaugeAnimation.start();
+		airspeedGaugeAnimation.start();
 
 	}
 
