@@ -9,6 +9,7 @@ class Cockpit {
 			width: this.container.offsetWidth,
 			height: this.container.offsetHeight
 		});
+		this.gaugeTextLayer = new Konva.Layer();
 		// Roll and Yaw Animatable 
 		this.rollAndYawLayer = new Konva.Layer();
 		this.planeGroup = new Konva.Group({
@@ -58,7 +59,7 @@ class Cockpit {
 		const coordArr = [
 			  	[ 96, 110 ],
 			  	[ 198, 110 ],
-			  	[ 299, 110 ],
+			  	// [ 299, 110 ],
 			  	[ 400, 110 ],
 			  	[ 502, 110 ]
 			  ],
@@ -78,7 +79,14 @@ class Cockpit {
 			panelLayer.add(gauge);
 		}
 
+		this.drawLabel(87, 162, "Turn");
+		this.drawLabel(181, 162, "Altimeter");
+		this.drawLabel(286, 162, "Atitude");
+		this.drawLabel(384, 162, "Airspeed");
+		this.drawLabel(488, 162, "Heading");
+
 		this.stage.add(panelLayer);
+		this.stage.add(this.gaugeTextLayer);
 	}
 
 	drawRollAndYawGauge(){
@@ -269,6 +277,18 @@ class Cockpit {
 		
 	}
 
+	drawLabel( x, y, text ){
+		const label = new Konva.Text({
+			x: x,
+			y: y,
+			text: text,
+			fill: '#dbe4eb',
+			fontSize: 9
+		});
+
+		this.gaugeTextLayer.add(label);
+	}
+
 	animate(){
 		const rollAndYawGaugeAnimation = new Konva.Animation( (frame) => {
 		    const time = frame.time,
@@ -294,7 +314,7 @@ class Cockpit {
 		}, this.altimeterLayer);
 
 		const knotsGaugeAnimation = new Konva.Animation( (frame) => {
-			const aY = window.flightSim.aY - window.flightSim.gravAOffset,
+			const aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
 				  knotsRatio = 25.714, // Max aY / (14/360)
 				  needleDeg = (aY/100) * knotsRatio;
 
