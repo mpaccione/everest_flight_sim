@@ -18,6 +18,12 @@ const scene = new THREE.Scene(),
 // Fog
 scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
 
+// Add Clouds
+const cloud = new Terrain.Clouds,
+	  cloudObj = cloud.returnCloudObj();
+
+scene.add(cloudObj)
+
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain,
 	  terrainObj = terrain.returnTerrainObj();

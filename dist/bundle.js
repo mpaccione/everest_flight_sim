@@ -205,6 +205,12 @@ const scene = new THREE.Scene(),
 // Fog
 scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
 
+// Add Clouds
+const cloud = new Terrain.Clouds,
+	  cloudObj = cloud.returnCloudObj();
+
+scene.add(cloudObj)
+
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain,
 	  terrainObj = terrain.returnTerrainObj();
@@ -66177,6 +66183,79 @@ module.exports = Helicopter;
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
+function cloudVertexShader(){
+	return `			
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}
+	`
+}
+
+function cloudFragmentShader(){
+	return `
+		uniform sampler2D cloudTexture;
+		uniform vec3 fogColor;
+		uniform float fogNear;
+		uniform float fogFar;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			float depth = gl_FragCoord.z / gl_FragCoord.w;
+			float fogFactor = smoothstep( fogNear, fogFar, depth );
+
+			gl_FragColor = texture2D( cloudTexture, vUv );
+			gl_FragColor.w *= pow( gl_FragCoord.z, 20.0 );
+			gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
+
+		}
+	`
+}
+
+class Clouds {
+	constructor(){
+
+	}
+
+	returnCloudObj(){
+		const texture = new THREE.TextureLoader().load('./src/img/cloud.png'),
+			  fog = new THREE.Fog( 0x4584b4, - 100, 3000 ),
+			  cloudGeo = new THREE.Geometry(),
+			  cloudMat = new THREE.ShaderMaterial({ 
+			  		uniforms: {
+						"cloudTexture": { type: "t", value: texture },
+						"fogColor" : { type: "c", value: fog.color },
+						"fogNear" : { type: "f", value: fog.near },
+						"fogFar" : { type: "f", value: fog.far },
+					},
+					vertexShader: cloudVertexShader(),
+					fragmentShader: cloudFragmentShader(),
+					depthWrite: false,
+					depthTest: false,
+					transparent: true
+			  }),
+			  plane = new THREE.Mesh( new THREE.PlaneGeometry( 64, 64 ) );
+
+		for ( var i = 0; i < 8000; i++ ) {
+			plane.position.x = Math.random() * 1000 - 500;
+			plane.position.y = - Math.random() * Math.random() * 200 - 15;
+			plane.position.z = i;
+			plane.rotation.z = Math.random() * Math.PI;
+			plane.scale.x = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
+
+			THREE.GeometryUtils.merge( cloudGeo, plane );
+		}
+
+		return new THREE.Mesh( cloudGeo, cloudMat );
+	}	
+}
+
 class Terrain {
 
 	constructor( width = 6000, length = 6000, xVerts = 256, yVerts = 256 ){
@@ -66212,48 +66291,42 @@ class ProceduralTerrain extends Terrain {
 
 	vertexShader(){
 		return `
-		    varying vec3 vUv; 
+			uniform float bumpScale;
+			uniform sampler2D bumpTexture;
+
+			varying float vAmount;
+		    varying vec2 vUv; 
 
 		    void main() {
-		      vUv = position; 
+		      vUv = uv;
+		      vec4 bumpData = texture2D( bumpTexture, uv );
 
-		      vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-		      gl_Position = projectionMatrix * viewMatrix * modelPosition; 
+		      vAmount = bumpData.r;
+
+		      vec3 newPosition = position + normal * bumpScale * vAmount;
+
+		      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0); 
 		    }
 		`
 	}
 
 	fragmentShader(){
 		return `
-			precision mediump float;
-			varying vec3 vUv;
+			uniform sampler2D forestTexture;
+			uniform sampler2D gravelTexture;
+			uniform sampler2D rockTexture;
+			uniform sampler2D snowTexture;
 
-			vec3 color_from_height( const float height ) {
-			    vec3 terrain_colours[4];
-			    terrain_colours[0] = vec3(0.0,0.0,0.6); 
-			    terrain_colours[1] = vec3(0.1, 0.3, 0.1);
-			    terrain_colours[2] = vec3(0.4, 0.8, 0.4);
-			    terrain_colours[3] = vec3(1.0,1.0,1.0);
-
-			    if (height < 0.0){
-			        return terrain_colours[0];
-			    } else {
-			        float hscaled = height*2.0 - 1e-05; // hscaled should range in [0,2]
-			        int hi = int(hscaled); // hi should range in [0,1]
-			        float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
-			        if (hi == 0)
-			            return mix( terrain_colours[1],terrain_colours[2],hfrac); // blends between the two colours    
-			        else
-			            return mix( terrain_colours[2],terrain_colours[3],hfrac); // blends between the two colours
-			    }
-
-			    return vec3(0.0,0.0,0.0);
-			}
+			varying float vAmount;
+			varying vec2 vUv;
 
 			void main() {
-				vec2 uv = gl_FragCoord.xy / iResolution.xy;
-				vec3 col = color_from_height(uv.y*2.0-1.0);
-				gl_FragColor = vec4(col, 1.0);
+			    vec4 forest = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( forestTexture, vUv * 10.0 );
+			    vec4 gravel = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( gravelTexture, vUv * 10.0 );
+			    vec4 gravel2 = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( gravelTexture, vUv * 20.0 );
+			    vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockTexture, vUv * 20.0 );
+			    vec4 snow = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowTexture, vUv * 10.0 );
+			    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + forest + gravel + gravel2 + rocky + snow;
 			}
 		`
 	}
@@ -66264,12 +66337,21 @@ class ProceduralTerrain extends Terrain {
 
 	returnTerrainObj(){
 		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
-			  texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
-			  // texture = new THREE.ShaderMaterial({
-			  // 	fragmentShader: this.fragmentShader(),
-			  // 	vertexShader: this.vertexShader()
-			  // }),
-			  terrain = new THREE.Mesh( terrainGeom, new THREE.MeshBasicMaterial({ map: texture }) );
+			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
+			  texture = new THREE.ShaderMaterial({
+			  	uniforms: {
+			  		bumpScale: { type: "f", value: 1.0 },
+			  		bumpTexture: { type: "t", value: this.data },
+					// groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
+					forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  	},
+			  	fragmentShader: this.fragmentShader(),
+			  	vertexShader: this.vertexShader()
+			  }),
+			  terrain = new THREE.Mesh( terrainGeom, texture );
 		let   vertices = terrainGeom.attributes.position.array;
 		
 		terrainGeom.rotateX( - Math.PI / 2 );
@@ -66369,6 +66451,7 @@ class ProceduralTerrain extends Terrain {
 }
 
 
+module.exports.Clouds = Clouds;
 module.exports.BasicTerrain = Terrain;
 module.exports.ProceduralTerrain = ProceduralTerrain;
 
