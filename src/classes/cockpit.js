@@ -9,9 +9,8 @@ class Cockpit {
 			width: this.container.offsetWidth,
 			height: this.container.offsetHeight
 		});
-		this.gaugeTextLayer = new Konva.Layer();
+		this.instrumentPanelLayer = new Konva.Layer();
 		// Turn Animatable 
-		this.turnLayer = new Konva.Layer();
 		this.planeGroup = new Konva.Group({
 			x: 95.5,
 			y: 110
@@ -24,7 +23,6 @@ class Cockpit {
 		  	fill: "black"
 		});
 		// Altimeter Animatable
-		this.altimeterLayer = new Konva.Layer();
 		this.altimeterShortNeedle = new Konva.Rect({
 			x: 0,
 			y: 0,
@@ -40,7 +38,6 @@ class Cockpit {
 			fill: "#dbe4eb"
 		});
 		// Attitude Animatable
-		this.attitudeLayer = new Konva.Layer();
 		this.attitudeBGGroup = new Konva.Group({
 			x: 299,
 			y: 110
@@ -50,16 +47,18 @@ class Cockpit {
 			y: 110
 		});
 		// Airspeed Animatable
-		this.knotsLayer = new Konva.Layer();
 		this.knotsNeedle = new Konva.Rect({
-			x: -9,
-			y: 0,
+			x: -6,
+			y: 1,
 			width: 38,
 			height: 2,
 			fill: "#dbe4eb"
 		});
 		// Heading Animatable 
-		this.headingLayer = new Konva.Layer();
+		this.headingImgGroup = new Konva.Group({
+			x: 503,
+			y: 110
+		});
 		this.headingTextGroup = new Konva.Group({
 			x: 503, 
 			y: 110
@@ -75,6 +74,8 @@ class Cockpit {
 		this.drawAttitudeGauge();
 		this.drawAirspeedGauge();
 		this.drawHeadingGauge();
+
+		this.stage.add(this.instrumentPanelLayer);
 	}
 
 	drawGauges( x, y ){
@@ -84,8 +85,7 @@ class Cockpit {
 			  	[ 299, 110 ],
 			  	[ 400, 110 ],
 			  	[ 502, 110 ]
-			  ],
-			  panelLayer = new Konva.Layer();
+			  ];
 
 		for (var i = coordArr.length - 1; i >= 0; i--) {
 			const gauge = new Konva.Circle({ 
@@ -98,7 +98,7 @@ class Cockpit {
 				y: coordArr[i][1]
 			})
 
-			panelLayer.add(gauge);
+			this.instrumentPanelLayer.add(gauge);
 		}
 
 		this.drawLabel(87, 162, "Turn");
@@ -106,9 +106,6 @@ class Cockpit {
 		this.drawLabel(286, 162, "Attitude");
 		this.drawLabel(384, 162, "Airspeed");
 		this.drawLabel(488, 162, "Heading");
-
-		this.stage.add(panelLayer);
-		this.stage.add(this.gaugeTextLayer);
 	}
 
 	drawTurnGauge(){
@@ -215,47 +212,68 @@ class Cockpit {
 		this.planeGroup.offsetX(this.planeGroup.getClientRect().width/2);
 		this.planeGroup.offsetY(this.planeGroup.getClientRect().height/2);
 
-		this.turnLayer.add(tickGroup);
-		this.turnLayer.add(this.planeGroup); 
-
-		this.stage.add(this.turnLayer);
+		this.instrumentPanelLayer.add(tickGroup);
+		this.instrumentPanelLayer.add(this.planeGroup); 
 	}
 
 	drawAltimeterGauge(){
 		const altimeterTickGroup = new Konva.Group({
-				x: 196, 
-				y: 105
+				x: 198, 
+				y: 108
+			  }),
+			  altimeterTextGroup = new Konva.Group({
+			  	x: 195,
+			  	y: 104
 			  });
 
 		// Calculate Tick Marks Mathmatically
+		for (var i = 0; i < 50; i++) {
+			// Each Tick is 360/50 = 7.2 Degrees
+			// Convert to Radians 
+			const radians = 7.2*(i+1) * (Math.PI/180),
+				  tickX = 38 * Math.cos(radians),
+				  tickY = 38 * Math.sin(radians),
+				  tick = new Konva.Rect({
+				  	x: tickX,
+				  	y: tickY,
+				  	width: 5,
+				  	height: 1,
+				  	fill: "#dbe4eb"
+				  });
+
+			tick.rotation(7.2*(i+1));
+			altimeterTickGroup.add(tick);
+		}
+
+		// Calculate Text Marks Mathmatically
 		for (var i = 0; i < 10; i++) {
-			// Each Tick is 360/10 = 36 Degrees
+			// Each Text is 360/10 = 36 Degrees
 			// Convert to Radians 
 			const radians = 36*(i+1) * (Math.PI/180),
-				  x = 38 * Math.cos(radians),
-				  y = 38 * Math.sin(radians),
-				  tick = new Konva.Text({
-					x: x,
-					y: y,
-					text: i,
+				  textX = 30 * Math.cos(radians),
+				  textY = 30 * Math.sin(radians),
+				  text = new Konva.Text({
+					x: textX,
+					y: textY,
+					text: i*1,
 					fill: '#dbe4eb',
 					fontSize: 10
 				  });
 
-			tick.rotation(126);
-			altimeterTickGroup.add(tick);
+			text.rotation(126);
+			altimeterTextGroup.add(text);
 		}
 
 		altimeterTickGroup.rotation(-126);
+		altimeterTextGroup.rotation(-126);
 		this.altimeterShortNeedle.rotation(-90);
 		this.altimeterLongNeedle.rotation(-90);
 
 		altimeterTickGroup.add(this.altimeterShortNeedle);
 		altimeterTickGroup.add(this.altimeterLongNeedle);
-		this.altimeterLayer.add(altimeterTickGroup);
 
-		this.stage.add(this.altimeterLayer);
-
+		this.instrumentPanelLayer.add(altimeterTickGroup);
+		this.instrumentPanelLayer.add(altimeterTextGroup);
 	}
 
 	drawAttitudeGauge(){
@@ -331,8 +349,79 @@ class Cockpit {
 			  	width: 30,
 			  	height: 1,
 			  	fill: "#dbe4eb"
-			  });
+			  }),
+			  maxPitch = 45,
+			  pitchTextFontSize = 7,
+			  // Create Pitch Text Max
+			  pitchMaxText1 = new Konva.Text({
+				x: -27,
+				y: -20,
+				text: maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText2 = new Konva.Text({
+				x: 20,
+				y: -20,
+				text: maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText3 = new Konva.Text({
+				x: -30,
+				y: 16,
+				text: -maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText4 = new Konva.Text({
+				x: 20,
+				y: 16,
+				text: -maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  // Create Pitch Text Half
+			  pitchHalfMaxText1 = new Konva.Text({
+				x: -25,
+				y: 7,
+				text: -Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText2 = new Konva.Text({
+				x: 16,
+				y: 7,
+				text: -Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText3 = new Konva.Text({
+				x: -22,
+				y: -11,
+				text: Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText4 = new Konva.Text({
+				x: 16,
+				y: -11,
+				text: Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchTextArr = [
+			  	pitchMaxText1,
+			  	pitchMaxText2,
+			  	pitchMaxText3,
+			  	pitchMaxText4,
+				pitchHalfMaxText1,
+				pitchHalfMaxText2,
+				pitchHalfMaxText3,
+				pitchHalfMaxText4
+			  ];
 
+	
 		// attitudeBGGroup is Colored Background
 		// attitudePitchGroup is White Pitch Bars
 		// attitudeBarGroup is Yellow Pitch Reference 
@@ -346,68 +435,112 @@ class Cockpit {
 		this.attitudePitchGroup.add(pitchBGBarThree);
 		this.attitudePitchGroup.add(pitchBGBarFour);
 
+		for (var i = 0; i < pitchTextArr.length; i++) {
+			this.attitudePitchGroup.add(pitchTextArr[i]);
+		}
+
 		attitudeBarGroup.add(pitchBarLeft);
 		attitudeBarGroup.add(pitchDot);
 		attitudeBarGroup.add(pitchBarRight);
 
-		this.attitudeLayer.add(this.attitudeBGGroup);
-		this.attitudeLayer.add(attitudeBarGroup);
-		this.attitudeLayer.add(this.attitudePitchGroup)
-
-		this.stage.add(this.attitudeLayer);
+		this.instrumentPanelLayer.add(this.attitudeBGGroup);
+		this.instrumentPanelLayer.add(attitudeBarGroup);
+		this.instrumentPanelLayer.add(this.attitudePitchGroup)
 	}
 
 	drawAirspeedGauge(){
-		const knotsTickGroup = new Konva.Group({
-				x: 396, 
-				y: 106
+		const airSpeedTextGroup = new Konva.Group({
+				x: 395, 
+				y: 107
+			  }),
+			  airSpeedTickGroup = new Konva.Group({
+				x: 400, 
+				y: 110
+			  }),
+			  arcGroup = new Konva.Group({
+			  	x: 400,
+			  	y: 110
+			  }),
+			  greenArc = new Konva.Arc({
+				innerRadius: 40,
+				outerRadius: 43,
+				fill: '#6ebd6e',
+				angle: 280,
+				rotationDeg: 40
+			  }),
+			  yellowArc = new Konva.Arc({
+				innerRadius: 40,
+				outerRadius: 43,
+				fill: '#fbeb7b',
+				angle: 40,
+				rotationDeg: 320
 			  });
 
-		// Calculate Tick Marks Mathmatically
+		// Calculate Text Marks Mathmatically
 		for (var i = 0; i < 14; i++) {
-			// Each Tick is 360/14 = 25.714 Degrees
+			// Each Text is 360/14 = 25.714 Degrees
 			// Convert to Radians 
 			const radians = 25.714*(i+1) * (Math.PI/180),
-				  x = 38 * Math.cos(radians),
-				  y = 38 * Math.sin(radians),
-				  tick = new Konva.Text({
-					x: x,
-					y: y,
+				  tickX = 38 * Math.cos(radians),
+				  tickY = 38 * Math.sin(radians),
+				  textX = 30 * Math.cos(radians),
+				  textY = 30 * Math.sin(radians),
+				  tick = new Konva.Rect({
+				  	x: tickX,
+				  	y: tickY,
+				  	width: 5,
+				  	height: 1,
+				  	fill: "#dbe4eb"
+				  }),
+				  text = new Konva.Text({
+					x: textX,
+					y: textY,
 					text: i*10,
 					fill: '#dbe4eb',
 					fontSize: 8
 				  });
 
-			tick.rotation(126);
-			knotsTickGroup.add(tick);
+			tick.rotation(25.714*(i+1));
+			text.rotation(126);
+			airSpeedTickGroup.add(tick);
+			airSpeedTextGroup.add(text);
 		}
 
 		this.knotsNeedle.rotation(-126);
-		knotsTickGroup.rotation(-126);
+		arcGroup.rotation(-126);
+		airSpeedTextGroup.rotation(-126);
 
-		knotsTickGroup.add(this.knotsNeedle);
-		this.knotsLayer.add(knotsTickGroup);
-		this.stage.add(this.knotsLayer);
+		arcGroup.add(greenArc);
+		arcGroup.add(yellowArc);
+		airSpeedTextGroup.add(this.knotsNeedle);
+
+		this.instrumentPanelLayer.add(arcGroup);
+		this.instrumentPanelLayer.add(airSpeedTextGroup);
+		this.instrumentPanelLayer.add(airSpeedTickGroup);
+
 	}
 
 	drawHeadingGauge(){
-		const headingImgLayer = new Konva.Layer(),
-			  headingImg = new Image();
-
+		const headingImg = new Image();
+		
 		headingImg.src ="./src/img/heading-indicator.png";
 
 		// Add Heading Indicator Image
 		headingImg.onload = () => {
 			const img = new Konva.Image({
-				x: 485,
-				y: 91,
+				x: 0,
+				y: -1,
 				image: headingImg,
 				width: 35,
 				height: 35
 			});
 
-			headingImgLayer.add(img);
-			this.stage.add(headingImgLayer);
+			this.headingImgGroup.add(img);
+
+			this.headingImgGroup.offsetX(this.headingImgGroup.getClientRect().width/2);
+			this.headingImgGroup.offsetY(this.headingImgGroup.getClientRect().height/2);
+
+			this.instrumentPanelLayer.add(this.headingImgGroup);
 		}
 
 		// Calculate Outer Text Mathmatically
@@ -464,7 +597,6 @@ class Cockpit {
 					fontSize: 8
 				  });
 
-			// textLabel.rotation(-240);
 			this.headingTextGroup.add(textLabel);
 		}
 
@@ -487,14 +619,8 @@ class Cockpit {
 			this.headingTickGroup.add(tick);
 		}
 
-		// this.headingTextGroup.rotate(-90);
-		// this.headingTickGroup.rotate(-90);
-
-		// this.headingLayer.rotate(-120);
-
-		this.headingLayer.add(this.headingTextGroup);
-		this.headingLayer.add(this.headingTickGroup);
-		this.stage.add(this.headingLayer);
+		this.instrumentPanelLayer.add(this.headingTextGroup);
+		this.instrumentPanelLayer.add(this.headingTickGroup);
 	}
 
 	drawLabel( x, y, text ){
@@ -506,58 +632,44 @@ class Cockpit {
 			fontSize: 9
 		});
 
-		this.gaugeTextLayer.add(label);
+		this.instrumentPanelLayer.add(label);
 	}
 
 	animate(){
-		const turnGaugeAnimation = new Konva.Animation( (frame) => {
-		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw);
+		const gaugeAnimation = new Konva.Animation( (frame) => {
+		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
+		    	  altitude = window.flightSim.y,
+				  altimeterShortNeedleDeg = (altitude / 10000) * 36,
+				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
+				  aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
+				  knotsRatio = 25.714, // Max aY / (14/360)
+				  airspeedNeedleDeg = (aY/100) * knotsRatio,
+				  headingDegrees = window.flightSim.heliRotation * 360;
 
+			// Turn Gauge
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
-		}, this.turnLayer);
+		    // Altimeter Gauge
+		    this.altimeterShortNeedle.rotation(altimeterShortNeedleDeg);
+			this.altimeterLongNeedle.rotation(altimeterLongNeedleDeg);
 
-		const altimeterGaugeAnimation = new Konva.Animation( (frame) => {
-			const altitude = window.flightSim.y,
-				  shortNeedleDeg = (altitude / 10000) * 36,
-				  longNeedleDeg = (altitude / 1000) * 36;
-
-			this.altimeterShortNeedle.rotation(shortNeedleDeg);
-			this.altimeterLongNeedle.rotation(longNeedleDeg);
-
-		}, this.altimeterLayer);
-
-		const attitudeGaugeAnimation = new Konva.Animation( (frame) => {
-
-		    this.attitudeBGGroup.rotation(window.flightSim.roll);
+			// Attitude Gauge
+			this.attitudeBGGroup.rotation(window.flightSim.roll);
 		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
 
-		}, this.attitudeLayer);
+			// Airspeed Gauge
+			this.knotsNeedle.rotation(airspeedNeedleDeg);
 
-		const airspeedGaugeAnimation = new Konva.Animation( (frame) => {
-			const aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
-				  knotsRatio = 25.714, // Max aY / (14/360)
-				  needleDeg = (aY/100) * knotsRatio;
+			// Heading Gauge
+			this.headingImgGroup.rotation(headingDegrees);
+			// this.headingTextGroup.rotation(headingDegrees);
+		 //    this.headingTickGroup.rotation(headingDegrees);
 
-			this.knotsNeedle.rotation(needleDeg);
-
-		}, this.knotsLayer);
-
-		const headingGaugeAnimation = new Konva.Animation( (frame) => {
-			const degrees = window.flightSim.heliRotation * 360;
-
-		    this.headingTextGroup.rotation(degrees);
-		    this.headingTickGroup.rotation(degrees);
-
-		}, this.headingLayer);
+		}, this.instrumentPanelLayer);
 
 		// Start Animations
-		turnGaugeAnimation.start();
-		altimeterGaugeAnimation.start();
-		attitudeGaugeAnimation.start();
-		airspeedGaugeAnimation.start();
-		headingGaugeAnimation.start();
+		gaugeAnimation.start();
 
 	}
 
