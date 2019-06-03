@@ -76,7 +76,7 @@ class Clouds {
 
 class Terrain {
 
-	constructor( width = 6000, length = 6000, xVerts = 256, yVerts = 256 ){
+	constructor( width = 10000, length = 10000, xVerts = 256, yVerts = 256 ){
 		this.width = width;
 		this.length = length;
 		this.xVerts = xVerts;
@@ -98,24 +98,25 @@ class Terrain {
 
 class ProceduralTerrain extends Terrain {
 
-	constructor( worldWidth = 256, worldDepth = 256 ){
+	constructor( worldWidthVerts = 1024, worldLengthVerts = 1024 ){
 		super();
-		this.worldWidth = worldWidth;
-		this.worldDepth = worldDepth;
-		this.worldHalfWidth = worldWidth/2;
-		this.worldHalfDepth = worldDepth/2;
-		this.data = this.generateHeight( worldWidth, worldDepth );
+		this.worldWidthVerts = worldWidthVerts;
+		this.worldLengthVerts = worldLengthVerts;
+		this.worldHalfWidth = worldWidthVerts/2;
+		this.worldHalfDepth = worldLengthVerts/2;
+		this.data = this.generateHeight( worldWidthVerts, worldLengthVerts );
 	}
 
 	vertexHeightShader(){
         return `
             varying vec3 vUv; 
+            varying vec3 col;
 
             void main() {
               vUv = position; 
 
-              vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-              gl_Position = projectionMatrix * viewMatrix * modelPosition; 
+              vec4 modelPosition = modelMatrix * vec4( position, 1.0 );
+              gl_Position = projectionMatrix * modelViewMatrix * modelPosition; 
             }
         `
     }
@@ -123,14 +124,16 @@ class ProceduralTerrain extends Terrain {
 	fragmentHeightShader(){
         return `
             precision mediump float;
+
+            uniform vec2 iResolution;
             varying vec3 vUv;
 
             vec3 color_from_height( const float height ) {
                 vec3 terrain_colours[4];
-                terrain_colours[0] = vec3(0.0,0.0,0.6); 
-                terrain_colours[1] = vec3(0.1, 0.3, 0.1);
-                terrain_colours[2] = vec3(0.4, 0.8, 0.4);
-                terrain_colours[3] = vec3(1.0,1.0,1.0);
+                terrain_colours[0] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
+                terrain_colours[1] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
+                terrain_colours[2] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
+                terrain_colours[3] = vec3( 0.949, 0.969, 0.976 ); // White Snow
 
                 if (height < 0.0){
                     return terrain_colours[0];
@@ -139,19 +142,18 @@ class ProceduralTerrain extends Terrain {
                     int hi = int(hscaled); // hi should range in [0,1]
                     float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
                     if (hi == 0)
-                        return mix( terrain_colours[1],terrain_colours[2],hfrac); // blends between the two colours    
+                        return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
                     else
-                        return mix( terrain_colours[2],terrain_colours[3],hfrac); // blends between the two colours
+                        return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
                 }
 
-                return vec3(0.0,0.0,0.0);
+                return vec3( 0.0, 0.0, 0.0 );
             }
 
             void main() {
-                // vec2 uv = gl_FragCoord.xy / iResolution.xy;
-                vec2 uv = gl_FragCoord.xy;
-                vec3 col = color_from_height(uv.y*2.0-1.0);
-                gl_FragColor = vec4(col, 1.0);
+                vec2 uv = gl_FragCoord.xy / iResolution.xy;
+                vec3 col = color_from_height( uv.y * 2.0-1.0 );
+                gl_FragColor = vec4( col, 1.0 );
             }
         `
     }
@@ -199,31 +201,27 @@ class ProceduralTerrain extends Terrain {
 	}
 
 	returnCameraStartPosY(){
-		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidth ] * 10 + 500;
+		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidthVerts ] * 10 + 500;
 	}
 
 	returnTerrainObj(){
-		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
-			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
-			  texture = new THREE.ShaderMaterial({
-			  	uniforms: {
-			  		bumpScale: { type: "f", value: 1.0 },
-			  		bumpTexture: { type: "t", value: this.data },
-					// groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
-					forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
-					gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
-					rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
-					snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
-			  	},
-			  	fragmentShader: this.fragmentSplatShader(),
-			  	vertexShader: this.vertexSplatShader()
-			  }),
+		const terrainGeom =  new THREE.PlaneBufferGeometry( 20000, 20000, this.worldWidthVerts - 1, this.worldLengthVerts - 1 );
+			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidthVerts, this.worldLengthVerts ) ),
 			  // texture = new THREE.ShaderMaterial({
-			  // 	fragmentShader: this.fragmentHeightShader(),
-			  // 	vertexShader: this.vertexHeightShader()
+			  // 	uniforms: {
+			  // 		bumpScale: { type: "f", value: 1.0 },
+			  // 		bumpTexture: { type: "t", value: this.data },
+					// // groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
+					// forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					// gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					// rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					// snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  // 	},
+			  // 	fragmentShader: this.fragmentSplatShader(),
+			  // 	vertexShader: this.vertexSplatShader()
 			  // }),
-			  terrain = new THREE.Mesh( terrainGeom, texture );
-		let   vertices = terrainGeom.attributes.position.array;
+
+		let vertices = terrainGeom.attributes.position.array;
 		
 		terrainGeom.rotateX( - Math.PI / 2 );
 
@@ -231,8 +229,19 @@ class ProceduralTerrain extends Terrain {
 			vertices[ j + 1 ] = this.data[ i ] * 10;
 		}
 
+		const texture = new THREE.ShaderMaterial({
+			  	uniforms: {
+			  		iResolution: { type: 'v2', value: new THREE.Vector2( 800 , 800 ) },
+			  	},
+			  	fragmentShader: this.fragmentHeightShader(),
+			  	vertexShader: this.vertexHeightShader()
+			  }),
+			  terrain = new THREE.Mesh( terrainGeom, texture );
+
 		texture.wrapS = THREE.ClampToEdgeWrapping;
 		texture.wrapT = THREE.ClampToEdgeWrapping;
+
+		terrain.name = "terrain";
 
 		return terrain;
 	}
