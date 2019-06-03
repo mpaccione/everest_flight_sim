@@ -205,23 +205,23 @@ class ProceduralTerrain extends Terrain {
 	returnTerrainObj(){
 		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
 			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
-			  // texture = new THREE.ShaderMaterial({
-			  // 	uniforms: {
-			  // 		bumpScale: { type: "f", value: 1.0 },
-			  // 		bumpTexture: { type: "t", value: this.data },
-					// // groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
-					// forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
-					// gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
-					// rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
-					// snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
-			  // 	},
-			  // 	fragmentShader: this.fragmentSplatShader(),
-			  // 	vertexShader: this.vertexSplatShader()
-			  // }),
 			  texture = new THREE.ShaderMaterial({
-			  	fragmentShader: this.fragmentHeightShader(),
-			  	vertexShader: this.vertexHeightShader()
+			  	uniforms: {
+			  		bumpScale: { type: "f", value: 1.0 },
+			  		bumpTexture: { type: "t", value: this.data },
+					// groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
+					forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  	},
+			  	fragmentShader: this.fragmentSplatShader(),
+			  	vertexShader: this.vertexSplatShader()
 			  }),
+			  // texture = new THREE.ShaderMaterial({
+			  // 	fragmentShader: this.fragmentHeightShader(),
+			  // 	vertexShader: this.vertexHeightShader()
+			  // }),
 			  terrain = new THREE.Mesh( terrainGeom, texture );
 		let   vertices = terrainGeom.attributes.position.array;
 		

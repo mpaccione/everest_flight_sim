@@ -646,8 +646,6 @@ class Cockpit {
 				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
 				  headingDegrees = window.flightSim.heliRotation * 360;
 
-			console.log(airspeedNeedleDeg);
-
 			// Turn Gauge
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 

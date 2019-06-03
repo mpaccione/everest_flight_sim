@@ -199,11 +199,11 @@ const Cockpit = require('./src/classes/cockpit');
 
 // View
 const scene = new THREE.Scene(),
-	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 20000 ),
+	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 50000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Fog
-scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
+scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
 
 // Add Clouds
 // const cloud = new Terrain.Clouds,
@@ -212,30 +212,34 @@ scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
 // scene.add(cloudObj)
 
 // Add Terrain
-const terrain = new Terrain.ProceduralTerrain,
+const terrain = new Terrain.ProceduralTerrain(),
 	  terrainObj = terrain.returnTerrainObj();
 
 scene.add(terrainObj);
 
 // Add SkyBox
-// const tgaLoader = new TGALoader(),
-// 	  materialArray = [],
-//       imgArray = ["peaks_rt.tga", "peaks_lf.tga", "peaks_up.tga", "peaks_dn.tga", "peaks_ft.tga", "peaks_bk.tga"];
+const loader = new THREE.TextureLoader(),
+	  materialArray = [],
+      imgArray = ["peaks_lf.jpg", "peaks_rt.jpg", "peaks_up.jpg", "peaks_dn.jpg", "peaks_ft.jpg", "peaks_bk.jpg"];
 
-// tgaLoader.setPath("./src/skybox/ely_peaks/");
+loader.setPath("./src/skybox/ely_peaks/");
 
-// for ( let i = 0; i < 6; i++ ){
-//     const material = new THREE.MeshBasicMaterial({ map: tgaLoader.load( imgArray[i] ), side: THREE.BackSide });
-//     materialArray.push( material );
-// }
+for ( let i = 0; i < 6; i++ ){
+    const material = new THREE.MeshBasicMaterial({ 
+    	map: loader.load( imgArray[i] ), 
+    	side: THREE.BackSide,
+    	fog: false
+    });
 
-// const skyMat = new THREE.MeshFaceMaterial( materialArray ),
-const skyMat = new THREE.MeshBasicMaterial({ color: 0xfffcce, side: THREE.BackSide }),
-      skyGeo = new THREE.BoxGeometry( 10000, 10000, 10000, 1, 1, 1),
+    materialArray.push( material );
+}
+
+const skyMat = new THREE.MeshFaceMaterial( materialArray ),
+      skyGeo = new THREE.BoxGeometry( 40000, 40000, 40000, 1, 1, 1),
       sky = new THREE.Mesh( skyGeo, skyMat );
 
 sky.name = "skybox";
-sky.position.set( 0, terrain.returnCameraStartPosY(), 0 );
+sky.position.set( 0, 5000, 0 );
 scene.add(sky);
 
 // Camera
@@ -65959,8 +65963,6 @@ class Cockpit {
 				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
 				  headingDegrees = window.flightSim.heliRotation * 360;
 
-			console.log(airspeedNeedleDeg);
-
 			// Turn Gauge
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
@@ -66499,23 +66501,23 @@ class ProceduralTerrain extends Terrain {
 	returnTerrainObj(){
 		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
 			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
-			  // texture = new THREE.ShaderMaterial({
-			  // 	uniforms: {
-			  // 		bumpScale: { type: "f", value: 1.0 },
-			  // 		bumpTexture: { type: "t", value: this.data },
-					// // groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
-					// forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
-					// gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
-					// rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
-					// snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
-			  // 	},
-			  // 	fragmentShader: this.fragmentSplatShader(),
-			  // 	vertexShader: this.vertexSplatShader()
-			  // }),
 			  texture = new THREE.ShaderMaterial({
-			  	fragmentShader: this.fragmentHeightShader(),
-			  	vertexShader: this.vertexHeightShader()
+			  	uniforms: {
+			  		bumpScale: { type: "f", value: 1.0 },
+			  		bumpTexture: { type: "t", value: this.data },
+					// groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
+					forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  	},
+			  	fragmentShader: this.fragmentSplatShader(),
+			  	vertexShader: this.vertexSplatShader()
 			  }),
+			  // texture = new THREE.ShaderMaterial({
+			  // 	fragmentShader: this.fragmentHeightShader(),
+			  // 	vertexShader: this.vertexHeightShader()
+			  // }),
 			  terrain = new THREE.Mesh( terrainGeom, texture );
 		let   vertices = terrainGeom.attributes.position.array;
 		
