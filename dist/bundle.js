@@ -66406,11 +66406,16 @@ class ProceduralTerrain extends Terrain {
 	vertexHeightShader(){
         return `
             varying vec3 vUv;
-            varying vec4 worldPosition; 
+            varying float vertXPos;
+            varying float vertYPos; 
 
-            void main() {
-              vUv = position; 
-              vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+            void main() {              
+              vec4 localPosition = vec4( position, 1.0 );
+              vec4 worldPosition = modelMatrix * localPosition;
+
+              vUv = position;
+              vertXPos = position.x;
+              vertYPos = position.y; 
              
               gl_Position = projectionMatrix * viewMatrix * worldPosition; 
             }
@@ -66423,7 +66428,8 @@ class ProceduralTerrain extends Terrain {
 
             uniform vec2 iResolution;
             varying vec3 vUv;
-            varying vec4 worldPosition;
+            varying float vertXPos;
+            varying float vertYPos;
 
             vec3 color_from_height( const float height ) {
                 vec3 terrain_colours[5];
@@ -66434,15 +66440,18 @@ class ProceduralTerrain extends Terrain {
                 terrain_colours[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
                 terrain_colours[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
 
+                // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
+
                 if (height < 0.0){
                     return terrain_colours[0];
                 } else {
                     float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
-                    int hi = int(hscaled); // hi should range in [0,1]
-                    float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
+                    int hi = int(hscaled);            // hi should range in [0,1]
+                    float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
+
                     if ( hi == 0 )
                         return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
-                    // else if ( hi > 0 && hi < 0.5 )
+                    // else if ( hi > 0.0 && hi < 0.5 )
                         // return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
                     else 
                     	return mix( terrain_colours[3], terrain_colours[4], hfrac); // blends between the two colours
@@ -66452,10 +66461,9 @@ class ProceduralTerrain extends Terrain {
             }
 
             void main() {
-                vec2 uv = gl_FragCoord.xy / iResolution.xy;
+                // vec2 uv = gl_FragCoord.xy / iResolution.xy;
                 // vec2 uv = worldPosition.xy / iResolution.xy;
-                // vec3 color = color_from_height( worldPosition.y );
-                vec3 color = color_from_height( uv.y );
+                vec3 color = color_from_height( vertYPos*0.001 );
                 gl_FragColor = vec4( color, 1.0 );
             }
         `
