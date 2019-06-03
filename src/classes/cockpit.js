@@ -662,7 +662,7 @@ class Cockpit {
 			this.knotsNeedle.rotation(airspeedNeedleDeg);
 
 			// Heading Gauge
-			this.headingImgGroup.rotation(headingDegrees);
+			this.headingImgGroup.rotation(-headingDegrees);
 
 		}, this.instrumentPanelLayer);
 

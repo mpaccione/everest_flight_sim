@@ -109,14 +109,14 @@ class ProceduralTerrain extends Terrain {
 
 	vertexHeightShader(){
         return `
-            varying vec3 vUv; 
-            varying vec3 col;
+            varying vec3 vUv;
+            varying vec4 worldPosition; 
 
             void main() {
               vUv = position; 
-
-              vec4 modelPosition = modelMatrix * vec4( position, 1.0 );
-              gl_Position = projectionMatrix * modelViewMatrix * modelPosition; 
+              vec4 worldPosition = modelMatrix * vec4( position, 1.0 );
+             
+              gl_Position = projectionMatrix * viewMatrix * worldPosition; 
             }
         `
     }
@@ -127,24 +127,29 @@ class ProceduralTerrain extends Terrain {
 
             uniform vec2 iResolution;
             varying vec3 vUv;
+            varying vec4 worldPosition;
 
             vec3 color_from_height( const float height ) {
-                vec3 terrain_colours[4];
-                terrain_colours[0] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
-                terrain_colours[1] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
-                terrain_colours[2] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
-                terrain_colours[3] = vec3( 0.949, 0.969, 0.976 ); // White Snow
+                vec3 terrain_colours[5];
+
+                terrain_colours[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
+                terrain_colours[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
+                terrain_colours[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
+                terrain_colours[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
+                terrain_colours[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
 
                 if (height < 0.0){
                     return terrain_colours[0];
                 } else {
-                    float hscaled = height*2.0 - 1e-05; // hscaled should range in [0,2]
+                    float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
                     int hi = int(hscaled); // hi should range in [0,1]
                     float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
-                    if (hi == 0)
+                    if ( hi == 0 )
                         return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
-                    else
-                        return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
+                    // else if ( hi > 0 && hi < 0.5 )
+                        // return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
+                    else 
+                    	return mix( terrain_colours[3], terrain_colours[4], hfrac); // blends between the two colours
                 }
 
                 return vec3( 0.0, 0.0, 0.0 );
@@ -152,8 +157,10 @@ class ProceduralTerrain extends Terrain {
 
             void main() {
                 vec2 uv = gl_FragCoord.xy / iResolution.xy;
-                vec3 col = color_from_height( uv.y * 2.0-1.0 );
-                gl_FragColor = vec4( col, 1.0 );
+                // vec2 uv = worldPosition.xy / iResolution.xy;
+                // vec3 color = color_from_height( worldPosition.y );
+                vec3 color = color_from_height( uv.y );
+                gl_FragColor = vec4( color, 1.0 );
             }
         `
     }
@@ -234,7 +241,8 @@ class ProceduralTerrain extends Terrain {
 			  		iResolution: { type: 'v2', value: new THREE.Vector2( 800 , 800 ) },
 			  	},
 			  	fragmentShader: this.fragmentHeightShader(),
-			  	vertexShader: this.vertexHeightShader()
+			  	vertexShader: this.vertexHeightShader(),
+			  	light: true
 			  }),
 			  terrain = new THREE.Mesh( terrainGeom, texture );
 
