@@ -66446,15 +66446,15 @@ class ProceduralTerrain extends Terrain {
                     return terrain_colours[0];
                 } else {
                     float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
-                    int hi = int(hscaled);            // hi should range in [0,1]
+                    float hi = float(hscaled);            // hi should range in [0,1]
                     float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
 
-                    if ( hi == 0 )
-                        return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
-                    // else if ( hi > 0.0 && hi < 0.5 )
-                        // return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
+                    if ( hi < 0.33 )
+                        return mix( terrain_colours[1], terrain_colours[2], 0.5); // blends between the two colours    
+                    else if ( hi < 0.66 )
+                        return mix( terrain_colours[2], terrain_colours[3], 0.5); // blends between the two colours
                     else 
-                    	return mix( terrain_colours[3], terrain_colours[4], hfrac); // blends between the two colours
+                    	return mix( terrain_colours[3], terrain_colours[4], 0.5); // blends between the two colours
                 }
 
                 return vec3( 0.0, 0.0, 0.0 );
