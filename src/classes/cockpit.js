@@ -639,12 +639,14 @@ class Cockpit {
 		const gaugeAnimation = new Konva.Animation( (frame) => {
 		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
 		    	  altitude = window.flightSim.y,
-				  altimeterShortNeedleDeg = (altitude / 10000) * 36,
+				  altimeterShortNeedleDeg = ((altitude / 10000) * 36) + 36, // + 36 Bug Fix for proper angle
 				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
-				  aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
+				  aY = (window.flightSim.aY - window.flightSim.gravAOffset) > 0 ? (window.flightSim.aY - window.flightSim.gravAOffset) : 0,
 				  knotsRatio = 25.714, // Max aY / (14/360)
-				  airspeedNeedleDeg = (aY/100) * knotsRatio,
+				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
 				  headingDegrees = window.flightSim.heliRotation * 360;
+
+			console.log(airspeedNeedleDeg);
 
 			// Turn Gauge
 		    this.planeGroup.rotation(-window.flightSim.roll);
@@ -663,8 +665,6 @@ class Cockpit {
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(headingDegrees);
-			// this.headingTextGroup.rotation(headingDegrees);
-		 //    this.headingTickGroup.rotation(headingDegrees);
 
 		}, this.instrumentPanelLayer);
 
