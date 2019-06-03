@@ -199,37 +199,47 @@ const Cockpit = require('./src/classes/cockpit');
 
 // View
 const scene = new THREE.Scene(),
-	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 20000 ),
+	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 50000 ),
 	  renderer = new THREE.WebGLRenderer();
 
 // Fog
-scene.fog = new THREE.Fog(0xf9fbff, 500, 10000);
+scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
+
+// Add Clouds
+// const cloud = new Terrain.Clouds,
+// 	  cloudObj = cloud.returnCloudObj();
+
+// scene.add(cloudObj)
 
 // Add Terrain
-const terrain = new Terrain.ProceduralTerrain,
+const terrain = new Terrain.ProceduralTerrain(),
 	  terrainObj = terrain.returnTerrainObj();
 
 scene.add(terrainObj);
 
 // Add SkyBox
-// const tgaLoader = new TGALoader(),
-// 	  materialArray = [],
-//       imgArray = ["peaks_rt.tga", "peaks_lf.tga", "peaks_up.tga", "peaks_dn.tga", "peaks_ft.tga", "peaks_bk.tga"];
+const loader = new THREE.TextureLoader(),
+	  materialArray = [],
+      imgArray = ["peaks_lf.jpg", "peaks_rt.jpg", "peaks_up.jpg", "peaks_dn.jpg", "peaks_ft.jpg", "peaks_bk.jpg"];
 
-// tgaLoader.setPath("./src/skybox/ely_peaks/");
+loader.setPath("./src/skybox/ely_peaks/");
 
-// for ( let i = 0; i < 6; i++ ){
-//     const material = new THREE.MeshBasicMaterial({ map: tgaLoader.load( imgArray[i] ), side: THREE.BackSide });
-//     materialArray.push( material );
-// }
+for ( let i = 0; i < 6; i++ ){
+    const material = new THREE.MeshBasicMaterial({ 
+    	map: loader.load( imgArray[i] ), 
+    	side: THREE.BackSide,
+    	fog: false
+    });
 
-// const skyMat = new THREE.MeshFaceMaterial( materialArray ),
-const skyMat = new THREE.MeshBasicMaterial({ color: 0xfffcce, side: THREE.BackSide }),
-      skyGeo = new THREE.BoxGeometry( 10000, 10000, 10000, 1, 1, 1),
+    materialArray.push( material );
+}
+
+const skyMat = new THREE.MeshFaceMaterial( materialArray ),
+      skyGeo = new THREE.BoxGeometry( 40000, 40000, 40000, 1, 1, 1),
       sky = new THREE.Mesh( skyGeo, skyMat );
 
 sky.name = "skybox";
-sky.position.set( 0, terrain.returnCameraStartPosY(), 0 );
+sky.position.set( 0, 5000, 0 );
 scene.add(sky);
 
 // Camera
@@ -65316,9 +65326,8 @@ class Cockpit {
 			width: this.container.offsetWidth,
 			height: this.container.offsetHeight
 		});
-		this.gaugeTextLayer = new Konva.Layer();
+		this.instrumentPanelLayer = new Konva.Layer();
 		// Turn Animatable 
-		this.turnLayer = new Konva.Layer();
 		this.planeGroup = new Konva.Group({
 			x: 95.5,
 			y: 110
@@ -65331,7 +65340,6 @@ class Cockpit {
 		  	fill: "black"
 		});
 		// Altimeter Animatable
-		this.altimeterLayer = new Konva.Layer();
 		this.altimeterShortNeedle = new Konva.Rect({
 			x: 0,
 			y: 0,
@@ -65347,7 +65355,6 @@ class Cockpit {
 			fill: "#dbe4eb"
 		});
 		// Attitude Animatable
-		this.attitudeLayer = new Konva.Layer();
 		this.attitudeBGGroup = new Konva.Group({
 			x: 299,
 			y: 110
@@ -65357,16 +65364,18 @@ class Cockpit {
 			y: 110
 		});
 		// Airspeed Animatable
-		this.knotsLayer = new Konva.Layer();
 		this.knotsNeedle = new Konva.Rect({
-			x: -9,
-			y: 0,
+			x: -6,
+			y: 1,
 			width: 38,
 			height: 2,
 			fill: "#dbe4eb"
 		});
 		// Heading Animatable 
-		this.headingLayer = new Konva.Layer();
+		this.headingImgGroup = new Konva.Group({
+			x: 503,
+			y: 110
+		});
 		this.headingTextGroup = new Konva.Group({
 			x: 503, 
 			y: 110
@@ -65382,6 +65391,8 @@ class Cockpit {
 		this.drawAttitudeGauge();
 		this.drawAirspeedGauge();
 		this.drawHeadingGauge();
+
+		this.stage.add(this.instrumentPanelLayer);
 	}
 
 	drawGauges( x, y ){
@@ -65391,8 +65402,7 @@ class Cockpit {
 			  	[ 299, 110 ],
 			  	[ 400, 110 ],
 			  	[ 502, 110 ]
-			  ],
-			  panelLayer = new Konva.Layer();
+			  ];
 
 		for (var i = coordArr.length - 1; i >= 0; i--) {
 			const gauge = new Konva.Circle({ 
@@ -65405,7 +65415,7 @@ class Cockpit {
 				y: coordArr[i][1]
 			})
 
-			panelLayer.add(gauge);
+			this.instrumentPanelLayer.add(gauge);
 		}
 
 		this.drawLabel(87, 162, "Turn");
@@ -65413,9 +65423,6 @@ class Cockpit {
 		this.drawLabel(286, 162, "Attitude");
 		this.drawLabel(384, 162, "Airspeed");
 		this.drawLabel(488, 162, "Heading");
-
-		this.stage.add(panelLayer);
-		this.stage.add(this.gaugeTextLayer);
 	}
 
 	drawTurnGauge(){
@@ -65522,47 +65529,68 @@ class Cockpit {
 		this.planeGroup.offsetX(this.planeGroup.getClientRect().width/2);
 		this.planeGroup.offsetY(this.planeGroup.getClientRect().height/2);
 
-		this.turnLayer.add(tickGroup);
-		this.turnLayer.add(this.planeGroup); 
-
-		this.stage.add(this.turnLayer);
+		this.instrumentPanelLayer.add(tickGroup);
+		this.instrumentPanelLayer.add(this.planeGroup); 
 	}
 
 	drawAltimeterGauge(){
 		const altimeterTickGroup = new Konva.Group({
-				x: 196, 
-				y: 105
+				x: 198, 
+				y: 108
+			  }),
+			  altimeterTextGroup = new Konva.Group({
+			  	x: 195,
+			  	y: 104
 			  });
 
 		// Calculate Tick Marks Mathmatically
+		for (var i = 0; i < 50; i++) {
+			// Each Tick is 360/50 = 7.2 Degrees
+			// Convert to Radians 
+			const radians = 7.2*(i+1) * (Math.PI/180),
+				  tickX = 38 * Math.cos(radians),
+				  tickY = 38 * Math.sin(radians),
+				  tick = new Konva.Rect({
+				  	x: tickX,
+				  	y: tickY,
+				  	width: 5,
+				  	height: 1,
+				  	fill: "#dbe4eb"
+				  });
+
+			tick.rotation(7.2*(i+1));
+			altimeterTickGroup.add(tick);
+		}
+
+		// Calculate Text Marks Mathmatically
 		for (var i = 0; i < 10; i++) {
-			// Each Tick is 360/10 = 36 Degrees
+			// Each Text is 360/10 = 36 Degrees
 			// Convert to Radians 
 			const radians = 36*(i+1) * (Math.PI/180),
-				  x = 38 * Math.cos(radians),
-				  y = 38 * Math.sin(radians),
-				  tick = new Konva.Text({
-					x: x,
-					y: y,
-					text: i,
+				  textX = 30 * Math.cos(radians),
+				  textY = 30 * Math.sin(radians),
+				  text = new Konva.Text({
+					x: textX,
+					y: textY,
+					text: i*1,
 					fill: '#dbe4eb',
 					fontSize: 10
 				  });
 
-			tick.rotation(126);
-			altimeterTickGroup.add(tick);
+			text.rotation(126);
+			altimeterTextGroup.add(text);
 		}
 
 		altimeterTickGroup.rotation(-126);
+		altimeterTextGroup.rotation(-126);
 		this.altimeterShortNeedle.rotation(-90);
 		this.altimeterLongNeedle.rotation(-90);
 
 		altimeterTickGroup.add(this.altimeterShortNeedle);
 		altimeterTickGroup.add(this.altimeterLongNeedle);
-		this.altimeterLayer.add(altimeterTickGroup);
 
-		this.stage.add(this.altimeterLayer);
-
+		this.instrumentPanelLayer.add(altimeterTickGroup);
+		this.instrumentPanelLayer.add(altimeterTextGroup);
 	}
 
 	drawAttitudeGauge(){
@@ -65638,8 +65666,79 @@ class Cockpit {
 			  	width: 30,
 			  	height: 1,
 			  	fill: "#dbe4eb"
-			  });
+			  }),
+			  maxPitch = 45,
+			  pitchTextFontSize = 7,
+			  // Create Pitch Text Max
+			  pitchMaxText1 = new Konva.Text({
+				x: -27,
+				y: -20,
+				text: maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText2 = new Konva.Text({
+				x: 20,
+				y: -20,
+				text: maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText3 = new Konva.Text({
+				x: -30,
+				y: 16,
+				text: -maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),	
+			  pitchMaxText4 = new Konva.Text({
+				x: 20,
+				y: 16,
+				text: -maxPitch,
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  // Create Pitch Text Half
+			  pitchHalfMaxText1 = new Konva.Text({
+				x: -25,
+				y: 7,
+				text: -Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText2 = new Konva.Text({
+				x: 16,
+				y: 7,
+				text: -Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText3 = new Konva.Text({
+				x: -22,
+				y: -11,
+				text: Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchHalfMaxText4 = new Konva.Text({
+				x: 16,
+				y: -11,
+				text: Math.round(maxPitch/2),
+				fill: '#dbe4eb',
+				fontSize: pitchTextFontSize
+			  }),
+			  pitchTextArr = [
+			  	pitchMaxText1,
+			  	pitchMaxText2,
+			  	pitchMaxText3,
+			  	pitchMaxText4,
+				pitchHalfMaxText1,
+				pitchHalfMaxText2,
+				pitchHalfMaxText3,
+				pitchHalfMaxText4
+			  ];
 
+	
 		// attitudeBGGroup is Colored Background
 		// attitudePitchGroup is White Pitch Bars
 		// attitudeBarGroup is Yellow Pitch Reference 
@@ -65653,68 +65752,112 @@ class Cockpit {
 		this.attitudePitchGroup.add(pitchBGBarThree);
 		this.attitudePitchGroup.add(pitchBGBarFour);
 
+		for (var i = 0; i < pitchTextArr.length; i++) {
+			this.attitudePitchGroup.add(pitchTextArr[i]);
+		}
+
 		attitudeBarGroup.add(pitchBarLeft);
 		attitudeBarGroup.add(pitchDot);
 		attitudeBarGroup.add(pitchBarRight);
 
-		this.attitudeLayer.add(this.attitudeBGGroup);
-		this.attitudeLayer.add(attitudeBarGroup);
-		this.attitudeLayer.add(this.attitudePitchGroup)
-
-		this.stage.add(this.attitudeLayer);
+		this.instrumentPanelLayer.add(this.attitudeBGGroup);
+		this.instrumentPanelLayer.add(attitudeBarGroup);
+		this.instrumentPanelLayer.add(this.attitudePitchGroup)
 	}
 
 	drawAirspeedGauge(){
-		const knotsTickGroup = new Konva.Group({
-				x: 396, 
-				y: 106
+		const airSpeedTextGroup = new Konva.Group({
+				x: 395, 
+				y: 107
+			  }),
+			  airSpeedTickGroup = new Konva.Group({
+				x: 400, 
+				y: 110
+			  }),
+			  arcGroup = new Konva.Group({
+			  	x: 400,
+			  	y: 110
+			  }),
+			  greenArc = new Konva.Arc({
+				innerRadius: 40,
+				outerRadius: 43,
+				fill: '#6ebd6e',
+				angle: 280,
+				rotationDeg: 40
+			  }),
+			  yellowArc = new Konva.Arc({
+				innerRadius: 40,
+				outerRadius: 43,
+				fill: '#fbeb7b',
+				angle: 40,
+				rotationDeg: 320
 			  });
 
-		// Calculate Tick Marks Mathmatically
+		// Calculate Text Marks Mathmatically
 		for (var i = 0; i < 14; i++) {
-			// Each Tick is 360/14 = 25.714 Degrees
+			// Each Text is 360/14 = 25.714 Degrees
 			// Convert to Radians 
 			const radians = 25.714*(i+1) * (Math.PI/180),
-				  x = 38 * Math.cos(radians),
-				  y = 38 * Math.sin(radians),
-				  tick = new Konva.Text({
-					x: x,
-					y: y,
+				  tickX = 38 * Math.cos(radians),
+				  tickY = 38 * Math.sin(radians),
+				  textX = 30 * Math.cos(radians),
+				  textY = 30 * Math.sin(radians),
+				  tick = new Konva.Rect({
+				  	x: tickX,
+				  	y: tickY,
+				  	width: 5,
+				  	height: 1,
+				  	fill: "#dbe4eb"
+				  }),
+				  text = new Konva.Text({
+					x: textX,
+					y: textY,
 					text: i*10,
 					fill: '#dbe4eb',
 					fontSize: 8
 				  });
 
-			tick.rotation(126);
-			knotsTickGroup.add(tick);
+			tick.rotation(25.714*(i+1));
+			text.rotation(126);
+			airSpeedTickGroup.add(tick);
+			airSpeedTextGroup.add(text);
 		}
 
 		this.knotsNeedle.rotation(-126);
-		knotsTickGroup.rotation(-126);
+		arcGroup.rotation(-126);
+		airSpeedTextGroup.rotation(-126);
 
-		knotsTickGroup.add(this.knotsNeedle);
-		this.knotsLayer.add(knotsTickGroup);
-		this.stage.add(this.knotsLayer);
+		arcGroup.add(greenArc);
+		arcGroup.add(yellowArc);
+		airSpeedTextGroup.add(this.knotsNeedle);
+
+		this.instrumentPanelLayer.add(arcGroup);
+		this.instrumentPanelLayer.add(airSpeedTextGroup);
+		this.instrumentPanelLayer.add(airSpeedTickGroup);
+
 	}
 
 	drawHeadingGauge(){
-		const headingImgLayer = new Konva.Layer(),
-			  headingImg = new Image();
-
+		const headingImg = new Image();
+		
 		headingImg.src ="./src/img/heading-indicator.png";
 
 		// Add Heading Indicator Image
 		headingImg.onload = () => {
 			const img = new Konva.Image({
-				x: 485,
-				y: 91,
+				x: 0,
+				y: -1,
 				image: headingImg,
 				width: 35,
 				height: 35
 			});
 
-			headingImgLayer.add(img);
-			this.stage.add(headingImgLayer);
+			this.headingImgGroup.add(img);
+
+			this.headingImgGroup.offsetX(this.headingImgGroup.getClientRect().width/2);
+			this.headingImgGroup.offsetY(this.headingImgGroup.getClientRect().height/2);
+
+			this.instrumentPanelLayer.add(this.headingImgGroup);
 		}
 
 		// Calculate Outer Text Mathmatically
@@ -65771,7 +65914,6 @@ class Cockpit {
 					fontSize: 8
 				  });
 
-			// textLabel.rotation(-240);
 			this.headingTextGroup.add(textLabel);
 		}
 
@@ -65794,14 +65936,8 @@ class Cockpit {
 			this.headingTickGroup.add(tick);
 		}
 
-		// this.headingTextGroup.rotate(-90);
-		// this.headingTickGroup.rotate(-90);
-
-		// this.headingLayer.rotate(-120);
-
-		this.headingLayer.add(this.headingTextGroup);
-		this.headingLayer.add(this.headingTickGroup);
-		this.stage.add(this.headingLayer);
+		this.instrumentPanelLayer.add(this.headingTextGroup);
+		this.instrumentPanelLayer.add(this.headingTickGroup);
 	}
 
 	drawLabel( x, y, text ){
@@ -65813,58 +65949,42 @@ class Cockpit {
 			fontSize: 9
 		});
 
-		this.gaugeTextLayer.add(label);
+		this.instrumentPanelLayer.add(label);
 	}
 
 	animate(){
-		const turnGaugeAnimation = new Konva.Animation( (frame) => {
-		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw);
+		const gaugeAnimation = new Konva.Animation( (frame) => {
+		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
+		    	  altitude = window.flightSim.y,
+				  altimeterShortNeedleDeg = ((altitude / 10000) * 36) + 36, // + 36 Bug Fix for proper angle
+				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
+				  aY = (window.flightSim.aY - window.flightSim.gravAOffset) > 0 ? (window.flightSim.aY - window.flightSim.gravAOffset) : 0,
+				  knotsRatio = 25.714, // Max aY / (14/360)
+				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
+				  headingDegrees = window.flightSim.heliRotation * 360;
 
+			// Turn Gauge
 		    this.planeGroup.rotation(-window.flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
-		}, this.turnLayer);
+		    // Altimeter Gauge
+		    this.altimeterShortNeedle.rotation(altimeterShortNeedleDeg);
+			this.altimeterLongNeedle.rotation(altimeterLongNeedleDeg);
 
-		const altimeterGaugeAnimation = new Konva.Animation( (frame) => {
-			const altitude = window.flightSim.y,
-				  shortNeedleDeg = (altitude / 10000) * 36,
-				  longNeedleDeg = (altitude / 1000) * 36;
-
-			this.altimeterShortNeedle.rotation(shortNeedleDeg);
-			this.altimeterLongNeedle.rotation(longNeedleDeg);
-
-		}, this.altimeterLayer);
-
-		const attitudeGaugeAnimation = new Konva.Animation( (frame) => {
-
-		    this.attitudeBGGroup.rotation(window.flightSim.roll);
+			// Attitude Gauge
+			this.attitudeBGGroup.rotation(window.flightSim.roll);
 		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
 
-		}, this.attitudeLayer);
+			// Airspeed Gauge
+			this.knotsNeedle.rotation(airspeedNeedleDeg);
 
-		const airspeedGaugeAnimation = new Konva.Animation( (frame) => {
-			const aY = Math.abs(window.flightSim.aY - window.flightSim.gravAOffset),
-				  knotsRatio = 25.714, // Max aY / (14/360)
-				  needleDeg = (aY/100) * knotsRatio;
+			// Heading Gauge
+			this.headingImgGroup.rotation(-headingDegrees);
 
-			this.knotsNeedle.rotation(needleDeg);
-
-		}, this.knotsLayer);
-
-		const headingGaugeAnimation = new Konva.Animation( (frame) => {
-			const degrees = window.flightSim.heliRotation * 360;
-
-		    this.headingTextGroup.rotation(degrees);
-		    this.headingTickGroup.rotation(degrees);
-
-		}, this.headingLayer);
+		}, this.instrumentPanelLayer);
 
 		// Start Animations
-		turnGaugeAnimation.start();
-		altimeterGaugeAnimation.start();
-		attitudeGaugeAnimation.start();
-		airspeedGaugeAnimation.start();
-		headingGaugeAnimation.start();
+		gaugeAnimation.start();
 
 	}
 
@@ -66177,9 +66297,82 @@ module.exports = Helicopter;
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
+function cloudVertexShader(){
+	return `			
+		varying vec2 vUv;
+
+		void main() {
+
+			vUv = uv;
+			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+		}
+	`
+}
+
+function cloudFragmentShader(){
+	return `
+		uniform sampler2D cloudTexture;
+		uniform vec3 fogColor;
+		uniform float fogNear;
+		uniform float fogFar;
+
+		varying vec2 vUv;
+
+		void main() {
+
+			float depth = gl_FragCoord.z / gl_FragCoord.w;
+			float fogFactor = smoothstep( fogNear, fogFar, depth );
+
+			gl_FragColor = texture2D( cloudTexture, vUv );
+			gl_FragColor.w *= pow( gl_FragCoord.z, 20.0 );
+			gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
+
+		}
+	`
+}
+
+class Clouds {
+	constructor(){
+
+	}
+
+	returnCloudObj(){
+		const texture = new THREE.TextureLoader().load('./src/img/cloud.png'),
+			  fog = new THREE.Fog( 0x4584b4, - 100, 3000 ),
+			  cloudGeo = new THREE.Geometry(),
+			  cloudMat = new THREE.ShaderMaterial({ 
+			  		uniforms: {
+						"cloudTexture": { type: "t", value: texture },
+						"fogColor" : { type: "c", value: fog.color },
+						"fogNear" : { type: "f", value: fog.near },
+						"fogFar" : { type: "f", value: fog.far },
+					},
+					vertexShader: cloudVertexShader(),
+					fragmentShader: cloudFragmentShader(),
+					depthWrite: false,
+					depthTest: false,
+					transparent: true
+			  }),
+			  plane = new THREE.Mesh( new THREE.PlaneGeometry( 64, 64 ) );
+
+		for ( var i = 0; i < 8000; i++ ) {
+			plane.position.x = Math.random() * 1000 - 500;
+			plane.position.y = - Math.random() * Math.random() * 200 - 15;
+			plane.position.z = i;
+			plane.rotation.z = Math.random() * Math.PI;
+			plane.scale.x = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
+
+			THREE.GeometryUtils.merge( cloudGeo, plane );
+		}
+
+		return new THREE.Mesh( cloudGeo, cloudMat );
+	}	
+}
+
 class Terrain {
 
-	constructor( width = 6000, length = 6000, xVerts = 256, yVerts = 256 ){
+	constructor( width = 10000, length = 10000, xVerts = 256, yVerts = 256 ){
 		this.width = width;
 		this.length = length;
 		this.xVerts = xVerts;
@@ -66201,76 +66394,145 @@ class Terrain {
 
 class ProceduralTerrain extends Terrain {
 
-	constructor( worldWidth = 256, worldDepth = 256 ){
+	constructor( worldWidthVerts = 1024, worldLengthVerts = 1024 ){
 		super();
-		this.worldWidth = worldWidth;
-		this.worldDepth = worldDepth;
-		this.worldHalfWidth = worldWidth/2;
-		this.worldHalfDepth = worldDepth/2;
-		this.data = this.generateHeight( worldWidth, worldDepth );
+		this.worldWidthVerts = worldWidthVerts;
+		this.worldLengthVerts = worldLengthVerts;
+		this.worldHalfWidth = worldWidthVerts/2;
+		this.worldHalfDepth = worldLengthVerts/2;
+		this.data = this.generateHeight( worldWidthVerts, worldLengthVerts );
 	}
 
-	vertexShader(){
+	vertexHeightShader(){
+        return `
+            varying vec3 vUv;
+            varying float vertXPos;
+            varying float vertYPos; 
+
+            void main() {              
+              vec4 localPosition = vec4( position, 1.0 );
+              vec4 worldPosition = modelMatrix * localPosition;
+
+              vUv = position;
+              vertXPos = position.x;
+              vertYPos = position.y; 
+             
+              gl_Position = projectionMatrix * viewMatrix * worldPosition; 
+            }
+        `
+    }
+
+	fragmentHeightShader(){
+        return `
+            precision mediump float;
+
+            uniform vec2 iResolution;
+            varying vec3 vUv;
+            varying float vertXPos;
+            varying float vertYPos;
+
+            vec3 color_from_height( const float height ) {
+                vec3 terrain_colours[5];
+
+                terrain_colours[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
+                terrain_colours[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
+                terrain_colours[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
+                terrain_colours[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
+                terrain_colours[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
+
+                // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
+
+                if (height < 0.0){
+                    return terrain_colours[0];
+                } else {
+                    float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
+                    int hi = int(hscaled);            // hi should range in [0,1]
+                    float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
+
+                    if ( hi == 0 )
+                        return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
+                    // else if ( hi > 0.0 && hi < 0.5 )
+                        // return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
+                    else 
+                    	return mix( terrain_colours[3], terrain_colours[4], hfrac); // blends between the two colours
+                }
+
+                return vec3( 0.0, 0.0, 0.0 );
+            }
+
+            void main() {
+                // vec2 uv = gl_FragCoord.xy / iResolution.xy;
+                // vec2 uv = worldPosition.xy / iResolution.xy;
+                vec3 color = color_from_height( vertYPos*0.001 );
+                gl_FragColor = vec4( color, 1.0 );
+            }
+        `
+    }
+
+	vertexSplatShader(){
 		return `
-		    varying vec3 vUv; 
+			uniform float bumpScale;
+			uniform sampler2D bumpTexture;
+
+			varying float vAmount;
+		    varying vec2 vUv; 
 
 		    void main() {
-		      vUv = position; 
+		      vUv = uv;
+		      vec4 bumpData = texture2D( bumpTexture, uv );
 
-		      vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-		      gl_Position = projectionMatrix * viewMatrix * modelPosition; 
+		      vAmount = bumpData.r;
+
+		      vec3 newPosition = position + normal * bumpScale * vAmount;
+
+		      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0); 
 		    }
 		`
 	}
 
-	fragmentShader(){
+	fragmentSplatShader(){
 		return `
-			precision mediump float;
-			varying vec3 vUv;
+			uniform sampler2D forestTexture;
+			uniform sampler2D gravelTexture;
+			uniform sampler2D rockTexture;
+			uniform sampler2D snowTexture;
 
-			vec3 color_from_height( const float height ) {
-			    vec3 terrain_colours[4];
-			    terrain_colours[0] = vec3(0.0,0.0,0.6); 
-			    terrain_colours[1] = vec3(0.1, 0.3, 0.1);
-			    terrain_colours[2] = vec3(0.4, 0.8, 0.4);
-			    terrain_colours[3] = vec3(1.0,1.0,1.0);
-
-			    if (height < 0.0){
-			        return terrain_colours[0];
-			    } else {
-			        float hscaled = height*2.0 - 1e-05; // hscaled should range in [0,2]
-			        int hi = int(hscaled); // hi should range in [0,1]
-			        float hfrac = hscaled-float(hi); // hfrac should range in [0,1]
-			        if (hi == 0)
-			            return mix( terrain_colours[1],terrain_colours[2],hfrac); // blends between the two colours    
-			        else
-			            return mix( terrain_colours[2],terrain_colours[3],hfrac); // blends between the two colours
-			    }
-
-			    return vec3(0.0,0.0,0.0);
-			}
+			varying float vAmount;
+			varying vec2 vUv;
 
 			void main() {
-				vec2 uv = gl_FragCoord.xy / iResolution.xy;
-				vec3 col = color_from_height(uv.y*2.0-1.0);
-				gl_FragColor = vec4(col, 1.0);
+			    vec4 forest = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( forestTexture, vUv * 10.0 );
+			    vec4 gravel = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( gravelTexture, vUv * 10.0 );
+			    vec4 gravel2 = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( gravelTexture, vUv * 20.0 );
+			    vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockTexture, vUv * 20.0 );
+			    vec4 snow = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowTexture, vUv * 10.0 );
+			    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + forest + gravel + gravel2 + rocky + snow;
 			}
 		`
 	}
 
 	returnCameraStartPosY(){
-		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidth ] * 10 + 500;
+		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidthVerts ] * 10 + 500;
 	}
 
 	returnTerrainObj(){
-		const terrainGeom =  new THREE.PlaneBufferGeometry( 7500, 7500, this.worldWidth - 1, this.worldDepth - 1 ),
-			  texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidth, this.worldDepth ) ),
+		const terrainGeom =  new THREE.PlaneBufferGeometry( 20000, 20000, this.worldWidthVerts - 1, this.worldLengthVerts - 1 );
+			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidthVerts, this.worldLengthVerts ) ),
 			  // texture = new THREE.ShaderMaterial({
-			  // 	fragmentShader: this.fragmentShader(),
-			  // 	vertexShader: this.vertexShader()
+			  // 	uniforms: {
+			  // 		bumpScale: { type: "f", value: 1.0 },
+			  // 		bumpTexture: { type: "t", value: this.data },
+					// // groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
+					// forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					// gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					// rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					// snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  // 	},
+			  // 	fragmentShader: this.fragmentSplatShader(),
+			  // 	vertexShader: this.vertexSplatShader()
 			  // }),
-			  terrain = new THREE.Mesh( terrainGeom, new THREE.MeshBasicMaterial({ map: texture }) );
-		let   vertices = terrainGeom.attributes.position.array;
+
+		let vertices = terrainGeom.attributes.position.array;
 		
 		terrainGeom.rotateX( - Math.PI / 2 );
 
@@ -66278,8 +66540,20 @@ class ProceduralTerrain extends Terrain {
 			vertices[ j + 1 ] = this.data[ i ] * 10;
 		}
 
+		const texture = new THREE.ShaderMaterial({
+			  	uniforms: {
+			  		iResolution: { type: 'v2', value: new THREE.Vector2( 800 , 800 ) },
+			  	},
+			  	fragmentShader: this.fragmentHeightShader(),
+			  	vertexShader: this.vertexHeightShader(),
+			  	light: true
+			  }),
+			  terrain = new THREE.Mesh( terrainGeom, texture );
+
 		texture.wrapS = THREE.ClampToEdgeWrapping;
 		texture.wrapT = THREE.ClampToEdgeWrapping;
+
+		terrain.name = "terrain";
 
 		return terrain;
 	}
@@ -66369,6 +66643,7 @@ class ProceduralTerrain extends Terrain {
 }
 
 
+module.exports.Clouds = Clouds;
 module.exports.BasicTerrain = Terrain;
 module.exports.ProceduralTerrain = ProceduralTerrain;
 
