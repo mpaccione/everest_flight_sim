@@ -136,30 +136,35 @@ class ProceduralTerrain extends Terrain {
             varying float vertYPos;
 
             vec3 color_from_height( const float height ) {
-                vec3 terrain_colours[5];
+                vec3 terrain_colors[5];
 
-                terrain_colours[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
-                terrain_colours[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
-                terrain_colours[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
-                terrain_colours[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
-                terrain_colours[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
+                terrain_colors[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
+                terrain_colors[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
+                terrain_colors[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
+                terrain_colors[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
+                terrain_colors[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
 
                 // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
 
                 if (height < 0.0){
-                    return terrain_colours[0];
+                    return terrain_colors[0];
                 } else {
-                    float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
+                    float hscaled = height*1.0; // hscaled should range in [0,2]
                     int hi = int(hscaled);            // hi should range in [0,1]
                     float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
 
-                    if ( hi == 0 )
-                        return mix( terrain_colours[1], terrain_colours[2], hfrac); // blends between the two colours    
-                    // else if ( hi > 0.0 && hi < 0.5 )
-                        // return mix( terrain_colours[2], terrain_colours[3], hfrac); // blends between the two colours
-                    else 
-                    	return mix( terrain_colours[3], terrain_colours[4], hfrac); // blends between the two colours
+                    if ( hscaled < 0.1 )
+                    	return terrain_colors[0];
+                    else if ( hscaled > 0.1 && hscaled < 0.25 )
+                        return mix( terrain_colors[1], terrain_colors[2], hfrac); // blends between the two colors    
+                    else if ( hscaled > 0.25 && hscaled < 0.5 )    
+                        return mix( terrain_colors[2], terrain_colors[3], hfrac); // blends between the two colors
+                    else if ( hscaled > 0.5 && hscaled < 0.75 )
+                    	return mix( terrain_colors[3], terrain_colors[4], hfrac); // blends between the two colors
+                	else
+                		return terrain_colors[4];
                 }
+
 
                 return vec3( 0.0, 0.0, 0.0 );
             }
