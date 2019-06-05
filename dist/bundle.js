@@ -205,17 +205,19 @@ const scene = new THREE.Scene(),
 // Fog
 scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
 
-// Add Clouds
-// const cloud = new Terrain.Clouds,
-// 	  cloudObj = cloud.returnCloudObj();
-
-// scene.add(cloudObj)
-
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain(),
 	  terrainObj = terrain.returnTerrainObj();
 
 scene.add(terrainObj);
+
+// Add Clouds
+for (var i = 10; i >= 0; i--) {
+	const cloud = new Terrain.Clouds( 0, terrain.returnCameraStartPosY(), i * 100, 50, 10),
+	  	  cloudObj = cloud.returnCloudObj();
+
+	scene.add(cloudObj)
+}
 
 // Add SkyBox
 const loader = new THREE.TextureLoader(),
@@ -270,6 +272,7 @@ heliCam.add(rect);
 heliCam.position.x = 0;
 heliCam.position.y = terrain.returnCameraStartPosY();
 heliCam.position.z = 0;
+heliCam.name = "heliCam";
 scene.add(heliCam);
 
 // Init Cockpit
@@ -66297,76 +66300,149 @@ module.exports = Helicopter;
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
-function cloudVertexShader(){
-	return `			
-		varying vec2 vUv;
+function vertexHeightShader(){
+    return `
+        varying float vertXPos;
+        varying float vertYPos; 
 
-		void main() {
+        void main() {              
+          vec4 localPosition = vec4( position, 1.0 );
+          vec4 worldPosition = modelMatrix * localPosition;
 
+          vertXPos = position.x;
+          vertYPos = position.y; 
+         
+          gl_Position = projectionMatrix * viewMatrix * worldPosition; 
+        }
+    `
+}
+
+function fragmentHeightShader(){
+    return `
+        precision mediump float;
+
+        varying float vertXPos;
+        varying float vertYPos;
+
+        vec3 color_from_height( const float height ) {
+            vec3 terrain_colors[5];
+
+            terrain_colors[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
+            terrain_colors[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
+            terrain_colors[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
+            terrain_colors[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
+            terrain_colors[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
+
+            // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
+
+            if (height < 0.0){
+                return terrain_colors[0];
+            } else {
+                float hscaled = height*1.0;       // hscaled should range in [0,2]
+                int hi = int(hscaled);            // hi should range in [0,1]
+                float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
+
+                if ( hscaled < 0.1 )
+                	return terrain_colors[0];
+                else if ( hscaled > 0.1 && hscaled < 0.33 )
+                    return mix( terrain_colors[1], terrain_colors[2], hfrac); // blends between the two colors    
+                else if ( hscaled > 0.33 && hscaled < 0.66 )    
+                    return mix( terrain_colors[2], terrain_colors[3], hfrac); // blends between the two colors
+                else if ( hscaled > 0.66 && hscaled < 1.0 )
+                  	return mix( terrain_colors[3], terrain_colors[4], hfrac); // blends between the two colors
+            	else
+            	 	return terrain_colors[4];
+            }
+
+            return vec3( 0.0, 0.0, 0.0 );
+        }
+
+        void main() {
+            vec3 color = color_from_height( vertYPos*0.001 );
+            gl_FragColor = vec4( color, 1.0 );
+        }
+    `
+}
+
+
+function vertexSplatShader(){
+	return `
+		varying float vertXPos;
+        varying float vertYPos;
+	    varying vec2 vUv; 
+
+	    void main() {
 			vUv = uv;
-			gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+			vec4 localPosition = vec4( position, 1.0 );
+			vec4 worldPosition = modelMatrix * localPosition;
 
-		}
+			vertXPos = position.x;
+			vertYPos = position.y;  
+
+	    	gl_Position = projectionMatrix * viewMatrix * worldPosition;
+	    }
 	`
 }
 
-function cloudFragmentShader(){
+function fragmentSplatShader(){
 	return `
-		uniform sampler2D cloudTexture;
-		uniform vec3 fogColor;
-		uniform float fogNear;
-		uniform float fogFar;
+		precision mediump float;
 
+		uniform sampler2D waterTexture;
+		uniform sampler2D forestTexture;
+		uniform sampler2D gravelTexture;
+		uniform sampler2D rockTexture;
+		uniform sampler2D snowTexture;
+
+		varying float vAmount;
 		varying vec2 vUv;
+		varying float vertXPos;
+        varying float vertYPos;
 
 		void main() {
+			float height = vertYPos * 0.001;
 
-			float depth = gl_FragCoord.z / gl_FragCoord.w;
-			float fogFactor = smoothstep( fogNear, fogFar, depth );
+			vec4 water  =  (smoothstep(-1.0, 0.1, height)  - smoothstep(0.1, 0.1, height))	 * texture2D( waterTexture, vUv * 100.0 );
+			vec4 forest =  (smoothstep(-1.0, 0.4, height)  - smoothstep(0.4, 0.7, height))    * texture2D( forestTexture, vUv * 100.0 );
+		    vec4 gravel =  (smoothstep(0.4, 0.8, height)  - smoothstep(0.8, 1.1, height))    * texture2D( gravelTexture, vUv * 100.0 );
+		    vec4 rocky  =  (smoothstep(0.8, 1.1, height) - smoothstep(1.1, 1.4, height))    * texture2D( rockTexture, vUv * 100.0 );
+		    vec4 snow   =  (smoothstep(1.1, 1.4, height)                                )  * texture2D( snowTexture, vUv * 100.0 );
+		    
+		    vec4 fragTexture = vec4(0.0, 0.0, 0.0, 1.0) + water + forest + gravel + rocky + snow;
 
-			gl_FragColor = texture2D( cloudTexture, vUv );
-			gl_FragColor.w *= pow( gl_FragCoord.z, 20.0 );
-			gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
-
+		    gl_FragColor = fragTexture;
 		}
 	`
 }
 
 class Clouds {
-	constructor(){
-
+	constructor( x = 0, y = 0, z = 0, amount = 50, spread = 10 ){
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.amount = amount;
+		this.spread = spread;
 	}
 
 	returnCloudObj(){
-		const texture = new THREE.TextureLoader().load('./src/img/cloud.png'),
-			  fog = new THREE.Fog( 0x4584b4, - 100, 3000 ),
-			  cloudGeo = new THREE.Geometry(),
-			  cloudMat = new THREE.ShaderMaterial({ 
-			  		uniforms: {
-						"cloudTexture": { type: "t", value: texture },
-						"fogColor" : { type: "c", value: fog.color },
-						"fogNear" : { type: "f", value: fog.near },
-						"fogFar" : { type: "f", value: fog.far },
-					},
-					vertexShader: cloudVertexShader(),
-					fragmentShader: cloudFragmentShader(),
-					depthWrite: false,
-					depthTest: false,
-					transparent: true
-			  }),
-			  plane = new THREE.Mesh( new THREE.PlaneGeometry( 64, 64 ) );
+		const spriteMap = new THREE.TextureLoader().load('./src/img/cloud2.png'),
+			  spriteMaterial = new THREE.SpriteMaterial({ map: spriteMap, color: 0xffffff }),
+			  spriteGroup = new THREE.Group();
 
-		for ( var i = 0; i < 8000; i++ ) {
-			plane.position.x = Math.random() * 1000 - 500;
-			plane.position.y = - Math.random() * Math.random() * 200 - 15;
-			plane.position.z = i;
-			plane.rotation.z = Math.random() * Math.PI;
-			plane.scale.x = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
+		for (var i = this.amount - 1; i >= 0; i--) {
+			const sprite = new THREE.Sprite( spriteMaterial ),
+				  x = Math.random() * this.spread,
+				  y = Math.random() * this.spread,
+				  z = Math.random() * this.spread;
 
-			THREE.GeometryUtils.merge( cloudGeo, plane );
+			sprite.position.set( x, y, z );
+			spriteGroup.add( sprite );
 		}
+			  
+		spriteGroup.position.set( this.x, this.y, this.z );
+		spriteGroup.name = "spriteGroup";
 
-		return new THREE.Mesh( cloudGeo, cloudMat );
+		return spriteGroup;
 	}	
 }
 
@@ -66403,139 +66479,24 @@ class ProceduralTerrain extends Terrain {
 		this.data = this.generateHeight( worldWidthVerts, worldLengthVerts );
 	}
 
-	vertexHeightShader(){
-        return `
-            varying vec3 vUv;
-            varying float vertXPos;
-            varying float vertYPos; 
-
-            void main() {              
-              vec4 localPosition = vec4( position, 1.0 );
-              vec4 worldPosition = modelMatrix * localPosition;
-
-              vUv = position;
-              vertXPos = position.x;
-              vertYPos = position.y; 
-             
-              gl_Position = projectionMatrix * viewMatrix * worldPosition; 
-            }
-        `
-    }
-
-	fragmentHeightShader(){
-        return `
-            precision mediump float;
-
-            uniform vec2 iResolution;
-            varying vec3 vUv;
-            varying float vertXPos;
-            varying float vertYPos;
-
-            vec3 color_from_height( const float height ) {
-                vec3 terrain_colors[5];
-
-                terrain_colors[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
-                terrain_colors[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
-                terrain_colors[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
-                terrain_colors[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
-                terrain_colors[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
-
-                // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
-
-                if (height < 0.0){
-                    return terrain_colors[0];
-                } else {
-                    float hscaled = height*1.0; // hscaled should range in [0,2]
-                    int hi = int(hscaled);            // hi should range in [0,1]
-                    float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
-
-                    if ( hscaled < 0.1 )
-                    	return terrain_colors[0];
-                    else if ( hscaled > 0.1 && hscaled < 0.25 )
-                        return mix( terrain_colors[1], terrain_colors[2], hfrac); // blends between the two colors    
-                    else if ( hscaled > 0.25 && hscaled < 0.5 )    
-                        return mix( terrain_colors[2], terrain_colors[3], hfrac); // blends between the two colors
-                    else if ( hscaled > 0.5 && hscaled < 0.75 )
-                    	return mix( terrain_colors[3], terrain_colors[4], hfrac); // blends between the two colors
-                	else
-                		return terrain_colors[4];
-                }
-
-
-                return vec3( 0.0, 0.0, 0.0 );
-            }
-
-            void main() {
-                // vec2 uv = gl_FragCoord.xy / iResolution.xy;
-                // vec2 uv = worldPosition.xy / iResolution.xy;
-                vec3 color = color_from_height( vertYPos*0.001 );
-                gl_FragColor = vec4( color, 1.0 );
-            }
-        `
-    }
-
-	vertexSplatShader(){
-		return `
-			uniform float bumpScale;
-			uniform sampler2D bumpTexture;
-
-			varying float vAmount;
-		    varying vec2 vUv; 
-
-		    void main() {
-		      vUv = uv;
-		      vec4 bumpData = texture2D( bumpTexture, uv );
-
-		      vAmount = bumpData.r;
-
-		      vec3 newPosition = position + normal * bumpScale * vAmount;
-
-		      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0); 
-		    }
-		`
-	}
-
-	fragmentSplatShader(){
-		return `
-			uniform sampler2D forestTexture;
-			uniform sampler2D gravelTexture;
-			uniform sampler2D rockTexture;
-			uniform sampler2D snowTexture;
-
-			varying float vAmount;
-			varying vec2 vUv;
-
-			void main() {
-			    vec4 forest = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( forestTexture, vUv * 10.0 );
-			    vec4 gravel = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( gravelTexture, vUv * 10.0 );
-			    vec4 gravel2 = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( gravelTexture, vUv * 20.0 );
-			    vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockTexture, vUv * 20.0 );
-			    vec4 snow = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowTexture, vUv * 10.0 );
-			    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + forest + gravel + gravel2 + rocky + snow;
-			}
-		`
-	}
-
 	returnCameraStartPosY(){
 		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidthVerts ] * 10 + 500;
 	}
 
 	returnTerrainObj(){
-		const terrainGeom =  new THREE.PlaneBufferGeometry( 20000, 20000, this.worldWidthVerts - 1, this.worldLengthVerts - 1 );
-			  // texture = new THREE.CanvasTexture( this.generateTexture( this.data, this.worldWidthVerts, this.worldLengthVerts ) ),
-			  // texture = new THREE.ShaderMaterial({
-			  // 	uniforms: {
-			  // 		bumpScale: { type: "f", value: 1.0 },
-			  // 		bumpTexture: { type: "t", value: this.data },
-					// // groundTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/shrub.png") }
-					// forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
-					// gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
-					// rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
-					// snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
-			  // 	},
-			  // 	fragmentShader: this.fragmentSplatShader(),
-			  // 	vertexShader: this.vertexSplatShader()
-			  // }),
+		const terrainGeom =  new THREE.PlaneBufferGeometry( 20000, 20000, this.worldWidthVerts - 1, this.worldLengthVerts - 1 ),
+			  texture = new THREE.ShaderMaterial({
+			  	uniforms: {
+					waterTexture: { type: "t", value: THREE.ImageUtils.loadTexture("./src/img/water.jpg") },
+					forestTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/shrub.png") },
+					gravelTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/gravel.jpg") },
+					// stoneTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/stone.png") },
+					rockTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/icy_rock.jpg") },
+					snowTexture: { type: "t", value: new THREE.TextureLoader().load("./src/img/snow.jpg") }
+			  	},
+			  	fragmentShader: fragmentSplatShader(),
+			  	vertexShader: vertexSplatShader()
+			  });
 
 		let vertices = terrainGeom.attributes.position.array;
 		
@@ -66545,15 +66506,17 @@ class ProceduralTerrain extends Terrain {
 			vertices[ j + 1 ] = this.data[ i ] * 10;
 		}
 
-		const texture = new THREE.ShaderMaterial({
-			  	uniforms: {
-			  		iResolution: { type: 'v2', value: new THREE.Vector2( 800 , 800 ) },
-			  	},
-			  	fragmentShader: this.fragmentHeightShader(),
-			  	vertexShader: this.vertexHeightShader(),
-			  	light: true
-			  }),
-			  terrain = new THREE.Mesh( terrainGeom, texture );
+		const terrain = new THREE.Mesh( terrainGeom, texture );
+
+		// const texture = new THREE.ShaderMaterial({
+		// 	  	uniforms: {
+		// 	  		iResolution: { type: 'v2', value: new THREE.Vector2( 800 , 800 ) },
+		// 	  	},
+		// 	  	fragmentShader: fragmentHeightShader(),
+		// 	  	vertexShader: vertexHeightShader(),
+		// 	  	light: true
+		// 	  }),
+		// 	  terrain = new THREE.Mesh( terrainGeom, texture );
 
 		texture.wrapS = THREE.ClampToEdgeWrapping;
 		texture.wrapT = THREE.ClampToEdgeWrapping;

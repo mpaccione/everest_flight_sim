@@ -18,17 +18,19 @@ const scene = new THREE.Scene(),
 // Fog
 scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
 
-// Add Clouds
-// const cloud = new Terrain.Clouds,
-// 	  cloudObj = cloud.returnCloudObj();
-
-// scene.add(cloudObj)
-
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain(),
 	  terrainObj = terrain.returnTerrainObj();
 
 scene.add(terrainObj);
+
+// Add Clouds
+for (var i = 10; i >= 0; i--) {
+	const cloud = new Terrain.Clouds( 0, terrain.returnCameraStartPosY(), i * 100, 50, 10),
+	  	  cloudObj = cloud.returnCloudObj();
+
+	scene.add(cloudObj)
+}
 
 // Add SkyBox
 const loader = new THREE.TextureLoader(),
@@ -83,6 +85,7 @@ heliCam.add(rect);
 heliCam.position.x = 0;
 heliCam.position.y = terrain.returnCameraStartPosY();
 heliCam.position.z = 0;
+heliCam.name = "heliCam";
 scene.add(heliCam);
 
 // Init Cockpit
