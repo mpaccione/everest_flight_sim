@@ -92,6 +92,22 @@ scene.add(heliCam);
 const cockpit = new Cockpit();
 cockpit.animate();
 
+// Helicopter Audio
+window.addEventListener('load', function(){
+	let audioCtx;
+
+	try {
+		// Fix up for prefixing
+		window.AudioContext = window.AudioContext||window.webkitAudioContext;
+		audioCtx = new AudioContext();
+
+		
+	}
+	catch(e) {
+		alert('Web Audio API is not supported in this browser');
+	}
+}, false);
+
 // Debugging
 window.scene = scene;
 window.camera = camera;

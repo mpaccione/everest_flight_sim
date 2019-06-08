@@ -279,6 +279,22 @@ scene.add(heliCam);
 const cockpit = new Cockpit();
 cockpit.animate();
 
+// Helicopter Audio
+window.addEventListener('load', function(){
+	let audioCtx;
+
+	try {
+		// Fix up for prefixing
+		window.AudioContext = window.AudioContext||window.webkitAudioContext;
+		audioCtx = new AudioContext();
+
+		
+	}
+	catch(e) {
+		alert('Web Audio API is not supported in this browser');
+	}
+}, false);
+
 // Debugging
 window.scene = scene;
 window.camera = camera;
@@ -66479,117 +66495,6 @@ class ProceduralTerrain extends Terrain {
 		this.data = this.generateHeight( worldWidthVerts, worldLengthVerts );
 	}
 
-<<<<<<< HEAD
-	vertexHeightShader(){
-        return `
-            varying vec3 vUv;
-            varying float vertXPos;
-            varying float vertYPos; 
-
-            void main() {              
-              vec4 localPosition = vec4( position, 1.0 );
-              vec4 worldPosition = modelMatrix * localPosition;
-
-              vUv = position;
-              vertXPos = position.x;
-              vertYPos = position.y; 
-             
-              gl_Position = projectionMatrix * viewMatrix * worldPosition; 
-            }
-        `
-    }
-
-	fragmentHeightShader(){
-        return `
-            precision mediump float;
-
-            uniform vec2 iResolution;
-            varying vec3 vUv;
-            varying float vertXPos;
-            varying float vertYPos;
-
-            vec3 color_from_height( const float height ) {
-                vec3 terrain_colours[5];
-
-                terrain_colours[0] = vec3( 0.506, 0.898, 0.976 ); // Light Blue Water
-                terrain_colours[1] = vec3( 0.016, 0.530, 0.023 ); // Green Forest
-                terrain_colours[2] = vec3( 0.501, 0.416, 0.167 ); // Brown Gravel
-                terrain_colours[3] = vec3( 0.729, 0.749, 0.776 ); // Blue Gray Icy Rock
-                terrain_colours[4] = vec3( 0.949, 0.969, 0.976 ); // White Snow
-
-                // return vec3( vertYPos*0.001, 0.0, 0.0 ); // Testing
-
-                if (height < 0.0){
-                    return terrain_colours[0];
-                } else {
-                    float hscaled = height*2.0 - 0.5; // hscaled should range in [0,2]
-                    float hi = float(hscaled);            // hi should range in [0,1]
-                    float hfrac = hscaled-float(hi);  // hfrac should range in [0,1]
-
-                    if ( hi < 0.33 )
-                        return mix( terrain_colours[1], terrain_colours[2], 0.5); // blends between the two colours    
-                    else if ( hi < 0.66 )
-                        return mix( terrain_colours[2], terrain_colours[3], 0.5); // blends between the two colours
-                    else 
-                    	return mix( terrain_colours[3], terrain_colours[4], 0.5); // blends between the two colours
-                }
-
-                return vec3( 0.0, 0.0, 0.0 );
-            }
-
-            void main() {
-                // vec2 uv = gl_FragCoord.xy / iResolution.xy;
-                // vec2 uv = worldPosition.xy / iResolution.xy;
-                vec3 color = color_from_height( vertYPos*0.001 );
-                gl_FragColor = vec4( color, 1.0 );
-            }
-        `
-    }
-
-	vertexSplatShader(){
-		return `
-			uniform float bumpScale;
-			uniform sampler2D bumpTexture;
-
-			varying float vAmount;
-		    varying vec2 vUv; 
-
-		    void main() {
-		      vUv = uv;
-		      vec4 bumpData = texture2D( bumpTexture, uv );
-
-		      vAmount = bumpData.r;
-
-		      vec3 newPosition = position + normal * bumpScale * vAmount;
-
-		      gl_Position = projectionMatrix * modelViewMatrix * vec4(newPosition, 1.0); 
-		    }
-		`
-	}
-
-	fragmentSplatShader(){
-		return `
-			uniform sampler2D forestTexture;
-			uniform sampler2D gravelTexture;
-			uniform sampler2D rockTexture;
-			uniform sampler2D snowTexture;
-
-			varying float vAmount;
-			varying vec2 vUv;
-
-			void main() {
-			    vec4 forest = (smoothstep(0.01, 0.25, vAmount) - smoothstep(0.24, 0.26, vAmount)) * texture2D( forestTexture, vUv * 10.0 );
-			    vec4 gravel = (smoothstep(0.24, 0.27, vAmount) - smoothstep(0.28, 0.31, vAmount)) * texture2D( gravelTexture, vUv * 10.0 );
-			    vec4 gravel2 = (smoothstep(0.28, 0.32, vAmount) - smoothstep(0.35, 0.40, vAmount)) * texture2D( gravelTexture, vUv * 20.0 );
-			    vec4 rocky = (smoothstep(0.30, 0.50, vAmount) - smoothstep(0.40, 0.70, vAmount)) * texture2D( rockTexture, vUv * 20.0 );
-			    vec4 snow = (smoothstep(0.50, 0.65, vAmount))                                   * texture2D( snowTexture, vUv * 10.0 );
-			    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0) + forest + gravel + gravel2 + rocky + snow;
-			}
-		`
-	}
-
-=======
->>>>>>> a0a024bbd20291515431a882fd3998486b415c89
 	returnCameraStartPosY(){
 		return this.data[ this.worldHalfWidth + this.worldHalfDepth * this.worldWidthVerts ] * 10 + 500;
 	}
