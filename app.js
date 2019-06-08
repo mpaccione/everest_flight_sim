@@ -5,6 +5,7 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
 const Cockpit = require('./src/classes/cockpit');
+const Audio = require('./src/classes/audio');
 
 ////////////////
 // Main Scene //
@@ -93,20 +94,7 @@ const cockpit = new Cockpit();
 cockpit.animate();
 
 // Helicopter Audio
-window.addEventListener('load', function(){
-	let audioCtx;
-
-	try {
-		// Fix up for prefixing
-		window.AudioContext = window.AudioContext||window.webkitAudioContext;
-		audioCtx = new AudioContext();
-
-		
-	}
-	catch(e) {
-		alert('Web Audio API is not supported in this browser');
-	}
-}, false);
+const helicopterAudio = new Audio();
 
 // Debugging
 window.scene = scene;

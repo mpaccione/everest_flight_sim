@@ -192,6 +192,7 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
 const Cockpit = require('./src/classes/cockpit');
+const Audio = require('./src/classes/audio');
 
 ////////////////
 // Main Scene //
@@ -280,20 +281,7 @@ const cockpit = new Cockpit();
 cockpit.animate();
 
 // Helicopter Audio
-window.addEventListener('load', function(){
-	let audioCtx;
-
-	try {
-		// Fix up for prefixing
-		window.AudioContext = window.AudioContext||window.webkitAudioContext;
-		audioCtx = new AudioContext();
-
-		
-	}
-	catch(e) {
-		alert('Web Audio API is not supported in this browser');
-	}
-}, false);
+const helicopterAudio = new Audio();
 
 // Debugging
 window.scene = scene;
@@ -314,7 +302,7 @@ const animate = function () {
 };
 
 animate();
-},{"./src/classes/cockpit":66,"./src/classes/helicopter":67,"./src/classes/terrain":68,"three":65,"three-gltf-loader":63,"three-orbit-controls":64}],3:[function(require,module,exports){
+},{"./src/classes/audio":66,"./src/classes/cockpit":67,"./src/classes/helicopter":68,"./src/classes/terrain":69,"three":65,"three-gltf-loader":63,"three-orbit-controls":64}],3:[function(require,module,exports){
 (function (process){
 /**
  * Tween.js - Licensed under the MIT license
@@ -65334,6 +65322,54 @@ module.exports = function( THREE ) {
 },{}],65:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
 },{"dup":4}],66:[function(require,module,exports){
+function initHelicopterAudio(){
+	// const that = this;
+	// console.log(that);
+	try {
+		// Remove Event Listener
+		window.removeEventListener("keydown", initHelicopterAudio);
+		// Fix up for prefixing
+		window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+		let audioCtx = new AudioContext(),
+		    req = new XMLHttpRequest();
+
+		req.open('GET', 'http://localhost/flight_sim/src/audio/helicopter_in_flight', true);
+		req.responseType = 'arraybuffer';
+
+		// Decode Asynchronously
+		req.onload = function(event){ 
+			audioCtx.decodeAudioData(req.response, function(buffer){
+				window.source = audioCtx.createBufferSource();
+				window.source.buffer = buffer; 
+				window.source.connect(audioCtx.destination);
+				window.source.playbackRate.value = window.flightSim.aY/1600;
+				window.source.start(0);
+				window.source.loop = true;
+
+				window.addEventListener("keydown", function(){
+					window.source.playbackRate.value = window.flightSim.aY/1600;
+				});
+			}, console.log(event));
+		}
+
+		req.send();
+	}
+	catch(e) {
+		alert('Web Audio API is not supported in this browser');
+	}
+}
+
+class HelicopterAudio {
+
+	constructor(){
+		window.addEventListener("keydown", initHelicopterAudio);
+	}
+
+}
+
+module.exports = HelicopterAudio;
+},{}],67:[function(require,module,exports){
 const Konva = require('konva');
 
 class Cockpit {
@@ -66010,7 +66046,7 @@ class Cockpit {
 }
 
 module.exports = Cockpit;
-},{"konva":45}],67:[function(require,module,exports){
+},{"konva":45}],68:[function(require,module,exports){
 // Helicopter Degrees of Freedom
 // X = -Xb + hθb
 // Y = Yb + hφb
@@ -66312,7 +66348,7 @@ class Helicopter {
 }
 
 module.exports = Helicopter;
-},{"@tweenjs/tween.js":3,"THREE":4}],68:[function(require,module,exports){
+},{"@tweenjs/tween.js":3,"THREE":4}],69:[function(require,module,exports){
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
