@@ -65322,6 +65322,8 @@ module.exports = function( THREE ) {
 },{}],65:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
 },{"dup":4}],66:[function(require,module,exports){
+const TWEEN = require('@tweenjs/tween.js');
+
 function initHelicopterAudio(){
 	// const that = this;
 	// console.log(that);
@@ -65348,7 +65350,12 @@ function initHelicopterAudio(){
 				window.source.loop = true;
 
 				window.addEventListener("keydown", function(){
-					window.source.playbackRate.value = window.flightSim.aY/1600;
+					const audioTween = new TWEEN.Tween({ playbackRate: window.source.playbackRate.value })
+											.to({ playbackRate: window.flightSim.aY/1600 }, 500 )
+											.easing( TWEEN.Easing.Quadratic.Out )
+											.onUpdate( (tween) => {
+												window.source.playbackRate.value = tween.playbackRate;
+											} ).start();
 				});
 			}, console.log(event));
 		}
@@ -65369,7 +65376,7 @@ class HelicopterAudio {
 }
 
 module.exports = HelicopterAudio;
-},{}],67:[function(require,module,exports){
+},{"@tweenjs/tween.js":3}],67:[function(require,module,exports){
 const Konva = require('konva');
 
 class Cockpit {
@@ -66142,14 +66149,19 @@ class Helicopter {
 							yaw: 0,
 							pitch: 0
 						},
-						hover = new TWEEN.Tween( start )
-									.to( end, 1000 )
+						hoverEngine = new TWEEN.Tween( start )
+									.to( end, 500 )
 									.easing( TWEEN.Easing.Quadratic.Out )
 									.onUpdate( (tween) => {
 										this.aX = tween.aX;
 										this.aY = tween.aY;
 										this.vX = tween.vX;
 										this.vY = tween.vY;
+									} ).start(),
+						hoverControls = new TWEEN.Tween( start )
+									.to( end, 1000 )
+									.easing( TWEEN.Easing.Quadratic.Out )
+									.onUpdate( (tween) => {
 										this.roll = tween.roll;
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
@@ -66210,7 +66222,7 @@ class Helicopter {
 
 	flightTween(start, end, that, propName){
 		const flightTween = new TWEEN.Tween( start )
-								 .to( end, 250 )
+								 .to( end, 500 )
 								 .easing( TWEEN.Easing.Quadratic.Out )
 								 .onUpdate( (tween) => {
 									that[propName] = tween[propName];

@@ -93,14 +93,19 @@ class Helicopter {
 							yaw: 0,
 							pitch: 0
 						},
-						hover = new TWEEN.Tween( start )
-									.to( end, 1000 )
+						hoverEngine = new TWEEN.Tween( start )
+									.to( end, 500 )
 									.easing( TWEEN.Easing.Quadratic.Out )
 									.onUpdate( (tween) => {
 										this.aX = tween.aX;
 										this.aY = tween.aY;
 										this.vX = tween.vX;
 										this.vY = tween.vY;
+									} ).start(),
+						hoverControls = new TWEEN.Tween( start )
+									.to( end, 1000 )
+									.easing( TWEEN.Easing.Quadratic.Out )
+									.onUpdate( (tween) => {
 										this.roll = tween.roll;
 										this.yaw = tween.yaw;
 										this.pitch = tween.pitch;
@@ -161,7 +166,7 @@ class Helicopter {
 
 	flightTween(start, end, that, propName){
 		const flightTween = new TWEEN.Tween( start )
-								 .to( end, 250 )
+								 .to( end, 500 )
 								 .easing( TWEEN.Easing.Quadratic.Out )
 								 .onUpdate( (tween) => {
 									that[propName] = tween[propName];

@@ -1,3 +1,5 @@
+const TWEEN = require('@tweenjs/tween.js');
+
 function initHelicopterAudio(){
 	// const that = this;
 	// console.log(that);
@@ -24,7 +26,12 @@ function initHelicopterAudio(){
 				window.source.loop = true;
 
 				window.addEventListener("keydown", function(){
-					window.source.playbackRate.value = window.flightSim.aY/1600;
+					const audioTween = new TWEEN.Tween({ playbackRate: window.source.playbackRate.value })
+											.to({ playbackRate: window.flightSim.aY/1600 }, 500 )
+											.easing( TWEEN.Easing.Quadratic.Out )
+											.onUpdate( (tween) => {
+												window.source.playbackRate.value = tween.playbackRate;
+											} ).start();
 				});
 			}, console.log(event));
 		}
