@@ -192,10 +192,14 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 const Helicopter = require('./src/classes/helicopter');
 const Terrain = require('./src/classes/terrain');
 const Cockpit = require('./src/classes/cockpit');
+const Audio = require('./src/classes/audio');
 
 ////////////////
 // Main Scene //
 ////////////////
+
+// Globals
+window.helipadCoords = []; // Array Of Objects for Helipad Coordinates
 
 // View
 const scene = new THREE.Scene(),
@@ -207,9 +211,15 @@ scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
 
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain(),
-	  terrainObj = terrain.returnTerrainObj();
+	  terrainObj = terrain.returnTerrainObj(),
+	  helipadEnd = new Terrain.Helipad( 0, 1200, -3600, "Finish", true ),
+	  helipadStart = new Terrain.Helipad( 0, 2000, -2000, "Start", false ),
+	  helipadObjStart = helipadStart.returnHelipadObj(),
+	  helipadObjEnd = helipadEnd.returnHelipadObj();
 
 scene.add(terrainObj);
+scene.add(helipadObjStart);
+scene.add(helipadObjEnd);
 
 // Add Clouds
 for (var i = 10; i >= 0; i--) {
@@ -269,15 +279,16 @@ const heliCam = new THREE.Group(),
 
 heliCam.add(camera);
 heliCam.add(rect);
-heliCam.position.x = 0;
-heliCam.position.y = terrain.returnCameraStartPosY();
-heliCam.position.z = 0;
+heliCam.position.set( 0, 2000, -2000 );
 heliCam.name = "heliCam";
 scene.add(heliCam);
 
 // Init Cockpit
 const cockpit = new Cockpit();
 cockpit.animate();
+
+// Helicopter Audio
+const helicopterAudio = new Audio();
 
 // Debugging
 window.scene = scene;
@@ -298,7 +309,7 @@ const animate = function () {
 };
 
 animate();
-},{"./src/classes/cockpit":66,"./src/classes/helicopter":67,"./src/classes/terrain":68,"three":65,"three-gltf-loader":63,"three-orbit-controls":64}],3:[function(require,module,exports){
+},{"./src/classes/audio":66,"./src/classes/cockpit":67,"./src/classes/helicopter":68,"./src/classes/terrain":69,"three":65,"three-gltf-loader":63,"three-orbit-controls":64}],3:[function(require,module,exports){
 (function (process){
 /**
  * Tween.js - Licensed under the MIT license
@@ -65318,6 +65329,76 @@ module.exports = function( THREE ) {
 },{}],65:[function(require,module,exports){
 arguments[4][4][0].apply(exports,arguments)
 },{"dup":4}],66:[function(require,module,exports){
+const TWEEN = require('@tweenjs/tween.js');
+
+function initHelicopterAudio(){
+	// const that = this;
+	// console.log(that);
+	try {
+		// Remove Event Listener
+		window.removeEventListener("keydown", initHelicopterAudio);
+		// Fix up for prefixing
+		window.AudioContext = window.AudioContext || window.webkitAudioContext;
+
+		let audioCtx = new AudioContext(),
+		    req = new XMLHttpRequest();
+
+		req.open('GET', 'http://localhost/flight_sim/src/audio/helicopter_in_flight', true);
+		req.responseType = 'arraybuffer';
+
+		// Decode Asynchronously
+		req.onload = function(event){ 
+			audioCtx.decodeAudioData(req.response, function(buffer){
+				window.sourceGain = audioCtx.createGain(); 
+				window.source = audioCtx.createBufferSource();
+				window.source.buffer = buffer;
+				window.source.loop = true;
+
+				window.source.connect(audioCtx.destination);
+				window.sourceGain.connect(audioCtx.destination);
+				window.source.start(0);
+
+				window.addEventListener("keydown", function(e){
+					// Tween Audio Frequency In Relation To Acceleration
+					const audioTween = new TWEEN.Tween({ playbackRate: window.source.playbackRate.value })
+											.to({ playbackRate: window.flightSim.aY/1600 }, 500 )
+											.easing( TWEEN.Easing.Quadratic.Out )
+											.onUpdate( (tween) => {
+												window.source.playbackRate.value = tween.playbackRate;
+											} ).start();
+
+					// If Leaning Outside Cockpit Make Volume Loud
+					if ( e.key == "z" && window.flightSim.lookLeft == true && window.flightSim.lookDown == false ||
+						 e.key == "x" && window.flightSim.lookRight == true && window.flightSim.lookDown == false) {
+						window.sourceGain.gain.setValueAtTime(10, window.source.context.currentTime + 1);
+					} else if ( e.key == "z" && window.flightSim.lookRight == true & window.flightSim.lookDown == true ||
+					            e.key == "x" && window.flightSim.lookLeft == true && window.flightSim.lookDown == true ) {
+						window.sourceGain.gain.setValueAtTime(1, window.source.context.currentTime + 1);
+					}
+
+					console.log("sourceGain Value");
+					console.log(window.sourceGain.gain.value);
+				});
+			}, console.log(event));
+		}
+
+		req.send();
+	}
+	catch(e) {
+		alert('Web Audio API is not supported in this browser');
+	}
+}
+
+class HelicopterAudio {
+
+	constructor(){
+		window.addEventListener("keydown", initHelicopterAudio);
+	}
+
+}
+
+module.exports = HelicopterAudio;
+},{"@tweenjs/tween.js":3}],67:[function(require,module,exports){
 const Konva = require('konva');
 
 class Cockpit {
@@ -65994,7 +66075,7 @@ class Cockpit {
 }
 
 module.exports = Cockpit;
-},{"konva":45}],67:[function(require,module,exports){
+},{"konva":45}],68:[function(require,module,exports){
 // Helicopter Degrees of Freedom
 // X = -Xb + hθb
 // Y = Yb + hφb
@@ -66032,6 +66113,10 @@ class Helicopter {
 		this.maxRoll = 45;
 		this.maxYaw = 0.4;
 		this.maxPitch = 45;
+		this.lookLeft = false;
+		this.lookRight = false;
+		this.lookDown = false;
+		this.landed = false;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -66151,6 +66236,53 @@ class Helicopter {
 						this.flightTween(start, end, this, "yaw");
 					}
 					break;
+				case "z": // Look Left and Down
+					if (this.lookLeft == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameIn";
+					} else if (this.lookRight == false && this.lookLeft == false) {
+						// Look Left
+						this.lookLeft = true;						
+						this.quaternionTween(90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(100, 1000);
+					} else if (this.lookRight == true) {
+						// Look Center
+						this.lookRight = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookRight == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameOut";
+					}
+					break;
+				case "x": // Look Right and Down
+					if (this.lookRight == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameIn";						
+					}
+					else if (this.lookLeft == true) {
+						// Look Center
+						this.lookLeft = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookLeft == false && this.lookRight == false) {
+						// Look Right
+						this.lookRight = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(-100, 1000);
+					} else if (this.lookLeft == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameOut";					
+					}
+					break;					
 			}
 		}, false);
 
@@ -66163,6 +66295,62 @@ class Helicopter {
 								 .onUpdate( (tween) => {
 									that[propName] = tween[propName];
 								 } ).start();
+	}
+
+	quaternionTween(deg, vector, that, camera, time){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  slerpTarget = new THREE.Quaternion().setFromAxisAngle( vector, that.getRadians(deg) ),
+			  cameraTween = new TWEEN.Tween({ t: 0 })
+								.to({ t: 1 }, time*20 )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									// console.log(tween.t);
+									sceneCamera.quaternion.slerp( slerpTarget, tween.t );
+								 } ).start();
+	}
+
+	cameraTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.y })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.y = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+	}
+
+	cockpitRotationTween(translateX, time){
+		const cockpit = document.getElementById("cockpit"),
+			  cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+								.to({ translation: translateX }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									cockpit.style.left = tween.translation+"%";
+								 } ).start()
+	}
+
+	cockpitZoomCameraDownTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.z })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.z = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+			  // cockpit = document.getElementById("cockpit"),
+			  // cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+					// 			.to({ translation: translateX }, time )
+					// 			.easing( TWEEN.Easing.Quadratic.Out )
+					// 			.onUpdate( (tween) => {
+					// 				console.log(tween.translation+"%");
+					// 				cockpit.style.left = tween.translation+"%";
+					// 			 } ).start()
 	}
 
 	changePitch(newPitch){
@@ -66257,7 +66445,34 @@ class Helicopter {
 		this.z = this.heli.position.z;
 	}
 
-	getRadians(deg){
+	collisionDetection(){
+		// If No Y Acceleration
+		if ( (window.flightSim.aY - window.flightSim.gravAOffset) < 100 ) {
+			for (var i = window.helipadCoords.length - 1; i >= 0; i--) {
+				// Compare coordinates and radius
+				if ( window.flightSim.x <= window.helipadCoords[i].x + 60 && window.flightSim.x >= window.helipadCoords[i].x - 60 ) {
+					if ( window.flightSim.z <= window.helipadCoords[i].z + 60 && window.flightSim.z >= window.helipadCoords[i].z - 60 ) {
+						if ( window.flightSim.y <= window.helipadCoords[i].y + 100 && window.flightSim.y >= window.helipadCoords[i].y - 5 ) {
+							console.log(`Landed at ${ window.helipadCoords[i].text }`);
+							if (window.helipadCoords[i].text == "Start") {
+								this.landed = false;
+								this.vY = this.vY < 0 ? 0 : this.vY;
+							} else {
+								this.vY = 0;
+								this.vX = 0;
+								this.vZ = 0;
+								this.aY = 0;
+								this.aX = 0;
+								this.landed = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	getRadians( deg ){
 		return deg * Math.PI / 180;
 	}
 
@@ -66281,22 +66496,27 @@ class Helicopter {
 			maxRoll: this.maxRoll,
 			maxPitch: this.maxPitch,
 			maxYaw: this.maxYaw,
-			heliRotation: this.heli.rotation.y
+			heliRotation: this.heli.rotation.y,
+			lookLeft: this.lookLeft,
+			lookRight: this.lookRight,
+			lookDown: this.lookDown
 		}
 	}
 
 	update(){
-		this.updateVelocities();
-		this.updateRotation();
-		this.updatePosition();
-		this.updateState();
+		if ( this.landed == false ) {
+			this.updateVelocities();
+			this.updateRotation();
+			this.updatePosition();
+			this.updateState();
+		}
 		TWEEN.update();
 	}
 
 }
 
 module.exports = Helicopter;
-},{"@tweenjs/tween.js":3,"THREE":4}],68:[function(require,module,exports){
+},{"@tweenjs/tween.js":3,"THREE":4}],69:[function(require,module,exports){
 const THREE = require('THREE');
 const ImprovedNoise = require('improved-noise');
 
@@ -66610,9 +66830,70 @@ class ProceduralTerrain extends Terrain {
 
 }
 
+class Helipad {
+
+	constructor( x, y, z, text = false, enabled = true, radiusTop = 120, radiusBottom = 120, radialSegments = 32, heightSegments = 20 ){
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.radiusTop = radiusTop;
+		this.radiusBottom = radiusBottom;
+		this.radialSegments = radialSegments;
+		this.heightSegments = heightSegments;
+		this.text = text;
+	}
+
+	returnHelipadObj(){
+		const fontLoader = new THREE.FontLoader(),
+			  helipadGroup = new THREE.Group();
+
+		fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+			const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+				  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+				  helipadMatArr = [
+				  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+				  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+				  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+				  ],
+				  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
+				  helipadTextGeo = new THREE.TextGeometry( this.text, {
+					font: font,
+					size: 80,
+					height: 5,
+					curveSegments: 12,
+					bevelEnabled: false
+				  } ),
+				  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
+				  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
+				  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+
+			helipad.name = "helipad";
+			helipadText.name = "helipadText"+this.text;
+			helipad.position.set( 0, 0, 0 )
+			helipadText.position.set( -100, 300, 0 );
+			
+			window.helipadCoords.push( { 
+				x: this.x, 
+				y: this.y, 
+				z: this.z, 
+				text: this.text 
+			} );
+
+			helipadGroup.add( helipad );
+			helipadGroup.add( helipadText );
+			helipadGroup.position.set( this.x, this.y, this.z );
+			helipadGroup.name = "helipad"+this.text;
+		})
+
+		return helipadGroup;
+	}
+
+}
+
 
 module.exports.Clouds = Clouds;
 module.exports.BasicTerrain = Terrain;
 module.exports.ProceduralTerrain = ProceduralTerrain;
+module.exports.Helipad = Helipad;
 
 },{"THREE":4,"improved-noise":5}]},{},[2]);
