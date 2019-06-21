@@ -369,29 +369,31 @@ class Helicopter {
 
 	collisionDetection(){
 		// If No Y Acceleration
-		if ( (window.flightSim.aY - window.flightSim.gravAOffset) < 100 ) {
-			for (var i = window.helipadCoords.length - 1; i >= 0; i--) {
+		const fSim = window.flightSim;
+		console.log(fSim);
+
+		if ( (fSim.aY - fSim.gravAOffset) < 100 ) {
+
+			const hCoords = window.helipadCoords;
+
+			for (var i = hCoords.length - 1; i >= 0; i--) {
 				// Compare coordinates and radius
-				if ( window.flightSim.x <= window.helipadCoords[i].x + 60 && window.flightSim.x >= window.helipadCoords[i].x - 60 ) {
-					if ( window.flightSim.z <= window.helipadCoords[i].z + 60 && window.flightSim.z >= window.helipadCoords[i].z - 60 ) {
-						if ( window.flightSim.y <= window.helipadCoords[i].y + 100 && window.flightSim.y >= window.helipadCoords[i].y - 5 ) {
-							console.log(`Landed at ${ window.helipadCoords[i].text }`);
-							if (window.helipadCoords[i].text == "Start") {
-								this.landed = false;
-								this.vY = this.vY < 0 ? 0 : this.vY;
-							} else {
-								this.vY = 0;
-								this.vX = 0;
-								this.vZ = 0;
-								this.aY = 0;
-								this.aX = 0;
-								this.landed = true;
-							}
+				if ( fSim.x <= hCoords[i].x + 60 && fSim.x >= hCoords[i].x - 60 ) {
+					if ( fSim.z <= hCoords[i].z + 60 && fSim.z >= hCoords[i].z - 60 ) {
+						if ( fSim.y <= hCoords[i].y + 100 && fSim.y >= hCoords[i].y - 5 ) {
+							console.log( `Landed at ${ hCoords[i].text }` );
+							this.vY = 0;
+							this.vX = 0;
+							this.vZ = 0;
+							this.aY = 0;
+							this.aX = 0;
+							this.landed = true;
 						}
 					}
 				}
 			}
 		}
+
 	}
 
 	getRadians( deg ){
@@ -421,7 +423,8 @@ class Helicopter {
 			heliRotation: this.heli.rotation.y,
 			lookLeft: this.lookLeft,
 			lookRight: this.lookRight,
-			lookDown: this.lookDown
+			lookDown: this.lookDown,
+			landed: this.landed
 		}
 	}
 
@@ -431,6 +434,7 @@ class Helicopter {
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
+			this.collisionDetection();
 		}
 		TWEEN.update();
 	}
