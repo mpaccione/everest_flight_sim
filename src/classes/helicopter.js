@@ -35,6 +35,10 @@ class Helicopter {
 		this.maxRoll = 45;
 		this.maxYaw = 0.4;
 		this.maxPitch = 45;
+		this.lookLeft = false;
+		this.lookRight = false;
+		this.lookDown = false;
+		this.landed = false;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -154,6 +158,53 @@ class Helicopter {
 						this.flightTween(start, end, this, "yaw");
 					}
 					break;
+				case "z": // Look Left and Down
+					if (this.lookLeft == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameIn";
+					} else if (this.lookRight == false && this.lookLeft == false) {
+						// Look Left
+						this.lookLeft = true;						
+						this.quaternionTween(90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(100, 1000);
+					} else if (this.lookRight == true) {
+						// Look Center
+						this.lookRight = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookRight == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameOut";
+					}
+					break;
+				case "x": // Look Right and Down
+					if (this.lookRight == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameIn";						
+					}
+					else if (this.lookLeft == true) {
+						// Look Center
+						this.lookLeft = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookLeft == false && this.lookRight == false) {
+						// Look Right
+						this.lookRight = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(-100, 1000);
+					} else if (this.lookLeft == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameOut";					
+					}
+					break;					
 			}
 		}, false);
 
@@ -166,6 +217,62 @@ class Helicopter {
 								 .onUpdate( (tween) => {
 									that[propName] = tween[propName];
 								 } ).start();
+	}
+
+	quaternionTween(deg, vector, that, camera, time){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  slerpTarget = new THREE.Quaternion().setFromAxisAngle( vector, that.getRadians(deg) ),
+			  cameraTween = new TWEEN.Tween({ t: 0 })
+								.to({ t: 1 }, time*20 )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									// console.log(tween.t);
+									sceneCamera.quaternion.slerp( slerpTarget, tween.t );
+								 } ).start();
+	}
+
+	cameraTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.y })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.y = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+	}
+
+	cockpitRotationTween(translateX, time){
+		const cockpit = document.getElementById("cockpit"),
+			  cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+								.to({ translation: translateX }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									cockpit.style.left = tween.translation+"%";
+								 } ).start()
+	}
+
+	cockpitZoomCameraDownTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.z })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.z = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+			  // cockpit = document.getElementById("cockpit"),
+			  // cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+					// 			.to({ translation: translateX }, time )
+					// 			.easing( TWEEN.Easing.Quadratic.Out )
+					// 			.onUpdate( (tween) => {
+					// 				console.log(tween.translation+"%");
+					// 				cockpit.style.left = tween.translation+"%";
+					// 			 } ).start()
 	}
 
 	changePitch(newPitch){
@@ -260,7 +367,34 @@ class Helicopter {
 		this.z = this.heli.position.z;
 	}
 
-	getRadians(deg){
+	collisionDetection(){
+		// If No Y Acceleration
+		if ( (window.flightSim.aY - window.flightSim.gravAOffset) < 100 ) {
+			for (var i = window.helipadCoords.length - 1; i >= 0; i--) {
+				// Compare coordinates and radius
+				if ( window.flightSim.x <= window.helipadCoords[i].x + 60 && window.flightSim.x >= window.helipadCoords[i].x - 60 ) {
+					if ( window.flightSim.z <= window.helipadCoords[i].z + 60 && window.flightSim.z >= window.helipadCoords[i].z - 60 ) {
+						if ( window.flightSim.y <= window.helipadCoords[i].y + 100 && window.flightSim.y >= window.helipadCoords[i].y - 5 ) {
+							console.log(`Landed at ${ window.helipadCoords[i].text }`);
+							if (window.helipadCoords[i].text == "Start") {
+								this.landed = false;
+								this.vY = this.vY < 0 ? 0 : this.vY;
+							} else {
+								this.vY = 0;
+								this.vX = 0;
+								this.vZ = 0;
+								this.aY = 0;
+								this.aX = 0;
+								this.landed = true;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	getRadians( deg ){
 		return deg * Math.PI / 180;
 	}
 
@@ -284,15 +418,20 @@ class Helicopter {
 			maxRoll: this.maxRoll,
 			maxPitch: this.maxPitch,
 			maxYaw: this.maxYaw,
-			heliRotation: this.heli.rotation.y
+			heliRotation: this.heli.rotation.y,
+			lookLeft: this.lookLeft,
+			lookRight: this.lookRight,
+			lookDown: this.lookDown
 		}
 	}
 
 	update(){
-		this.updateVelocities();
-		this.updateRotation();
-		this.updatePosition();
-		this.updateState();
+		if ( this.landed == false ) {
+			this.updateVelocities();
+			this.updateRotation();
+			this.updatePosition();
+			this.updateState();
+		}
 		TWEEN.update();
 	}
 
