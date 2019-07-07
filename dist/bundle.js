@@ -66432,8 +66432,8 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
+		this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
+			this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
 		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
 		// Invert Velocity Based on Pitch Value
