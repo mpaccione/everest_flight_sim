@@ -22,7 +22,7 @@ class Helicopter {
 		this.maxAY = 1600;
 		this.maxAX = 3;
 		this.gravAOffset = 200;
-		this.gravVOffset = 0.15;
+		this.gravVOffset = -0.15;
 		this.aX = 0;
 		this.aY = 0;
 		this.vX = 0;
@@ -38,7 +38,8 @@ class Helicopter {
 		this.lookLeft = false;
 		this.lookRight = false;
 		this.lookDown = false;
-		this.landed = false;
+		this.landed = false; // False for initial helipad
+		this.start = false; // Boolean used for initial start
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -308,15 +309,14 @@ class Helicopter {
 		const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
 			  pitchRads = this.pitch < 0 ? this.getRadians( 150-this.pitch ) : this.getRadians( 150+this.pitch ), // Hypothetically 90-this.pitch, changed for better playability
 			  gravSimY = this.aY/this.weight,
-			  yawRatio = this.yaw/this.maxYaw;
+			  yawRatio = this.yaw/this.maxYaw,
+			  vYOriginal = this.vY;
 
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
 		// Y Velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
-
-		const vYOriginal = this.vY;
+		this.vY = this.aY > this.gravAOffset ? gravSimY : this.gravVOffset;
 		
 		// X & Z Velocity
 		if ( this.roll != 0 && this.pitch != 0 ) {
@@ -354,8 +354,9 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
+		// this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
+			// this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
+		this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
 		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
 		// Invert Velocity Based on Pitch Value
@@ -368,11 +369,18 @@ class Helicopter {
 	}
 
 	collisionDetection(){
-		// If No Y Acceleration
 		const fSim = window.flightSim;
-		console.log(fSim);
+		// prevent helicopter from dropping due to negative acceleration from gravity
+		if (fSim.start == false) {
+			this.vY = 0;
 
-		if ( (fSim.aY - fSim.gravAOffset) < 100 ) {
+			if (this.aY > this.gravAOffset && this.start == false) {
+				setTimeout(() => {
+					this.start = true;
+				}, 1000);
+			}
+
+		} else if (fSim.aY <= fSim.gravAOffset && fSim.start == true) {
 
 			const hCoords = window.helipadCoords;
 
@@ -380,8 +388,9 @@ class Helicopter {
 				// Compare coordinates and radius
 				if ( fSim.x <= hCoords[i].x + 60 && fSim.x >= hCoords[i].x - 60 ) {
 					if ( fSim.z <= hCoords[i].z + 60 && fSim.z >= hCoords[i].z - 60 ) {
-						if ( fSim.y <= hCoords[i].y + 100 && fSim.y >= hCoords[i].y - 5 ) {
+						if ( fSim.y <= hCoords[i].y + 30 && fSim.y >= hCoords[i].y - 5 ) {
 							console.log( `Landed at ${ hCoords[i].text }` );
+							// if helicopter has already lifted off initial helipad
 							this.vY = 0;
 							this.vX = 0;
 							this.vZ = 0;
@@ -424,16 +433,17 @@ class Helicopter {
 			lookLeft: this.lookLeft,
 			lookRight: this.lookRight,
 			lookDown: this.lookDown,
-			landed: this.landed
+			landed: this.landed,
+			start: this.start
 		}
 	}
 
 	update(){
 		if ( this.landed == false ) {
-			this.updateVelocities();
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
+			this.updateVelocities();
 			this.collisionDetection();
 		}
 		TWEEN.update();
