@@ -323,24 +323,31 @@ class Helicopter {
 			// Get Higher Degree of the two, use resultant Y Velocity for second equation
 			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
 				// Calc Roll Vector with Trigonometry, 
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
+				this.vX = Math.abs(gravSimY * Math.cos(rollRads));
+				//this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
+				this.vZ = Math.abs(gravSimY * Math.cos(pitchRads));
+				this.vY = gravSimY - (this.vX + this.vY);
 			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
+				this.vX = Math.abs(gravSimY * Math.cos(rollRads));
+				// this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
+				this.vZ = Math.abs(gravSimY * Math.cos(pitchRads));
+				this.vY = gravSimY - (this.vX + this.vY);
 			}
 		} else if ( this.roll != 0 ) {
 			// Calc Roll Vector with Trigonometry
-			this.vX = vYOriginal * Math.cos(rollRads);
-			this.vY = vYOriginal * Math.sin(rollRads);
+			this.vX = gravSimY * Math.cos(rollRads);
+			this.vY = gravSimY * Math.sin(rollRads);
 		} else if ( this.pitch != 0 ) {
 			// Calc Pitch Vector with Trigonometry
-			this.vY = vYOriginal * Math.sin(pitchRads);
-			this.vZ = vYOriginal * Math.cos(pitchRads);
+			this.vY = gravSimY * Math.sin(pitchRads);
+			this.vZ = gravSimY * Math.cos(pitchRads);
 		}
+
+		console.log("updateVelocities");
+		console.log("vY: "+this.vY);
+		console.log("vX: "+this.vX);
+		console.log("vZ: "+this.vZ);
 	}
 
 	updateRotation(){
@@ -358,9 +365,11 @@ class Helicopter {
 			// this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
 		this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
-		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
+		this.heli.position.x += this.vX*multiplier;
+		//this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
 		// Invert Velocity Based on Pitch Value
-		this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
+		this.heli.position.z += this.vZ*multiplier;
+		//this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
@@ -369,9 +378,9 @@ class Helicopter {
 	}
 
 	collisionDetection(){
-		const fSim = window.flightSim;
 		// prevent helicopter from dropping due to negative acceleration from gravity
-		if (fSim.start == false) {
+		if (this.start == false) {
+			console.log("0 vY");
 			this.vY = 0;
 
 			if (this.aY > this.gravAOffset && this.start == false) {
@@ -380,15 +389,15 @@ class Helicopter {
 				}, 1000);
 			}
 
-		} else if (fSim.aY <= fSim.gravAOffset && fSim.start == true) {
+		} else if (this.aY <= this.gravAOffset && this.start == true) {
 
 			const hCoords = window.helipadCoords;
 
 			for (var i = hCoords.length - 1; i >= 0; i--) {
 				// Compare coordinates and radius
-				if ( fSim.x <= hCoords[i].x + 60 && fSim.x >= hCoords[i].x - 60 ) {
-					if ( fSim.z <= hCoords[i].z + 60 && fSim.z >= hCoords[i].z - 60 ) {
-						if ( fSim.y <= hCoords[i].y + 30 && fSim.y >= hCoords[i].y - 5 ) {
+				if ( this.x <= hCoords[i].x + 60 && this.x >= hCoords[i].x - 60 ) {
+					if ( this.z <= hCoords[i].z + 60 && this.z >= hCoords[i].z - 60 ) {
+						if ( this.y <= hCoords[i].y + 40 && this.y >= hCoords[i].y - 5 ) {
 							console.log( `Landed at ${ hCoords[i].text }` );
 							// if helicopter has already lifted off initial helipad
 							this.vY = 0;
