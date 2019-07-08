@@ -279,7 +279,7 @@ const heliCam = new THREE.Group(),
 
 heliCam.add(camera);
 heliCam.add(rect);
-heliCam.position.set( 0, 2000, -2000 );
+heliCam.position.set( 0, 2040, -2000 );
 heliCam.name = "heliCam";
 scene.add(heliCam);
 
@@ -66038,17 +66038,18 @@ class Cockpit {
 
 	animate(){
 		const gaugeAnimation = new Konva.Animation( (frame) => {
-		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
-		    	  altitude = window.flightSim.y,
+		    const flightSim = window.flightSim,
+		    	  yawSum = flightSim.yaw * (20/flightSim.maxYaw),
+		    	  altitude = flightSim.y,
 				  altimeterShortNeedleDeg = ((altitude / 10000) * 36) + 36, // + 36 Bug Fix for proper angle
 				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
-				  aY = (window.flightSim.aY - window.flightSim.gravAOffset) > 0 ? (window.flightSim.aY - window.flightSim.gravAOffset) : 0,
+				  aY = (flightSim.aY - flightSim.gravAOffset) > 0 ? (flightSim.aY - flightSim.gravAOffset) : 0,
 				  knotsRatio = 25.714, // Max aY / (14/360)
 				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
-				  headingDegrees = window.flightSim.heliRotation * 360;
+				  headingDegrees = flightSim.heliRotation * 360;
 
 			// Turn Gauge
-		    this.planeGroup.rotation(-window.flightSim.roll);
+		    this.planeGroup.rotation(-flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
 		    // Altimeter Gauge
@@ -66056,11 +66057,14 @@ class Cockpit {
 			this.altimeterLongNeedle.rotation(altimeterLongNeedleDeg);
 
 			// Attitude Gauge
-			this.attitudeBGGroup.rotation(window.flightSim.roll);
-		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
+			this.attitudeBGGroup.rotation(flightSim.roll);
+		    this.attitudePitchGroup.y(110 + (flightSim.pitch/2.5));
 
 			// Airspeed Gauge
-			this.knotsNeedle.rotation(airspeedNeedleDeg);
+			if (flightSim.aY > flightSim.gravAOffset){
+				// Gravity If Check
+				this.knotsNeedle.rotation(airspeedNeedleDeg);
+			}
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);
@@ -66118,6 +66122,7 @@ class Helicopter {
 		this.lookDown = false;
 		this.landed = false; // False for initial helipad
 		this.start = false; // Boolean used for initial start
+		this.tweening = false; // Overlapping tweens creating decimals instead of integers
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -66290,12 +66295,22 @@ class Helicopter {
 	}
 
 	flightTween(start, end, that, propName){
-		const flightTween = new TWEEN.Tween( start )
-								 .to( end, 250 )
-								 .easing( TWEEN.Easing.Quadratic.Out )
-								 .onUpdate( (tween) => {
-									that[propName] = tween[propName];
-								 } ).start();
+		if (this.tweening == false) {
+			const flightTween = new TWEEN.Tween( start )
+									 .to( end, 250 )
+									 .easing( TWEEN.Easing.Quadratic.Out )
+									 .onUpdate( (tween) => {
+										that[propName] = tween[propName];
+									 } )
+									 .onComplete( () => {
+									 	this.tweening = false;
+									 } );
+			this.tweening = true;
+			flightTween.start();
+			console.log(start);
+			console.log(end);
+		}
+
 	}
 
 	quaternionTween(deg, vector, that, camera, time){
@@ -66392,39 +66407,44 @@ class Helicopter {
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Y Velocity from accel & gravity
-		this.vY = this.aY > this.gravAOffset ? gravSimY : this.gravVOffset;
-		
-		// X & Z Velocity
-		if ( this.roll != 0 && this.pitch != 0 ) {
-			// Get Higher Degree of the two, use resultant Y Velocity for second equation
-			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
-				// Calc Roll Vector with Trigonometry, 
+		// Upward Velocities
+		if (this.aY > this.gravAOffset) {
+			// Initial Y Velocity and Reset XY Velocities
+			this.vY = gravSimY;
+			this.vX = 0;
+			this.vZ = 0;
+			// X & Z Velocity
+			if ( this.roll != 0 && this.pitch != 0 ) {
+				// Get Higher Degree of the two, use resultant Y Velocity for second equation
+				if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+					// Calc Roll Vector with Trigonometry, 
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+					// Calc Pitch Vector with Trigonometry
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				}
+			} else if ( this.roll != 0 ) {
+				// Calc Roll Vector with Trigonometry
 				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-				this.vY = Math.abs(gravSimY * Math.sin(rollRads));
-				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
-				// this.vY = gravSimY - (this.vX + this.vY);
-			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+				this.vY = gravSimY * Math.sin(rollRads);
+			} else if ( this.pitch != 0 ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-				this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+				this.vY = gravSimY * Math.sin(pitchRads);
 				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
-				// this.vY = gravSimY - (this.vX + this.vY);
 			}
-		} else if ( this.roll != 0 ) {
-			// Calc Roll Vector with Trigonometry
-			this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-			this.vY = gravSimY * Math.sin(rollRads);
-		} else if ( this.pitch != 0 ) {
-			// Calc Pitch Vector with Trigonometry
-			this.vY = gravSimY * Math.sin(pitchRads);
-			this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+		} else {
+			this.vY = this.gravVOffset;
 		}
 
-		console.log("updateVelocities");
-		console.log("vY: "+this.vY);
-		console.log("vX: "+this.vX);
-		console.log("vZ: "+this.vZ);
+		// console.log("updateVelocities");
+		// console.log("vY: "+this.vY);
+		// console.log("vX: "+this.vX);
+		// console.log("vZ: "+this.vZ);
+		console.log(window.flightSim.roll);
 	}
 
 	updateRotation(){

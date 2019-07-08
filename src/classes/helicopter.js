@@ -40,6 +40,7 @@ class Helicopter {
 		this.lookDown = false;
 		this.landed = false; // False for initial helipad
 		this.start = false; // Boolean used for initial start
+		this.tweening = false; // Overlapping tweens creating decimals instead of integers
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -212,12 +213,22 @@ class Helicopter {
 	}
 
 	flightTween(start, end, that, propName){
-		const flightTween = new TWEEN.Tween( start )
-								 .to( end, 250 )
-								 .easing( TWEEN.Easing.Quadratic.Out )
-								 .onUpdate( (tween) => {
-									that[propName] = tween[propName];
-								 } ).start();
+		if (this.tweening == false) {
+			const flightTween = new TWEEN.Tween( start )
+									 .to( end, 250 )
+									 .easing( TWEEN.Easing.Quadratic.Out )
+									 .onUpdate( (tween) => {
+										that[propName] = tween[propName];
+									 } )
+									 .onComplete( () => {
+									 	this.tweening = false;
+									 } );
+			this.tweening = true;
+			flightTween.start();
+			console.log(start);
+			console.log(end);
+		}
+
 	}
 
 	quaternionTween(deg, vector, that, camera, time){
@@ -314,39 +325,44 @@ class Helicopter {
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Y Velocity from accel & gravity
-		this.vY = this.aY > this.gravAOffset ? gravSimY : this.gravVOffset;
-		
-		// X & Z Velocity
-		if ( this.roll != 0 && this.pitch != 0 ) {
-			// Get Higher Degree of the two, use resultant Y Velocity for second equation
-			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
-				// Calc Roll Vector with Trigonometry, 
+		// Upward Velocities
+		if (this.aY > this.gravAOffset) {
+			// Initial Y Velocity and Reset XY Velocities
+			this.vY = gravSimY;
+			this.vX = 0;
+			this.vZ = 0;
+			// X & Z Velocity
+			if ( this.roll != 0 && this.pitch != 0 ) {
+				// Get Higher Degree of the two, use resultant Y Velocity for second equation
+				if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+					// Calc Roll Vector with Trigonometry, 
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+					// Calc Pitch Vector with Trigonometry
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				}
+			} else if ( this.roll != 0 ) {
+				// Calc Roll Vector with Trigonometry
 				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-				this.vY = Math.abs(gravSimY * Math.sin(rollRads));
-				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
-				// this.vY = gravSimY - (this.vX + this.vY);
-			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+				this.vY = gravSimY * Math.sin(rollRads);
+			} else if ( this.pitch != 0 ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-				this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+				this.vY = gravSimY * Math.sin(pitchRads);
 				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
-				// this.vY = gravSimY - (this.vX + this.vY);
 			}
-		} else if ( this.roll != 0 ) {
-			// Calc Roll Vector with Trigonometry
-			this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-			this.vY = gravSimY * Math.sin(rollRads);
-		} else if ( this.pitch != 0 ) {
-			// Calc Pitch Vector with Trigonometry
-			this.vY = gravSimY * Math.sin(pitchRads);
-			this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+		} else {
+			this.vY = this.gravVOffset;
 		}
 
-		console.log("updateVelocities");
-		console.log("vY: "+this.vY);
-		console.log("vX: "+this.vX);
-		console.log("vZ: "+this.vZ);
+		// console.log("updateVelocities");
+		// console.log("vY: "+this.vY);
+		// console.log("vX: "+this.vX);
+		// console.log("vZ: "+this.vZ);
+		console.log(window.flightSim.roll);
 	}
 
 	updateRotation(){

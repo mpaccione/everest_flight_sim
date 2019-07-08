@@ -637,17 +637,18 @@ class Cockpit {
 
 	animate(){
 		const gaugeAnimation = new Konva.Animation( (frame) => {
-		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
-		    	  altitude = window.flightSim.y,
+		    const flightSim = window.flightSim,
+		    	  yawSum = flightSim.yaw * (20/flightSim.maxYaw),
+		    	  altitude = flightSim.y,
 				  altimeterShortNeedleDeg = ((altitude / 10000) * 36) + 36, // + 36 Bug Fix for proper angle
 				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
-				  aY = (window.flightSim.aY - window.flightSim.gravAOffset) > 0 ? (window.flightSim.aY - window.flightSim.gravAOffset) : 0,
+				  aY = (flightSim.aY - flightSim.gravAOffset) > 0 ? (flightSim.aY - flightSim.gravAOffset) : 0,
 				  knotsRatio = 25.714, // Max aY / (14/360)
 				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
-				  headingDegrees = window.flightSim.heliRotation * 360;
+				  headingDegrees = flightSim.heliRotation * 360;
 
 			// Turn Gauge
-		    this.planeGroup.rotation(-window.flightSim.roll);
+		    this.planeGroup.rotation(-flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
 		    // Altimeter Gauge
@@ -655,11 +656,14 @@ class Cockpit {
 			this.altimeterLongNeedle.rotation(altimeterLongNeedleDeg);
 
 			// Attitude Gauge
-			this.attitudeBGGroup.rotation(window.flightSim.roll);
-		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
+			this.attitudeBGGroup.rotation(flightSim.roll);
+		    this.attitudePitchGroup.y(110 + (flightSim.pitch/2.5));
 
 			// Airspeed Gauge
-			this.knotsNeedle.rotation(airspeedNeedleDeg);
+			if (flightSim.aY > flightSim.gravAOffset){
+				// Gravity If Check
+				this.knotsNeedle.rotation(airspeedNeedleDeg);
+			}
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);

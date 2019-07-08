@@ -92,7 +92,7 @@ const heliCam = new THREE.Group(),
 
 heliCam.add(camera);
 heliCam.add(rect);
-heliCam.position.set( 0, 2000, -2000 );
+heliCam.position.set( 0, 2040, -2000 );
 heliCam.name = "heliCam";
 scene.add(heliCam);
 
