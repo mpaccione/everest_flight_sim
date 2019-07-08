@@ -309,8 +309,7 @@ class Helicopter {
 		const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
 			  pitchRads = this.pitch < 0 ? this.getRadians( 150-this.pitch ) : this.getRadians( 150+this.pitch ), // Hypothetically 90-this.pitch, changed for better playability
 			  gravSimY = this.aY/this.weight,
-			  yawRatio = this.yaw/this.maxYaw,
-			  vYOriginal = this.vY;
+			  yawRatio = this.yaw/this.maxYaw;
 
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
@@ -323,25 +322,25 @@ class Helicopter {
 			// Get Higher Degree of the two, use resultant Y Velocity for second equation
 			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
 				// Calc Roll Vector with Trigonometry, 
-				this.vX = Math.abs(gravSimY * Math.cos(rollRads));
-				//this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
-				this.vZ = Math.abs(gravSimY * Math.cos(pitchRads));
-				this.vY = gravSimY - (this.vX + this.vY);
+				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+				this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				// this.vY = gravSimY - (this.vX + this.vY);
 			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = Math.abs(gravSimY * Math.cos(rollRads));
-				// this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
-				this.vZ = Math.abs(gravSimY * Math.cos(pitchRads));
-				this.vY = gravSimY - (this.vX + this.vY);
+				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+				this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				// this.vY = gravSimY - (this.vX + this.vY);
 			}
 		} else if ( this.roll != 0 ) {
 			// Calc Roll Vector with Trigonometry
-			this.vX = gravSimY * Math.cos(rollRads);
+			this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
 			this.vY = gravSimY * Math.sin(rollRads);
 		} else if ( this.pitch != 0 ) {
 			// Calc Pitch Vector with Trigonometry
 			this.vY = gravSimY * Math.sin(pitchRads);
-			this.vZ = gravSimY * Math.cos(pitchRads);
+			this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
 		}
 
 		console.log("updateVelocities");
