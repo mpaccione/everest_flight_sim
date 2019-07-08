@@ -65477,6 +65477,7 @@ class Cockpit {
 		this.drawHeadingGauge();
 
 		this.stage.add(this.instrumentPanelLayer);
+
 	}
 
 	drawGauges( x, y ){
@@ -65866,15 +65867,15 @@ class Cockpit {
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#6ebd6e',
-				angle: 280,
-				rotationDeg: 40
+				angle: 305,
+				rotationDeg: 35
 			  }),
 			  yellowArc = new Konva.Arc({
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#fbeb7b',
-				angle: 40,
-				rotationDeg: 320
+				angle: 55,
+				rotationDeg: 340
 			  });
 
 		// Calculate Text Marks Mathmatically
@@ -65902,14 +65903,15 @@ class Cockpit {
 				  });
 
 			tick.rotation(25.714*(i+1));
-			text.rotation(126);
+			text.rotation(120);
 			airSpeedTickGroup.add(tick);
 			airSpeedTextGroup.add(text);
 		}
 
 		this.knotsNeedle.rotation(-126);
 		arcGroup.rotation(-126);
-		airSpeedTextGroup.rotation(-126);
+		airSpeedTextGroup.rotation(-120);
+		airSpeedTickGroup.rotation(-120);
 
 		arcGroup.add(greenArc);
 		arcGroup.add(yellowArc);
@@ -66060,11 +66062,12 @@ class Cockpit {
 			this.attitudeBGGroup.rotation(flightSim.roll);
 		    this.attitudePitchGroup.y(110 + (flightSim.pitch/2.5));
 
-			// Airspeed Gauge
-			if (flightSim.aY > flightSim.gravAOffset){
-				// Gravity If Check
-				this.knotsNeedle.rotation(airspeedNeedleDeg);
-			}
+			// Airspeed Gauge // Gravity If Check
+			flightSim.aY > flightSim.gravAOffset ?	
+				this.knotsNeedle.rotation(airspeedNeedleDeg) :
+				this.knotsNeedle.rotation(28);
+
+			console.log(airspeedNeedleDeg);
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);
@@ -66115,14 +66118,13 @@ class Helicopter {
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 45;
-		this.maxYaw = 0.4;
+		this.maxYaw = 4;
 		this.maxPitch = 45;
 		this.lookLeft = false;
 		this.lookRight = false;
 		this.lookDown = false;
 		this.landed = false; // False for initial helipad
 		this.start = false; // Boolean used for initial start
-		this.tweening = false; // Overlapping tweens creating decimals instead of integers
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -66133,7 +66135,7 @@ class Helicopter {
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX-0.1 };
+							end = { aX: this.aX-1 };
 
 						this.flightTween(start, end, this, "aX");
 					}
@@ -66149,7 +66151,7 @@ class Helicopter {
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					if (this.aX < this.maxAX) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX+0.1 };
+							end = { aX: this.aX+1 };
 					
 						this.flightTween(start, end, this, "aX");					
 					}
@@ -66197,7 +66199,7 @@ class Helicopter {
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch-2 };
+							end = { pitch: this.pitch-4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}
@@ -66205,7 +66207,7 @@ class Helicopter {
 				case "s":  // Angle Heli Up
 					if (this.pitch < this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch+2 };
+							end = { pitch: this.pitch+4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}				
@@ -66213,7 +66215,7 @@ class Helicopter {
 				case "a": // Roll Heli Left
 					if (this.roll < this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll+2 };
+							end = { roll: this.roll+4 };
 
 						this.flightTween(start, end, this, "roll");
 					}
@@ -66221,7 +66223,7 @@ class Helicopter {
 				case "d": // Roll Heli Right
 					if (this.roll > -this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll-2 };
+							end = { roll: this.roll-4 };
 						
 						this.flightTween(start, end, this, "roll");
 					}
@@ -66229,7 +66231,7 @@ class Helicopter {
 				case "q": // Turn Heli Right
 					if (this.yaw < this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw+0.1 };
+							end = { yaw: this.yaw+1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
@@ -66237,7 +66239,7 @@ class Helicopter {
 				case "e": // Turn Heli Left
 					if (this.yaw > -this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw-0.1 };
+							end = { yaw: this.yaw-1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
@@ -66295,22 +66297,16 @@ class Helicopter {
 	}
 
 	flightTween(start, end, that, propName){
-		if (this.tweening == false) {
+		if (start[propName] % 1 === 0){
 			const flightTween = new TWEEN.Tween( start )
-									 .to( end, 250 )
+									 .to( end, 100 )
 									 .easing( TWEEN.Easing.Quadratic.Out )
 									 .onUpdate( (tween) => {
 										that[propName] = tween[propName];
-									 } )
-									 .onComplete( () => {
-									 	this.tweening = false;
-									 } );
-			this.tweening = true;
-			flightTween.start();
+									 } ).start();
 			console.log(start);
 			console.log(end);
 		}
-
 	}
 
 	quaternionTween(deg, vector, that, camera, time){

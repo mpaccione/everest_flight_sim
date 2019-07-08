@@ -76,6 +76,7 @@ class Cockpit {
 		this.drawHeadingGauge();
 
 		this.stage.add(this.instrumentPanelLayer);
+
 	}
 
 	drawGauges( x, y ){
@@ -465,15 +466,15 @@ class Cockpit {
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#6ebd6e',
-				angle: 280,
-				rotationDeg: 40
+				angle: 305,
+				rotationDeg: 35
 			  }),
 			  yellowArc = new Konva.Arc({
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#fbeb7b',
-				angle: 40,
-				rotationDeg: 320
+				angle: 55,
+				rotationDeg: 340
 			  });
 
 		// Calculate Text Marks Mathmatically
@@ -501,14 +502,15 @@ class Cockpit {
 				  });
 
 			tick.rotation(25.714*(i+1));
-			text.rotation(126);
+			text.rotation(120);
 			airSpeedTickGroup.add(tick);
 			airSpeedTextGroup.add(text);
 		}
 
 		this.knotsNeedle.rotation(-126);
 		arcGroup.rotation(-126);
-		airSpeedTextGroup.rotation(-126);
+		airSpeedTextGroup.rotation(-120);
+		airSpeedTickGroup.rotation(-120);
 
 		arcGroup.add(greenArc);
 		arcGroup.add(yellowArc);
@@ -659,11 +661,12 @@ class Cockpit {
 			this.attitudeBGGroup.rotation(flightSim.roll);
 		    this.attitudePitchGroup.y(110 + (flightSim.pitch/2.5));
 
-			// Airspeed Gauge
-			if (flightSim.aY > flightSim.gravAOffset){
-				// Gravity If Check
-				this.knotsNeedle.rotation(airspeedNeedleDeg);
-			}
+			// Airspeed Gauge // Gravity If Check
+			flightSim.aY > flightSim.gravAOffset ?	
+				this.knotsNeedle.rotation(airspeedNeedleDeg) :
+				this.knotsNeedle.rotation(28);
+
+			console.log(airspeedNeedleDeg);
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);
