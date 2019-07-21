@@ -19,10 +19,10 @@ class Helicopter {
 		this.x = 0;
 		this.y = 0;
 		this.z = 0;
-		this.maxAY = 2000;
-		this.maxAX = 1;
+		this.maxAY = 1600;
+		this.maxAX = 3;
 		this.gravAOffset = 200;
-		this.gravVOffset = 0.15;
+		this.gravVOffset = -0.15;
 		this.aX = 0;
 		this.aY = 0;
 		this.vX = 0;
@@ -32,9 +32,9 @@ class Helicopter {
 		this.roll = 0; // X Axis
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
-		this.maxRoll = 35;
-		this.maxYaw = 1;
-		this.maxPitch = 35;
+		this.maxRoll = 45;
+		this.maxYaw = 4;
+		this.maxPitch = 45;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -44,7 +44,7 @@ class Helicopter {
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX-0.1 };
+							end = { aX: this.aX-1 };
 
 						this.flightTween(start, end, this, "aX");
 					}
@@ -60,7 +60,7 @@ class Helicopter {
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					if (this.aX < this.maxAX) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX+0.1 };
+							end = { aX: this.aX+1 };
 					
 						this.flightTween(start, end, this, "aX");					
 					}
@@ -108,7 +108,7 @@ class Helicopter {
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch-2 };
+							end = { pitch: this.pitch-4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}
@@ -116,7 +116,7 @@ class Helicopter {
 				case "s":  // Angle Heli Up
 					if (this.pitch < this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch+2 };
+							end = { pitch: this.pitch+4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}				
@@ -124,7 +124,7 @@ class Helicopter {
 				case "a": // Roll Heli Left
 					if (this.roll < this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll+2 };
+							end = { roll: this.roll+4 };
 
 						this.flightTween(start, end, this, "roll");
 					}
@@ -132,7 +132,7 @@ class Helicopter {
 				case "d": // Roll Heli Right
 					if (this.roll > -this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll-2 };
+							end = { roll: this.roll-4 };
 						
 						this.flightTween(start, end, this, "roll");
 					}
@@ -140,7 +140,7 @@ class Helicopter {
 				case "q": // Turn Heli Right
 					if (this.yaw < this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw+0.1 };
+							end = { yaw: this.yaw+1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
@@ -148,12 +148,13 @@ class Helicopter {
 				case "e": // Turn Heli Left
 					if (this.yaw > -this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw-0.1 };
+							end = { yaw: this.yaw-1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
-					break;
+					break;			
 			}
+
 		}, false);
 
 	}
@@ -167,34 +168,6 @@ class Helicopter {
 								 } ).start();
 	}
 
-	changePitch(newPitch){
-		this.pitch += newPitch;
-	}
-
-	changeRoll(newRoll){
-		this.roll += newRoll;
-	}
-
-	changeYaw(newYaw){
-		this.yaw += newYaw;
-	}
-
-	changeAccelerationY(newAcceleration){
-		this.aY += newAcceleration;
-	}
-
-	changeAccelerationX(newAcceleration){
-		this.aX += newVelocity;
-	}
-
-	changeVelocityY(newVelocity){
-		this.vY += newVelocity;
-	}
-
-	changeVelocityX(newVelocity){
-		this.vX += newVelocity;
-	}
-
 	updateVelocities(){
 		// Convert Degrees to Radians
 		const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
@@ -205,33 +178,37 @@ class Helicopter {
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Y Velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
-
-		const vYOriginal = this.vY;
-		
-		// X & Z Velocity
-		if ( this.roll != 0 && this.pitch != 0 ) {
-			// Get Higher Degree of the two, use resultant Y Velocity for second equation
-			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
-				// Calc Roll Vector with Trigonometry, 
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
-			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+		// Upward Velocities
+		if (this.aY > this.gravAOffset) {
+			// Initial Y Velocity and Reset XY Velocities
+			this.vY = gravSimY;
+			this.vX = 0;
+			this.vZ = 0;
+			// X & Z Velocity
+			if ( this.roll != 0 && this.pitch != 0 ) {
+				// Get Higher Degree of the two, use resultant Y Velocity for second equation
+				if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+					// Calc Roll Vector with Trigonometry, 
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+					// Calc Pitch Vector with Trigonometry
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				}
+			} else if ( this.roll != 0 ) {
+				// Calc Roll Vector with Trigonometry
+				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+				this.vY = gravSimY * Math.sin(rollRads);
+			} else if ( this.pitch != 0 ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
+				this.vY = gravSimY * Math.sin(pitchRads);
+				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
 			}
-		} else if ( this.roll != 0 ) {
-			// Calc Roll Vector with Trigonometry
-			this.vX = vYOriginal * Math.cos(rollRads);
-			this.vY = vYOriginal * Math.sin(rollRads);
-		} else if ( this.pitch != 0 ) {
-			// Calc Pitch Vector with Trigonometry
-			this.vY = vYOriginal * Math.sin(pitchRads);
-			this.vZ = vYOriginal * Math.cos(pitchRads);
+		} else {
+			this.vY = this.gravVOffset;
 		}
 	}
 
@@ -246,13 +223,9 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
-		// Invert Velocity Based on Roll Value
-		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
-		// Invert Velocity Based on Pitch Value
-		this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
-		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
+		this.heli.position.y += this.vY*multiplier;
+		this.heli.position.x += this.vX*multiplier;
+		this.heli.position.z += this.vZ*multiplier;
 
 		this.x = this.heli.position.x;
 		this.y = this.heli.position.y;
