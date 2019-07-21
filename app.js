@@ -12,13 +12,18 @@ const THREE = require('three'),
 ////////////////
 
 // Globals
-window.flightSim     = {}; // Object For Helicopter Physics 
-window.helipadCoords = []; // Array Of Objects for Helipad Coordinates 
+window.flightSim          = {}; // Object For Helicopter Physics 
+window.helipadCoords      = []; // Array Of Objects for Helipad Coordinates 
+window.collidableMeshList = []; // Cllision Detection Compare List
 
 // View
 const scene = new THREE.Scene(),
 	  camera = new THREE.PerspectiveCamera( 60, window.innerWidth/window.innerHeight, 0.1, 50000 ),
 	  renderer = new THREE.WebGLRenderer();
+
+// Debugging
+window.scene  = scene;
+window.camera = camera;
 
 // Fog
 scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
@@ -30,6 +35,10 @@ const terrain = new Terrain.ProceduralTerrain(),
 	  helipadStart = new Terrain.Helipad( 0, 2000, -2000, "Start", false ),
 	  helipadObjStart = helipadStart.returnHelipadObj(),
 	  helipadObjEnd = helipadEnd.returnHelipadObj();
+
+window.collidableMeshList.push(terrainObj.clone());
+window.collidableMeshList.push(helipadObjStart.clone());
+window.collidableMeshList.push(helipadObjEnd.clone());
 
 scene.add(terrainObj);
 scene.add(helipadObjStart);
@@ -104,15 +113,15 @@ cockpit.animate();
 // Helicopter Audio
 const helicopterAudio = new Audio();
 
-// Debugging
-window.scene  = scene;
-window.camera = camera;
-
+// Append Canvas to DOM
 const canvas  = document.getElementById("three");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor( 0xffffff, 0.8 );
 canvas.appendChild( renderer.domElement );
+
+// Add Collision Detection
+player.startCollisionDetection();
 
 // Animation Loop
 const animate = function () {

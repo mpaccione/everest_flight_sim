@@ -352,13 +352,6 @@ class Helipad {
 			helipadText.name = "helipadText"+this.text;
 			helipad.position.set( 0, 0, 0 )
 			helipadText.position.set( -100, 300, 0 );
-			
-			window.helipadCoords.push( { 
-				x: this.x, 
-				y: this.y, 
-				z: this.z, 
-				text: this.text 
-			} );
 
 			helipadGroup.add( helipad );
 			helipadGroup.add( helipadText );

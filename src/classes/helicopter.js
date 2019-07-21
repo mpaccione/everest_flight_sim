@@ -42,14 +42,6 @@ class Helicopter {
 		this.start       = false;  // Boolean used for initial start
 		this.rayCasters  = [];
 
-		setTimeout(() => {
-			this.createRayCasters(); // Wait for things to load a bit
-		}, 800);
-
-		setInterval(() => {
-			this.collisionDetection(); // Throttling for performance reasons
-		}, 1000);
-
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
 		// WASDQE Keys for Rotations
@@ -340,7 +332,6 @@ class Helicopter {
 		// console.log("vY: "+this.vY);
 		// console.log("vX: "+this.vX);
 		// console.log("vZ: "+this.vZ);
-		console.log(window.flightSim.roll);
 	}
 
 	updateRotation(){
@@ -371,91 +362,49 @@ class Helicopter {
 	}
 
 	collisionDetection(){
+		console.log("collisionDetection()");
+		if (this.rayCasters !== undefined) {
+			for (let i = 0; i < window.collidableMeshList.length; i++) {
+				for (let n = 0; n < this.rayCasters.length; n++) {
+					const collisionResults = this.rayCasters[n].intersectObject( window.collidableMeshList[i], true )
+					// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+					if ( collisionResults.length > 0 ) {
+						this.landed = true;
+						console.log("Collision with vectorLength")
+					}
+				}	
+			}
 
-		console.log("collisionDetection Function")
-		console.log(this.rayCasters);
-
-		for (let i = this.rayCasters.length - 1; i >= 0; i--) {
-			for (let n = window.helipadCoords.length - 1; n >= 0; n--) {
-				const collisionResults = this.rayCasters[i].intersectObject( window.helipadCoords[n], true )
-
-				// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-				if ( collisionResults.length > 0 ) {
-					// this.landed = true;
-					console.log("Collision with vectorLength")
-				}
-			}	
 		}
 
-		// const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
-
-		// for (let i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
-		// 	const localVertex      = playerOrigin.geometry.vertices[i].clone(),
-		// 		  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
-		// 		  directionVector  = globalVertex.sub( playerOrigin.position ),
-		// 		  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() ),
-		// 		  collisionResults = ray.intersectObjects( window.collidableMeshList, true ); // Recursive Boolean for children
-
-		// 	if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-		// 		// this.landed = true;
-		// 		console.log("Collision with vectorLength")
-		// 	}	
-		// }
 	}
 
 	createRayCasters(){
-
-		console.log("createRayCasters");
-
+		console.log("createRayCasters()");
 		const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
 
-		for (var i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
+		for (var i = 0; i < playerOrigin.geometry.vertices.length; i++) {
 			const localVertex      = playerOrigin.geometry.vertices[i].clone(),
 				  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
 				  directionVector  = globalVertex.sub( playerOrigin.position ),
-				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() );
+				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize(), 0, 4 );
 
 			this.rayCasters.push(ray);
 		}
 
 	}
 
-	// collisionDetection(){
-	// 	// prevent helicopter from dropping due to negative acceleration from gravity
-	// 	if (this.start == false) {
-	// 		console.log("0 vY");
-	// 		this.vY = 0;
+	startCollisionDetection(){
+		console.log("startCollisionDetection()");
+		setTimeout(() => {
+			this.createRayCasters(); // Wait for things to load a bit
+		}, 500);
 
-	// 		if (this.aY > this.gravAOffset && this.start == false) {
-	// 			setTimeout(() => {
-	// 				this.start = true;
-	// 			}, 1000);
-	// 		}
+		setInterval(() => {
+			this.collisionDetection(); // Throttling for performance reasons
+		}, 1000);
 
-	// 	} else if (this.aY <= this.gravAOffset && this.start == true) {
-
-	// 		const hCoords = window.helipadCoords;
-
-	// 		for (var i = hCoords.length - 1; i >= 0; i--) {
-	// 			// Compare coordinates and radius
-	// 			if ( this.x <= hCoords[i].x + 60 && this.x >= hCoords[i].x - 60 ) {
-	// 				if ( this.z <= hCoords[i].z + 60 && this.z >= hCoords[i].z - 60 ) {
-	// 					if ( this.y <= hCoords[i].y + 40 && this.y >= hCoords[i].y - 5 ) {
-	// 						console.log( `Landed at ${ hCoords[i].text }` );
-	// 						// if helicopter has already lifted off initial helipad
-	// 						this.vY = 0;
-	// 						this.vX = 0;
-	// 						this.vZ = 0;
-	// 						this.aY = 0;
-	// 						this.aX = 0;
-	// 						this.landed = true;
-	// 					}
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-
-	// }
+	}
 
 	getRadians( deg ){
 		return deg * Math.PI / 180;
@@ -486,7 +435,8 @@ class Helicopter {
 			lookRight: 	  this.lookRight,
 			lookDown: 	  this.lookDown,
 			landed: 	  this.landed,
-			start: 		  this.start
+			start: 		  this.start,
+			rayCasters:   this.rayCasters 
 		}
 	}
 
