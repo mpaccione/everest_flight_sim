@@ -666,8 +666,6 @@ class Cockpit {
 				this.knotsNeedle.rotation(airspeedNeedleDeg) :
 				this.knotsNeedle.rotation(28);
 
-			console.log(airspeedNeedleDeg);
-
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);
 
