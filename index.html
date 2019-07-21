@@ -6,9 +6,23 @@
 	<body>
 		<div id="three"></div>
 		<div id="cockpit">
-<!-- 			<div id="hFrame"></div>
- -->			<!-- <div id="vFrame"></div> -->
-			<div id="instrument-panel"></div>
+			<div id="lWindow" class="window">
+				<!-- <div class="tFrame frame"></div> -->
+				<div class="rFrame frame"></div>
+				<!-- <div class="bFrame frame"></div> -->
+				<div class="lFrame frame"></div>
+			</div>
+			<!-- <div id="hFrame"></div> -->
+			<div id="cWindow" class="window">			
+				<div id="vFrame" class="frame"></div>
+				<div id="instrument-panel"></div>
+			</div>
+			<div id="rWindow" class="window">
+				<!-- <div class="tFrame frame"></div> -->
+				<div class="rFrame frame"></div>
+				<!-- <div class="bFrame frame"></div> -->
+				<div class="lFrame frame"></div>
+			</div>
 		</div>
 	</body>
 </html>
@@ -25,6 +39,7 @@
 	#three canvas {
 		position: absolute;
 	}
+	/* Debugger Simulation MipMap Orientation Canvas */
 	#three-mini {
 		position: fixed;
 		z-index: 9;
@@ -36,6 +51,7 @@
 		height: 200px;
 		width: 200px;
 	}
+	/* Cockpit */
 	#cockpit {
 		position: fixed;
 		z-index: 9;
@@ -55,34 +71,66 @@
 		background-repeat: no-repeat;
 		background-size: contain;
 	}
-/*	#instrument-canvas {
-		position: relative;
-		width: 100%;
+	/* Windows */
+	.window {
+		position: absolute;
 		height: 100%;
-		z-index: 999;
-	}*/
-	#hFrame,
-	#vFrame {
+		width: 100%;
+		top: 0;
+	}
+	#lWindow {
+		left: -100%;
+	}
+	#cWindow {
+		left: 0;
+	}
+	#rWindow {
+		left: 100%;
+	}
+	/* Frames */
+	.frame {
+		position: absolute;
 		background-repeat: repeat;
 		background-size: 100px;
 		background-image: url("./src/img/gunmetal-pattern.jpg");
+		background-color: #30373f;
+	}
+	.lFrame,
+	.rFrame {
+		width: 50px;
+		height: 100%;
+		top: 0;
+	}
+	.tFrame,
+	.bFrame {
+		width: 100%;
+		height: 50px;
+		left: 0;
+	}
+	.lFrame {
+		left: calc(0 + 50px);
+	}
+	.rFrame {
+		left: calc(100% - 50px);
+	}
+	.tFrame {
+		top: 0;
+	}
+	.bFrame {
+		top: calc(100% - 50px);
 	}
 	#hFrame {
-		position: absolute;
 		top: calc(100% - 50px);
 		left: 0;
 		height: 50px;
 		width: 100%;
-		background-color: #30373f;
 	}
 	#vFrame {
-		position: absolute;
 		top: 0px;
 		height: 100%;
 		width: 50px;
 		left: calc(50% - 25px);
-		background-color: #30373f;
-	}
+	} 
 </style>
 
 <script src="dist/bundle.js"></script>

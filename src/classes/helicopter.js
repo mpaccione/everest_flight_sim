@@ -13,34 +13,34 @@ const THREE = require('THREE'),
 class Helicopter {
 
 	constructor(heli = undefined, model = undefined, weight = 14000){
-		this.heli = heli;
-		this.model = model;
-		this.weight = weight;
-		this.x = 0;
-		this.y = 0;
-		this.z = 0;
-		this.maxAY = 1600;
-		this.maxAX = 3;
+		this.heli        = heli;
+		this.model       = model;
+		this.weight      = weight;
+		this.x           = 0;
+		this.y           = 0;
+		this.z           = 0;
+		this.maxAY       = 1600;
+		this.maxAX       = 3;
 		this.gravAOffset = 200;
 		this.gravVOffset = -0.15;
-		this.aX = 0;
-		this.aY = 0;
-		this.vX = 0;
-		this.vY = 0;
-		this.vZ = 0;
-		this.vR = 0;
-		this.roll = 0; // X Axis
-		this.yaw = 0; // Y Axiz
-		this.pitch = 0; // Z Axis
-		this.maxRoll = 45;
-		this.maxYaw = 4;
-		this.maxPitch = 45;
-		this.lookLeft = false;
-		this.lookRight = false;
-		this.lookDown = false;
-		this.landed = false; // False for initial helipad
-		this.start = false; // Boolean used for initial start
-		this.rayCasters = [];
+		this.aX          = 0;
+		this.aY          = 0;
+		this.vX          = 0;
+		this.vY          = 0;
+		this.vZ          = 0;
+		this.vR          = 0;
+		this.roll        = 0;  // X Axis
+		this.yaw         = 0;   // Y Axiz
+		this.pitch       = 0; // Z Axis
+		this.maxRoll     = 45;
+		this.maxYaw      = 4;
+		this.maxPitch    = 45;
+		this.lookLeft    = false;
+		this.lookRight   = false;
+		this.lookDown    = false;
+		this.landed      = false; // False for initial helipad
+		this.start       = false;  // Boolean used for initial start
+		this.rayCasters  = [];
 
 		setTimeout(() => {
 			this.createRayCasters(); // Wait for things to load a bit
@@ -227,6 +227,7 @@ class Helicopter {
 									 .to( end, 200 )
 									 .easing( TWEEN.Easing.Quadratic.Out )
 									 .onUpdate( (tween) => {
+									 	console.log(`flightTween: ${that[propName]}`);
 										that[propName] = tween[propName];
 									 } ).start();
 			console.log(start);
@@ -241,7 +242,7 @@ class Helicopter {
 								.to({ t: 1 }, time*20 )
 								.easing( TWEEN.Easing.Quadratic.Out )
 								.onUpdate( (tween) => {
-									// console.log(tween.t);
+									console.log(`quaternionTween: ${tween.t}`);
 									sceneCamera.quaternion.slerp( slerpTarget, tween.t );
 								 } ).start();
 	}
@@ -252,6 +253,7 @@ class Helicopter {
 								.to({ rotation: that.getRadians(deg) }, time )
 								.easing( TWEEN.Easing.Quadratic.Out )
 								.onUpdate( (tween) => {
+									console.log(`cameraTween: ${tween.rotation}`);
 									sceneCamera.rotation.y = tween.rotation;
 								 } )
 								.onComplete( () => {
@@ -265,6 +267,7 @@ class Helicopter {
 								.to({ translation: translateX }, time )
 								.easing( TWEEN.Easing.Quadratic.Out )
 								.onUpdate( (tween) => {
+									console.log(`cockpitRotationTween: ${tween.translation}`);
 									cockpit.style.left = tween.translation+"%";
 								 } ).start()
 	}
@@ -288,34 +291,6 @@ class Helicopter {
 					// 				console.log(tween.translation+"%");
 					// 				cockpit.style.left = tween.translation+"%";
 					// 			 } ).start()
-	}
-
-	changePitch(newPitch){
-		this.pitch += newPitch;
-	}
-
-	changeRoll(newRoll){
-		this.roll += newRoll;
-	}
-
-	changeYaw(newYaw){
-		this.yaw += newYaw;
-	}
-
-	changeAccelerationY(newAcceleration){
-		this.aY += newAcceleration;
-	}
-
-	changeAccelerationX(newAcceleration){
-		this.aX += newVelocity;
-	}
-
-	changeVelocityY(newVelocity){
-		this.vY += newVelocity;
-	}
-
-	changeVelocityX(newVelocity){
-		this.vX += newVelocity;
 	}
 
 	updateVelocities(){
@@ -400,9 +375,9 @@ class Helicopter {
 		console.log("collisionDetection Function")
 		console.log(this.rayCasters);
 
-		for (var i = this.rayCasters.length - 1; i >= 0; i--) {
-			for (var n = window.collidableMeshList.length - 1; n >= 0; n--) {
-				const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[n], true )
+		for (let i = this.rayCasters.length - 1; i >= 0; i--) {
+			for (let n = window.helipadCoords.length - 1; n >= 0; n--) {
+				const collisionResults = this.rayCasters[i].intersectObject( window.helipadCoords[n], true )
 
 				// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
 				if ( collisionResults.length > 0 ) {
@@ -489,29 +464,29 @@ class Helicopter {
 	updateState(){
 		// Update State
 		window.flightSim = {
-			x: this.x,
-			y: this.y,
-			z: this.z,
-			aX: this.aX,
-			aY: this.aY,
-			maxAX: this.maxAX,
-			maxAY: this.maxAY,
-			gravAOffset: this.gravAOffset,
-			vX: this.vX,
-			vY: this.vY,
-			vZ: this.vZ,
-			roll: this.roll,
-			pitch: this.pitch,
-			yaw: this.yaw,
-			maxRoll: this.maxRoll,
-			maxPitch: this.maxPitch,
-			maxYaw: this.maxYaw,
+			x:            this.x,
+			y:            this.y,
+			z:            this.z,
+			aX:           this.aX,
+			aY:           this.aY,
+			maxAX:        this.maxAX,
+			maxAY:        this.maxAY,
+			gravAOffset:  this.gravAOffset,
+			vX:           this.vX,
+			vY:           this.vY,
+			vZ:           this.vZ,
+			roll:         this.roll,
+			pitch:        this.pitch,
+			yaw:   		  this.yaw,
+			maxRoll: 	  this.maxRoll,
+			maxPitch: 	  this.maxPitch,
+			maxYaw: 	  this.maxYaw,
 			heliRotation: this.heli.rotation.y,
-			lookLeft: this.lookLeft,
-			lookRight: this.lookRight,
-			lookDown: this.lookDown,
-			landed: this.landed,
-			start: this.start
+			lookLeft: 	  this.lookLeft,
+			lookRight: 	  this.lookRight,
+			lookDown: 	  this.lookDown,
+			landed: 	  this.landed,
+			start: 		  this.start
 		}
 	}
 

@@ -12,7 +12,8 @@ const THREE = require('three'),
 ////////////////
 
 // Globals
-window.helipadCoords = []; // Array Of Objects for Helipad Coordinates
+window.flightSim     = {}; // Object For Helicopter Physics 
+window.helipadCoords = []; // Array Of Objects for Helipad Coordinates 
 
 // View
 const scene = new THREE.Scene(),
@@ -51,17 +52,17 @@ loader.setPath("./src/skybox/ely_peaks/");
 
 for ( let i = 0; i < 6; i++ ){
     const material = new THREE.MeshBasicMaterial({ 
-    	map: loader.load( imgArray[i] ), 
-    	side: THREE.BackSide,
-    	fog: false
-    });
+				    	map: loader.load( imgArray[i] ), 
+				    	side: THREE.BackSide,
+				    	fog: false
+				    });
 
     materialArray.push( material );
 }
 
 const skyMat = new THREE.MeshFaceMaterial( materialArray ),
       skyGeo = new THREE.BoxGeometry( 40000, 40000, 40000, 1, 1, 1),
-      sky = new THREE.Mesh( skyGeo, skyMat );
+      sky    = new THREE.Mesh( skyGeo, skyMat );
 
 sky.name = "skybox";
 sky.position.set( 0, 5000, 0 );
@@ -78,7 +79,7 @@ scene.add(ambientLight)
 // Rect to Simulate Helicopter
 const geometry = new THREE.BoxGeometry( 2, 1, 4 ),
 	  material = new THREE.MeshBasicMaterial(),
-	  rect = new THREE.Mesh( geometry, material );
+	  rect     = new THREE.Mesh( geometry, material );
 
 rect.position.x = 0;
 rect.position.y = terrain.returnCameraStartPosY();
@@ -88,7 +89,7 @@ rect.name = "heli";
 
 // Link Camera and Helicopter
 const heliCam = new THREE.Group(),
-	  player = new Helicopter(heliCam, "OH-58 Kiowa", 14000);
+	  player  = new Helicopter(heliCam, "OH-58 Kiowa", 14000);
 
 heliCam.add(camera);
 heliCam.add(rect);
@@ -104,10 +105,10 @@ cockpit.animate();
 const helicopterAudio = new Audio();
 
 // Debugging
-window.scene = scene;
+window.scene  = scene;
 window.camera = camera;
 
-const canvas = document.getElementById("three");
+const canvas  = document.getElementById("three");
 
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor( 0xffffff, 0.8 );
