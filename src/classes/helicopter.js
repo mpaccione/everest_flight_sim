@@ -22,7 +22,7 @@ class Helicopter {
 		this.maxAY = 1600;
 		this.maxAX = 3;
 		this.gravAOffset = 200;
-		this.gravVOffset = 0.15;
+		this.gravVOffset = -0.15;
 		this.aX = 0;
 		this.aY = 0;
 		this.vX = 0;
@@ -33,8 +33,22 @@ class Helicopter {
 		this.yaw = 0; // Y Axiz
 		this.pitch = 0; // Z Axis
 		this.maxRoll = 45;
-		this.maxYaw = 0.4;
+		this.maxYaw = 4;
 		this.maxPitch = 45;
+		this.lookLeft = false;
+		this.lookRight = false;
+		this.lookDown = false;
+		this.landed = false; // False for initial helipad
+		this.start = false; // Boolean used for initial start
+		this.rayCasters = [];
+
+		setTimeout(() => {
+			this.createRayCasters(); // Wait for things to load a bit
+		}, 800);
+
+		setInterval(() => {
+			this.collisionDetection(); // Throttling for performance reasons
+		}, 1000);
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -45,7 +59,7 @@ class Helicopter {
 				case "ArrowLeft": // Tail Rotor Thrust Negative
 					if (this.aX > 0) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX-0.1 };
+							end = { aX: this.aX-1 };
 
 						this.flightTween(start, end, this, "aX");
 					}
@@ -61,7 +75,7 @@ class Helicopter {
 				case "ArrowRight": // Tail Rotor Thrust Positive
 					if (this.aX < this.maxAX) {
 						let start = { aX: this.aX },
-							end = { aX: this.aX+0.1 };
+							end = { aX: this.aX+1 };
 					
 						this.flightTween(start, end, this, "aX");					
 					}
@@ -114,7 +128,7 @@ class Helicopter {
 				case "w":  // Angle Heli Down
 					if (this.pitch > -this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch-2 };
+							end = { pitch: this.pitch-4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}
@@ -122,7 +136,7 @@ class Helicopter {
 				case "s":  // Angle Heli Up
 					if (this.pitch < this.maxPitch) {
 						let start = { pitch: this.pitch },
-							end = { pitch: this.pitch+2 };
+							end = { pitch: this.pitch+4 };
 
 						this.flightTween(start, end, this, "pitch");
 					}				
@@ -130,7 +144,7 @@ class Helicopter {
 				case "a": // Roll Heli Left
 					if (this.roll < this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll+2 };
+							end = { roll: this.roll+4 };
 
 						this.flightTween(start, end, this, "roll");
 					}
@@ -138,7 +152,7 @@ class Helicopter {
 				case "d": // Roll Heli Right
 					if (this.roll > -this.maxRoll) {
 						let start = { roll: this.roll },
-							end = { roll: this.roll-2 };
+							end = { roll: this.roll-4 };
 						
 						this.flightTween(start, end, this, "roll");
 					}
@@ -146,7 +160,7 @@ class Helicopter {
 				case "q": // Turn Heli Right
 					if (this.yaw < this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw+0.1 };
+							end = { yaw: this.yaw+1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
@@ -154,23 +168,131 @@ class Helicopter {
 				case "e": // Turn Heli Left
 					if (this.yaw > -this.maxYaw) {
 						let start = { yaw: this.yaw },
-							end = { yaw: this.yaw-0.1 };
+							end = { yaw: this.yaw-1 };
 
 						this.flightTween(start, end, this, "yaw");
 					}
 					break;
+				case "z": // Look Left and Down
+					if (this.lookLeft == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameIn";
+					} else if (this.lookRight == false && this.lookLeft == false) {
+						// Look Left
+						this.lookLeft = true;						
+						this.quaternionTween(90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(100, 1000);
+					} else if (this.lookRight == true) {
+						// Look Center
+						this.lookRight = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookRight == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameOut";
+					}
+					break;
+				case "x": // Look Right and Down
+					if (this.lookRight == true && this.lookDown == false) {
+						// Look Down
+						this.lookDown = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("rWindow").classList = "zoomFrameIn";						
+					}
+					else if (this.lookLeft == true) {
+						// Look Center
+						this.lookLeft = false;						
+						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(0, 1000);
+					} else if (this.lookLeft == false && this.lookRight == false) {
+						// Look Right
+						this.lookRight = true;						
+						this.quaternionTween(-90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
+						this.cockpitRotationTween(-100, 1000);
+					} else if (this.lookLeft == true && this.lookDown == true) {
+						// Look Up
+						this.lookDown = false;						
+						this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
+						document.getElementById("lWindow").classList = "zoomFrameOut";					
+					}
+					break;					
 			}
 		}, false);
+
 
 	}
 
 	flightTween(start, end, that, propName){
-		const flightTween = new TWEEN.Tween( start )
-								 .to( end, 500 )
-								 .easing( TWEEN.Easing.Quadratic.Out )
-								 .onUpdate( (tween) => {
-									that[propName] = tween[propName];
+		if (start[propName] % 1 === 0){
+			const flightTween = new TWEEN.Tween( start )
+									 .to( end, 200 )
+									 .easing( TWEEN.Easing.Quadratic.Out )
+									 .onUpdate( (tween) => {
+										that[propName] = tween[propName];
+									 } ).start();
+			console.log(start);
+			console.log(end);
+		}
+	}
+
+	quaternionTween(deg, vector, that, camera, time){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  slerpTarget = new THREE.Quaternion().setFromAxisAngle( vector, that.getRadians(deg) ),
+			  cameraTween = new TWEEN.Tween({ t: 0 })
+								.to({ t: 1 }, time*20 )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									// console.log(tween.t);
+									sceneCamera.quaternion.slerp( slerpTarget, tween.t );
 								 } ).start();
+	}
+
+	cameraTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.y })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.y = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+	}
+
+	cockpitRotationTween(translateX, time){
+		const cockpit = document.getElementById("cockpit"),
+			  cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+								.to({ translation: translateX }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									cockpit.style.left = tween.translation+"%";
+								 } ).start()
+	}
+
+	cockpitZoomCameraDownTween(deg, that, camera, time, callback){
+		const sceneCamera = window.scene.getObjectByName(camera),
+			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.z })
+								.to({ rotation: that.getRadians(deg) }, time )
+								.easing( TWEEN.Easing.Quadratic.Out )
+								.onUpdate( (tween) => {
+									sceneCamera.rotation.z = tween.rotation;
+								 } )
+								.onComplete( () => {
+									callback();
+								}).start();
+			  // cockpit = document.getElementById("cockpit"),
+			  // cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
+					// 			.to({ translation: translateX }, time )
+					// 			.easing( TWEEN.Easing.Quadratic.Out )
+					// 			.onUpdate( (tween) => {
+					// 				console.log(tween.translation+"%");
+					// 				cockpit.style.left = tween.translation+"%";
+					// 			 } ).start()
 	}
 
 	changePitch(newPitch){
@@ -211,34 +333,44 @@ class Helicopter {
 		// Rotational Velocity
 		this.vR = this.aX * yawRatio;
 
-		// Y Velocity from accel & gravity
-		this.vY = this.aY <= this.gravAOffset ? gravSimY - this.gravVOffset : gravSimY;
-
-		const vYOriginal = this.vY;
-		
-		// X & Z Velocity
-		if ( this.roll != 0 && this.pitch != 0 ) {
-			// Get Higher Degree of the two, use resultant Y Velocity for second equation
-			if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
-				// Calc Roll Vector with Trigonometry, 
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(rollRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
-			} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+		// Upward Velocities
+		if (this.aY > this.gravAOffset) {
+			// Initial Y Velocity and Reset XY Velocities
+			this.vY = gravSimY;
+			this.vX = 0;
+			this.vZ = 0;
+			// X & Z Velocity
+			if ( this.roll != 0 && this.pitch != 0 ) {
+				// Get Higher Degree of the two, use resultant Y Velocity for second equation
+				if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+					// Calc Roll Vector with Trigonometry, 
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+					// Calc Pitch Vector with Trigonometry
+					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+					this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+				}
+			} else if ( this.roll != 0 ) {
+				// Calc Roll Vector with Trigonometry
+				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+				this.vY = gravSimY * Math.sin(rollRads);
+			} else if ( this.pitch != 0 ) {
 				// Calc Pitch Vector with Trigonometry
-				this.vX = Math.abs(vYOriginal * Math.cos(rollRads));
-				this.vY = Math.abs(vYOriginal * Math.sin(pitchRads));
-				this.vZ = Math.abs(vYOriginal * Math.cos(pitchRads));
+				this.vY = gravSimY * Math.sin(pitchRads);
+				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
 			}
-		} else if ( this.roll != 0 ) {
-			// Calc Roll Vector with Trigonometry
-			this.vX = vYOriginal * Math.cos(rollRads);
-			this.vY = vYOriginal * Math.sin(rollRads);
-		} else if ( this.pitch != 0 ) {
-			// Calc Pitch Vector with Trigonometry
-			this.vY = vYOriginal * Math.sin(pitchRads);
-			this.vZ = vYOriginal * Math.cos(pitchRads);
+		} else {
+			this.vY = this.gravVOffset;
 		}
+
+		// console.log("updateVelocities");
+		// console.log("vY: "+this.vY);
+		// console.log("vX: "+this.vX);
+		// console.log("vZ: "+this.vZ);
+		console.log(window.flightSim.roll);
 	}
 
 	updateRotation(){
@@ -252,12 +384,15 @@ class Helicopter {
 		// Velocity Multiplier - Scaling speeds to different size landscapes
 		const multiplier = 30;
 		// Arcade Style & Translate Method
-		this.y <= 0 && this.vY <= 0 ? // Ground Check Factoring 0 Level with Negative Y Velocity
-			this.heli.position.y += 0 : this.heli.position.y += this.vY*multiplier;
+		// this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
+			// this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
+		this.heli.position.y += this.vY*multiplier;
 		// Invert Velocity Based on Roll Value
-		this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
+		this.heli.position.x += this.vX*multiplier;
+		//this.heli.position.x += this.roll > 0 ? Math.abs(this.vX*multiplier)*-1 : Math.abs(this.vX*multiplier);
 		// Invert Velocity Based on Pitch Value
-		this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
+		this.heli.position.z += this.vZ*multiplier;
+		//this.heli.position.z += this.pitch > 0 ? Math.abs(this.vZ*multiplier) : Math.abs(this.vZ*multiplier)*-1;
 		// Need to add code to fix falling so it is relative to the ground and not the vectors of the helicopter
 
 		this.x = this.heli.position.x;
@@ -265,7 +400,94 @@ class Helicopter {
 		this.z = this.heli.position.z;
 	}
 
-	getRadians(deg){
+	collisionDetection(){
+
+		console.log("collisionDetection Function")
+		console.log(this.rayCasters);
+
+		for (var i = this.rayCasters.length - 1; i >= 0; i--) {
+			for (var n = window.collidableMeshList.length - 1; n >= 0; n--) {
+				const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[n], true )
+
+				// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+				if ( collisionResults.length > 0 ) {
+					// this.landed = true;
+					console.log("Collision with vectorLength")
+				}
+			}	
+		}
+
+		// const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
+
+		// for (let i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
+		// 	const localVertex      = playerOrigin.geometry.vertices[i].clone(),
+		// 		  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
+		// 		  directionVector  = globalVertex.sub( playerOrigin.position ),
+		// 		  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() ),
+		// 		  collisionResults = ray.intersectObjects( window.collidableMeshList, true ); // Recursive Boolean for children
+
+		// 	if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+		// 		// this.landed = true;
+		// 		console.log("Collision with vectorLength")
+		// 	}	
+		// }
+	}
+
+	createRayCasters(){
+
+		console.log("createRayCasters");
+
+		const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
+
+		for (var i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
+			const localVertex      = playerOrigin.geometry.vertices[i].clone(),
+				  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
+				  directionVector  = globalVertex.sub( playerOrigin.position ),
+				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() );
+
+			this.rayCasters.push(ray);
+		}
+
+	}
+
+	// collisionDetection(){
+	// 	// prevent helicopter from dropping due to negative acceleration from gravity
+	// 	if (this.start == false) {
+	// 		console.log("0 vY");
+	// 		this.vY = 0;
+
+	// 		if (this.aY > this.gravAOffset && this.start == false) {
+	// 			setTimeout(() => {
+	// 				this.start = true;
+	// 			}, 1000);
+	// 		}
+
+	// 	} else if (this.aY <= this.gravAOffset && this.start == true) {
+
+	// 		const hCoords = window.helipadCoords;
+
+	// 		for (var i = hCoords.length - 1; i >= 0; i--) {
+	// 			// Compare coordinates and radius
+	// 			if ( this.x <= hCoords[i].x + 60 && this.x >= hCoords[i].x - 60 ) {
+	// 				if ( this.z <= hCoords[i].z + 60 && this.z >= hCoords[i].z - 60 ) {
+	// 					if ( this.y <= hCoords[i].y + 40 && this.y >= hCoords[i].y - 5 ) {
+	// 						console.log( `Landed at ${ hCoords[i].text }` );
+	// 						// if helicopter has already lifted off initial helipad
+	// 						this.vY = 0;
+	// 						this.vX = 0;
+	// 						this.vZ = 0;
+	// 						this.aY = 0;
+	// 						this.aX = 0;
+	// 						this.landed = true;
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+
+	// }
+
+	getRadians( deg ){
 		return deg * Math.PI / 180;
 	}
 
@@ -289,15 +511,22 @@ class Helicopter {
 			maxRoll: this.maxRoll,
 			maxPitch: this.maxPitch,
 			maxYaw: this.maxYaw,
-			heliRotation: this.heli.rotation.y
+			heliRotation: this.heli.rotation.y,
+			lookLeft: this.lookLeft,
+			lookRight: this.lookRight,
+			lookDown: this.lookDown,
+			landed: this.landed,
+			start: this.start
 		}
 	}
 
 	update(){
-		this.updateVelocities();
-		this.updateRotation();
-		this.updatePosition();
-		this.updateState();
+		if ( this.landed == false ) {
+			this.updateRotation();
+			this.updatePosition();
+			this.updateState();
+			this.updateVelocities();
+		}
 		TWEEN.update();
 	}
 

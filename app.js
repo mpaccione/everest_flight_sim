@@ -1,15 +1,18 @@
 // Imports
-const THREE = require('three');
-const GLTFLoader = require('three-gltf-loader');
-const OrbitControls = require('three-orbit-controls')(THREE);
-const Helicopter = require('./src/classes/helicopter');
-const Terrain = require('./src/classes/terrain');
-const Cockpit = require('./src/classes/cockpit');
-const Audio = require('./src/classes/audio');
+const THREE = require('three'),
+	  GLTFLoader = require('three-gltf-loader'),
+	  OrbitControls = require('three-orbit-controls')(THREE),
+	  Helicopter = require('./src/classes/helicopter'),
+	  Terrain = require('./src/classes/terrain'),
+	  Cockpit = require('./src/classes/cockpit'),
+	  Audio = require('./src/classes/audio');
 
 ////////////////
 // Main Scene //
 ////////////////
+
+// Globals
+window.helipadCoords = []; // Array Of Objects for Helipad Coordinates
 
 // View
 const scene = new THREE.Scene(),
@@ -21,9 +24,15 @@ scene.fog = new THREE.Fog( 0xf9fbff, 500, 10000 );
 
 // Add Terrain
 const terrain = new Terrain.ProceduralTerrain(),
-	  terrainObj = terrain.returnTerrainObj();
+	  terrainObj = terrain.returnTerrainObj(),
+	  helipadEnd = new Terrain.Helipad( 0, 1200, -3600, "Finish", true ),
+	  helipadStart = new Terrain.Helipad( 0, 2000, -2000, "Start", false ),
+	  helipadObjStart = helipadStart.returnHelipadObj(),
+	  helipadObjEnd = helipadEnd.returnHelipadObj();
 
 scene.add(terrainObj);
+scene.add(helipadObjStart);
+scene.add(helipadObjEnd);
 
 // Add Clouds
 for (var i = 10; i >= 0; i--) {
@@ -83,9 +92,7 @@ const heliCam = new THREE.Group(),
 
 heliCam.add(camera);
 heliCam.add(rect);
-heliCam.position.x = 0;
-heliCam.position.y = terrain.returnCameraStartPosY();
-heliCam.position.z = 0;
+heliCam.position.set( 0, 2040, -2000 );
 heliCam.name = "heliCam";
 scene.add(heliCam);
 

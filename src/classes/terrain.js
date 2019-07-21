@@ -311,7 +311,68 @@ class ProceduralTerrain extends Terrain {
 
 }
 
+class Helipad {
+
+	constructor( x, y, z, text = false, enabled = true, radiusTop = 120, radiusBottom = 120, radialSegments = 32, heightSegments = 20 ){
+		this.x = x;
+		this.y = y;
+		this.z = z;
+		this.radiusTop = radiusTop;
+		this.radiusBottom = radiusBottom;
+		this.radialSegments = radialSegments;
+		this.heightSegments = heightSegments;
+		this.text = text;
+	}
+
+	returnHelipadObj(){
+		const fontLoader = new THREE.FontLoader(),
+			  helipadGroup = new THREE.Group();
+
+		fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+			const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+				  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+				  helipadMatArr = [
+				  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+				  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+				  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+				  ],
+				  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
+				  helipadTextGeo = new THREE.TextGeometry( this.text, {
+					font: font,
+					size: 80,
+					height: 5,
+					curveSegments: 12,
+					bevelEnabled: false
+				  } ),
+				  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
+				  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
+				  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+
+			helipad.name = "helipad";
+			helipadText.name = "helipadText"+this.text;
+			helipad.position.set( 0, 0, 0 )
+			helipadText.position.set( -100, 300, 0 );
+			
+			window.helipadCoords.push( { 
+				x: this.x, 
+				y: this.y, 
+				z: this.z, 
+				text: this.text 
+			} );
+
+			helipadGroup.add( helipad );
+			helipadGroup.add( helipadText );
+			helipadGroup.position.set( this.x, this.y, this.z );
+			helipadGroup.name = "helipad"+this.text;
+		})
+
+		return helipadGroup;
+	}
+
+}
+
 
 module.exports.Clouds = Clouds;
 module.exports.BasicTerrain = Terrain;
 module.exports.ProceduralTerrain = ProceduralTerrain;
+module.exports.Helipad = Helipad;

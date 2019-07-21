@@ -76,6 +76,7 @@ class Cockpit {
 		this.drawHeadingGauge();
 
 		this.stage.add(this.instrumentPanelLayer);
+
 	}
 
 	drawGauges( x, y ){
@@ -465,15 +466,15 @@ class Cockpit {
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#6ebd6e',
-				angle: 280,
-				rotationDeg: 40
+				angle: 305,
+				rotationDeg: 35
 			  }),
 			  yellowArc = new Konva.Arc({
 				innerRadius: 40,
 				outerRadius: 43,
 				fill: '#fbeb7b',
-				angle: 40,
-				rotationDeg: 320
+				angle: 55,
+				rotationDeg: 340
 			  });
 
 		// Calculate Text Marks Mathmatically
@@ -501,14 +502,15 @@ class Cockpit {
 				  });
 
 			tick.rotation(25.714*(i+1));
-			text.rotation(126);
+			text.rotation(120);
 			airSpeedTickGroup.add(tick);
 			airSpeedTextGroup.add(text);
 		}
 
 		this.knotsNeedle.rotation(-126);
 		arcGroup.rotation(-126);
-		airSpeedTextGroup.rotation(-126);
+		airSpeedTextGroup.rotation(-120);
+		airSpeedTickGroup.rotation(-120);
 
 		arcGroup.add(greenArc);
 		arcGroup.add(yellowArc);
@@ -637,17 +639,18 @@ class Cockpit {
 
 	animate(){
 		const gaugeAnimation = new Konva.Animation( (frame) => {
-		    const yawSum = window.flightSim.yaw * (20/window.flightSim.maxYaw),
-		    	  altitude = window.flightSim.y,
+		    const flightSim = window.flightSim,
+		    	  yawSum = flightSim.yaw * (20/flightSim.maxYaw),
+		    	  altitude = flightSim.y,
 				  altimeterShortNeedleDeg = ((altitude / 10000) * 36) + 36, // + 36 Bug Fix for proper angle
 				  altimeterLongNeedleDeg = (altitude / 1000) * 36,
-				  aY = (window.flightSim.aY - window.flightSim.gravAOffset) > 0 ? (window.flightSim.aY - window.flightSim.gravAOffset) : 0,
+				  aY = (flightSim.aY - flightSim.gravAOffset) > 0 ? (flightSim.aY - flightSim.gravAOffset) : 0,
 				  knotsRatio = 25.714, // Max aY / (14/360)
 				  airspeedNeedleDeg = ((aY/100) * knotsRatio) + knotsRatio, // + Knots Ratio Bug Fix for proper angle
-				  headingDegrees = window.flightSim.heliRotation * 360;
+				  headingDegrees = flightSim.heliRotation * 360;
 
 			// Turn Gauge
-		    this.planeGroup.rotation(-window.flightSim.roll);
+		    this.planeGroup.rotation(-flightSim.roll);
 		    this.yawYBar.x(29.5 + -yawSum); 
 
 		    // Altimeter Gauge
@@ -655,11 +658,13 @@ class Cockpit {
 			this.altimeterLongNeedle.rotation(altimeterLongNeedleDeg);
 
 			// Attitude Gauge
-			this.attitudeBGGroup.rotation(window.flightSim.roll);
-		    this.attitudePitchGroup.y(110 + (window.flightSim.pitch/2.5));
+			this.attitudeBGGroup.rotation(flightSim.roll);
+		    this.attitudePitchGroup.y(110 + (flightSim.pitch/2.5));
 
-			// Airspeed Gauge
-			this.knotsNeedle.rotation(airspeedNeedleDeg);
+			// Airspeed Gauge // Gravity If Check
+			flightSim.aY > flightSim.gravAOffset ?	
+				this.knotsNeedle.rotation(airspeedNeedleDeg) :
+				this.knotsNeedle.rotation(28);
 
 			// Heading Gauge
 			this.headingImgGroup.rotation(-headingDegrees);
