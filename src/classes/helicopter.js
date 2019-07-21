@@ -218,6 +218,7 @@ class Helicopter {
 			}
 		}, false);
 
+
 	}
 
 	flightTween(start, end, that, propName){
