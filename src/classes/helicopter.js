@@ -41,6 +41,8 @@ class Helicopter {
 		this.landed      = false; // False for initial helipad
 		this.start       = false;  // Boolean used for initial start
 		this.rayCasters  = [];
+		this.colWorker   = null;
+		this.collision   = false;
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -211,6 +213,13 @@ class Helicopter {
 		}, false);
 
 
+		// Initialize Collision Detection Web Worker
+		this.colWorker = new Worker('helicopter-worker.js');
+
+		this.colWorker.addEventListener("message", function(e){
+			this.collision = e.data;
+		});
+
 	}
 
 	flightTween(start, end, that, propName){
@@ -363,19 +372,25 @@ class Helicopter {
 
 	collisionDetection(){
 		console.log("collisionDetection()");
-		if (this.rayCasters !== undefined) {
-			for (let i = 0; i < window.collidableMeshList.length; i++) {
-				for (let n = 0; n < this.rayCasters.length; n++) {
-					const collisionResults = this.rayCasters[n].intersectObject( window.collidableMeshList[i], true )
-					// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-					if ( collisionResults.length > 0 ) {
-						this.landed = true;
-						console.log("Collision with vectorLength")
-					}
-				}	
-			}
 
-		}
+		this.colWorker.postMessage({
+			rayCasters: this.rayCasters, 
+			collidableMeshList: window.collidableMeshList
+		});
+
+		// if (this.rayCasters !== undefined) {
+		// 	for (let i = 0; i < window.collidableMeshList.length; i++) {
+		// 		for (let n = 0; n < this.rayCasters.length; n++) {
+		// 			const collisionResults = this.rayCasters[n].intersectObject( window.collidableMeshList[i], true )
+		// 			// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+		// 			if ( collisionResults.length > 0 ) {
+		// 				this.landed = true;
+		// 				console.log("Collision with vectorLength")
+		// 			}
+		// 		}	
+		// 	}
+
+		// }
 
 	}
 
@@ -441,7 +456,7 @@ class Helicopter {
 	}
 
 	update(){
-		if ( this.landed == false ) {
+		if ( this.landed == false && this.collision == false ) {
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
