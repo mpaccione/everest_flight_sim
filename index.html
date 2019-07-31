@@ -77,6 +77,8 @@
 		height: 100%;
 		width: 100%;
 		top: 0;
+		animation-duration: 0.5s;
+		animation-fill-mode: forwards;
 	}
 	#lWindow {
 		left: -100%;
@@ -131,6 +133,28 @@
 		width: 50px;
 		left: calc(50% - 25px);
 	} 
+	.zoomFrameIn {
+		animation-name: zoomFrameIn;
+	} 
+	.zoomFrameOut {
+		animation-name: zoomFrameOut;
+	} 
+	@keyframes zoomFrameIn {
+		0% {
+			transform: scale(1);
+		}
+		100% {
+			transform: scale(2);
+		}
+	}
+	@keyframes zoomFrameOut {
+		0% {
+			transform: scale(2);
+		}
+		100% {
+			transform: scale(1);
+		}
+	}
 </style>
 
 <script src="dist/bundle.js"></script>

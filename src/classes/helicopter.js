@@ -168,7 +168,7 @@ class Helicopter {
 						console.log("Z1");
 						this.lookDown = true;
 						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
-						document.getElementById("lWindow").classList = "zoomFrameIn";
+						document.getElementById("lWindow").classList = "window zoomFrameIn";
 					} else if (this.lookRight == false && this.lookLeft == false) {
 						// Look Left from Center
 						console.log("Z2");
@@ -185,14 +185,12 @@ class Helicopter {
 						this.lookDown  = false;											
 						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
 						this.cockpitRotationTween(0, 1000);
-					} 
-					else if (this.lookRight == true && this.lookDown == true) {
+					} else if (this.lookRight == true && this.lookDown == true) {
 						// Look Up to Center but animate through other transitions
 						console.log("Z4");
 						this.lookDown = false;		
 						this.quaternionTween(-90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);				
-						// this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
-						document.getElementById("rWindow").classList = "zoomFrameOut";
+						document.getElementById("rWindow").classList = "window zoomFrameOut";
 					}
 					break;
 				case "x": // Look Right and Down
@@ -201,7 +199,7 @@ class Helicopter {
 						console.log("X1");
 						this.lookDown = true;						
 						this.quaternionTween(-90, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
-						document.getElementById("rWindow").classList = "zoomFrameIn";						
+						document.getElementById("rWindow").classList = "window zoomFrameIn";						
 					} else if (this.lookLeft == false && this.lookRight == false) {
 						// Look Right
 						console.log("X2")
@@ -218,14 +216,12 @@ class Helicopter {
 						this.lookDown  = false;							
 						this.quaternionTween(0, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);
 						this.cockpitRotationTween(0, 1000);
-					} 
-					else if (this.lookLeft == true && this.lookDown == true) {
+					} else if (this.lookLeft == true && this.lookDown == true) {
 						console.log("X4");
 						// Look Up
 						this.lookDown = false;		
 						this.quaternionTween(90, new THREE.Vector3( 0, 1, 0 ), this, "camera", 1000);				
-						// this.quaternionTween(0, new THREE.Vector3( 1, 0, 0 ), this, "camera", 1000);
-						document.getElementById("lWindow").classList = "zoomFrameOut";					
+						document.getElementById("lWindow").classList = "window zoomFrameOut";					
 					}
 					break;					
 			}
@@ -292,17 +288,17 @@ class Helicopter {
 								 } ).start()
 	}
 
-	cockpitZoomCameraDownTween(deg, that, camera, time, callback){
-		const sceneCamera = window.scene.getObjectByName(camera),
-			  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.z })
-								.to({ rotation: that.getRadians(deg) }, time )
-								.easing( TWEEN.Easing.Quadratic.Out )
-								.onUpdate( (tween) => {
-									sceneCamera.rotation.z = tween.rotation;
-								 } )
-								.onComplete( () => {
-									callback();
-								}).start();
+	// cockpitZoomCameraDownTween(deg, that, camera, time, callback){
+	// 	const sceneCamera = window.scene.getObjectByName(camera),
+	// 		  cameraTween = new TWEEN.Tween({ rotation: sceneCamera.rotation.z })
+	// 							.to({ rotation: that.getRadians(deg) }, time )
+	// 							.easing( TWEEN.Easing.Quadratic.Out )
+	// 							.onUpdate( (tween) => {
+	// 								sceneCamera.rotation.z = tween.rotation;
+	// 							 } )
+	// 							.onComplete( () => {
+	// 								callback();
+	// 							}).start();
 			  // cockpit = document.getElementById("cockpit"),
 			  // cockpitTranslation = new TWEEN.Tween({ translation: parseInt(cockpit.style.left) })
 					// 			.to({ translation: translateX }, time )
@@ -311,7 +307,7 @@ class Helicopter {
 					// 				console.log(tween.translation+"%");
 					// 				cockpit.style.left = tween.translation+"%";
 					// 			 } ).start()
-	}
+	// }
 
 	updateVelocities(){
 		// Convert Degrees to Radians
