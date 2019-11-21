@@ -186,11 +186,11 @@ process.umask = function() { return 0; };
 
 },{}],2:[function(require,module,exports){
 // Imports
-const THREE = require('three');
-const GLTFLoader = require('three-gltf-loader');
-const OrbitControls = require('three-orbit-controls')(THREE);
-const Helicopter = require('./src/classes/helicopter');
-const Terrain = require('./src/classes/terrain');
+const THREE = require('three'),
+	  GLTFLoader = require('three-gltf-loader'),
+	  OrbitControls = require('three-orbit-controls')(THREE),
+	  Helicopter = require('./src/classes/helicopter'),
+	  Terrain = require('./src/classes/terrain');
 
 /////////////////////////////
 // Mini Orientation Scene //
@@ -54863,6 +54863,9 @@ class Helicopter {
 
 		}, false);
 
+		// Rotate MipMapObj
+		this.mipMapObj.rotation.y = this.getRadians(180);
+
 	}
 
 	flightTween(start, end, that, propName){
@@ -54927,9 +54930,9 @@ class Helicopter {
 		console.log("mipMapObj");
 		console.log(this.mipMapObj);
 		// Mip map orientation broken
-		// this.mipMapObj.children[1].rotation.y += this.getRadians(this.vR);
-		// this.mipMapObj.children[1].rotation.x = this.getRadians(this.pitch); // Swapped - Bug, don't change
-		// this.mipMapObj.children[1].rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
+		this.mipMapObj.rotation.y += this.getRadians(this.vR);
+		this.mipMapObj.rotation.x = -this.getRadians(this.pitch); // Swapped - Bug, don't change
+		this.mipMapObj.rotation.z = this.getRadians(this.roll); // Swapped - Bug, don't change
 	}
 
 	updatePosition(){

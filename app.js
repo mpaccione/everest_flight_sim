@@ -1,9 +1,9 @@
 // Imports
-const THREE = require('three');
-const GLTFLoader = require('three-gltf-loader');
-const OrbitControls = require('three-orbit-controls')(THREE);
-const Helicopter = require('./src/classes/helicopter');
-const Terrain = require('./src/classes/terrain');
+const THREE = require('three'),
+	  GLTFLoader = require('three-gltf-loader'),
+	  OrbitControls = require('three-orbit-controls')(THREE),
+	  Helicopter = require('./src/classes/helicopter'),
+	  Terrain = require('./src/classes/terrain');
 
 /////////////////////////////
 // Mini Orientation Scene //
