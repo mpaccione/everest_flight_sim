@@ -82,6 +82,7 @@ class Helicopter {
 					break;
 				case "ArrowDown": // Main Rotor Thrust Decrease
 					if (this.aY > 0) {
+						console.log('flightTween')
 						let start = { aY: this.aY },
 							end = { aY: this.aY-100 };
 
@@ -227,16 +228,16 @@ class Helicopter {
 	}
 
 	flightTween(start, end, that, propName){
-		if (start[propName] % 1 === 0){
+		// if (start[propName] % 1 === 0){
 			const flightTween = new TWEEN.Tween( start )
 									 .to( end, 200 )
 									 .easing( TWEEN.Easing.Quadratic.Out )
 									 .onUpdate( (tween) => {
 										that[propName] = tween[propName];
 									 } ).start();
-			console.log(start);
-			console.log(end);
-		}
+			// console.log(start);
+			// console.log(end);
+		// }
 	}
 
 	quaternionTween(deg, vector, that, camera, time){
