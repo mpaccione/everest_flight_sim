@@ -66157,8 +66157,8 @@ class Helicopter {
 
 						this.flightTween(start, end, this, "aY");
 					}
-					if (this.start === false) {
-						this.start = true;
+					if (this.landed && this.aY > this.gravAOffset) {
+						this.landed = false;	
 					}
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
@@ -66216,7 +66216,7 @@ class Helicopter {
 									} ).start();
 					break;
 				case "w":  // Angle Heli Down
-					if (this.pitch > -this.maxPitch) {
+					if (this.pitch > -this.maxPitch && !this.landed) {
 						let start = { pitch: this.pitch },
 							end = { pitch: this.pitch-4 };
 
@@ -66224,7 +66224,7 @@ class Helicopter {
 					}
 					break;
 				case "s":  // Angle Heli Up
-					if (this.pitch < this.maxPitch) {
+					if (this.pitch < this.maxPitch && !this.landed) {
 						let start = { pitch: this.pitch },
 							end = { pitch: this.pitch+4 };
 
@@ -66232,7 +66232,7 @@ class Helicopter {
 					}				
 					break;
 				case "a": // Roll Heli Left
-					if (this.roll < this.maxRoll) {
+					if (this.roll < this.maxRoll && !this.landed) {
 						let start = { roll: this.roll },
 							end = { roll: this.roll+4 };
 
@@ -66240,7 +66240,7 @@ class Helicopter {
 					}
 					break;
 				case "d": // Roll Heli Right
-					if (this.roll > -this.maxRoll) {
+					if (this.roll > -this.maxRoll && !this.landed) {
 						let start = { roll: this.roll },
 							end = { roll: this.roll-4 };
 						
@@ -66248,7 +66248,7 @@ class Helicopter {
 					}
 					break;
 				case "q": // Turn Heli Right
-					if (this.yaw < this.maxYaw) {
+					if (this.yaw < this.maxYaw && !this.landed) {
 						let start = { yaw: this.yaw },
 							end = { yaw: this.yaw+1 };
 
@@ -66256,7 +66256,7 @@ class Helicopter {
 					}
 					break;
 				case "e": // Turn Heli Left
-					if (this.yaw > -this.maxYaw) {
+					if (this.yaw > -this.maxYaw && !this.landed) {
 						let start = { yaw: this.yaw },
 							end = { yaw: this.yaw-1 };
 
@@ -66414,53 +66414,60 @@ class Helicopter {
 	}
 
 	updateVelocities(){
-		// Convert Degrees to Radians
-		const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
-			  pitchRads = this.pitch < 0 ? this.getRadians( 150-this.pitch ) : this.getRadians( 150+this.pitch ), // Hypothetically 90-this.pitch, changed for better playability
-			  gravSimY = this.aY/this.weight,
-			  yawRatio = this.yaw/this.maxYaw;
-
-		// Rotational Velocity
-		this.vR = this.aX * yawRatio;
-
-		// Upward Velocities
-		if (this.aY > this.gravAOffset) {
-			// Initial Y Velocity and Reset XY Velocities
-			this.vY = gravSimY;
+		if (this.landed === true) {
+			this.vY = 0;
 			this.vX = 0;
 			this.vZ = 0;
-			// X & Z Velocity
-			if ( this.roll != 0 && this.pitch != 0 ) {
-				// Get Higher Degree of the two, use resultant Y Velocity for second equation
-				if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
-					// Calc Roll Vector with Trigonometry, 
+			this.vR = 0;
+		} else {
+			// Convert Degrees to Radians
+			const rollRads = this.roll < 0 ? this.getRadians( 150-this.roll ) : this.getRadians( 150+this.roll ) , // Hypothetically 90-this.roll, changed for better playability
+				  pitchRads = this.pitch < 0 ? this.getRadians( 150-this.pitch ) : this.getRadians( 150+this.pitch ), // Hypothetically 90-this.pitch, changed for better playability
+				  gravSimY = this.aY/this.weight,
+				  yawRatio = this.yaw/this.maxYaw;
+
+			// Rotational Velocity
+			this.vR = this.aX * yawRatio;
+
+			// Upward Velocities
+			if (this.aY > this.gravAOffset) {
+				// Initial Y Velocity and Reset XY Velocities
+				this.vY = gravSimY;
+				this.vX = 0;
+				this.vZ = 0;
+				// X & Z Velocity
+				if ( this.roll != 0 && this.pitch != 0 ) {
+					// Get Higher Degree of the two, use resultant Y Velocity for second equation
+					if ( Math.abs(this.roll) > Math.abs(this.pitch) ) {
+						// Calc Roll Vector with Trigonometry, 
+						this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+						this.vY = Math.abs(gravSimY * Math.sin(rollRads));
+						this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+					} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+						// Calc Pitch Vector with Trigonometry
+						this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
+						this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+						this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+					}
+				} else if ( this.roll != 0 ) {
+					// Calc Roll Vector with Trigonometry
 					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-					this.vY = Math.abs(gravSimY * Math.sin(rollRads));
-					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
-				} else if ( Math.abs(this.pitch) > Math.abs(this.roll) ) {
+					this.vY = gravSimY * Math.sin(rollRads);
+				} else if ( this.pitch != 0 ) {
 					// Calc Pitch Vector with Trigonometry
-					this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-					this.vY = Math.abs(gravSimY * Math.sin(pitchRads));
+					this.vY = gravSimY * Math.sin(pitchRads);
 					this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
 				}
-			} else if ( this.roll != 0 ) {
-				// Calc Roll Vector with Trigonometry
-				this.vX = this.roll < 0 ? -(gravSimY * Math.cos(rollRads)) : gravSimY * Math.cos(rollRads);
-				this.vY = gravSimY * Math.sin(rollRads);
-			} else if ( this.pitch != 0 ) {
-				// Calc Pitch Vector with Trigonometry
-				this.vY = gravSimY * Math.sin(pitchRads);
-				this.vZ = this.pitch < 0 ? gravSimY * Math.cos(pitchRads) : -(gravSimY * Math.cos(pitchRads));
+			} else {
+				this.vY = this.gravVOffset;
 			}
-		} else {
-			this.vY = this.gravVOffset;
 		}
 
 		// console.log("updateVelocities");
 		// console.log("vY: "+this.vY);
 		// console.log("vX: "+this.vX);
 		// console.log("vZ: "+this.vZ);
-		console.log(window.flightSim.roll);
+		// console.log(window.flightSim.roll);
 	}
 
 	updateRotation(){
@@ -66523,23 +66530,22 @@ class Helicopter {
 	// }
 
 	raycasterCollisionDetection(){
-		// console.log("createRayCasters");
-
-		const playerOrigin 	 = this.heli.children[1].clone() // Get Box Mesh from Player Group
+		const playerOrigin 	 = this.heli.children[1], // Get Box Mesh from Player Group
+			  playerPosition = new THREE.Vector3( this.x, this.y, this.z );
+		let   collision;
 
 		for (var i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
 			const localVertex      = playerOrigin.geometry.vertices[i].clone(),
 				  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
-				  directionVector  = globalVertex.sub( playerOrigin.position ),
-				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() ),
+				  directionVector  = globalVertex.sub( playerPosition ),
+				  ray              = new THREE.Raycaster( playerPosition, directionVector.clone().normalize(), 0, 60 ),
 				  collisionResult  = ray.intersectObjects(window.collidableMeshList, true);
 
 			if ( collisionResult.length > 0 ) {
 				console.log(collisionResult)
-				if ( collisionResult[0].object.name === "helipadStart" && this.start === false || collisionResult[0].object.name !== "helipadStart") {
-					console.log("COLLISION");
-					this.landed = true;
-				}
+				console.log("COLLISION");
+				this.landed = true;
+
 			}
 		}
 	}
@@ -66615,13 +66621,13 @@ class Helicopter {
 	}
 
 	update(){
-		if ( this.landed === false || this.start === true ) {
+		// if ( this.landed === false ) {
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
 			this.updateVelocities();
 			this.raycasterCollisionDetection();
-		}
+		// }
 		TWEEN.update();
 	}
 
