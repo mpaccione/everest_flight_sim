@@ -12,7 +12,8 @@ const THREE = require('three'),
 ////////////////
 
 // Globals
-window.helipadCoords = []; // Array Of Objects for Helipad Coordinates
+window.helipadCoords = []; 		// Array Of Objects for Helipad Coordinates
+window.collidableMeshList = []; // Array of Collision Meshes
 
 // View
 const scene = new THREE.Scene(),
@@ -29,6 +30,9 @@ const terrain = new Terrain.ProceduralTerrain(),
 	  helipadStart = new Terrain.Helipad( 0, 2000, -2000, "Start", false ),
 	  helipadObjStart = helipadStart.returnHelipadObj(),
 	  helipadObjEnd = helipadEnd.returnHelipadObj();
+
+window.collidableMeshList.push(helipadObjStart);
+window.collidableMeshList.push(helipadObjEnd);
 
 scene.add(terrainObj);
 scene.add(helipadObjStart);

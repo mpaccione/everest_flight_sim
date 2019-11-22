@@ -40,15 +40,14 @@ class Helicopter {
 		this.lookDown = false;
 		this.landed = false; // False for initial helipad
 		this.start = false; // Boolean used for initial start
-		this.rayCasters = [];
 
-		setTimeout(() => {
-			this.createRayCasters(); // Wait for things to load a bit
-		}, 800);
+		// setTimeout(() => {
+		// 	this.createRayCasters(); // Wait for things to load a bit
+		// }, 800);
 
-		setInterval(() => {
-			this.collisionDetection(); // Throttling for performance reasons
-		}, 1000);
+		// setInterval(() => {
+		// 	this.collisionDetection(); // Throttling for performance reasons
+		// }, 1000);
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -70,6 +69,9 @@ class Helicopter {
 							end = { aY: this.aY+100 };
 
 						this.flightTween(start, end, this, "aY");
+					}
+					if (this.start === false) {
+						this.start = true;
 					}
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
@@ -383,7 +385,8 @@ class Helicopter {
 
 	updatePosition(){
 		// Velocity Multiplier - Scaling speeds to different size landscapes
-		const multiplier = 30;
+		const multiplier = 30,
+			  position   = new THREE.Vector3(this.x, this.y, this.z);
 		// Arcade Style & Translate Method
 		// this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
 			// this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
@@ -401,22 +404,20 @@ class Helicopter {
 		this.z = this.heli.position.z;
 	}
 
-	collisionDetection(){
+	// collisionDetection(){
 
-		console.log("collisionDetection Function")
-		console.log(this.rayCasters);
+	// 	console.log("collisionDetection Function")
+	// 	console.log(this.rayCasters);
 
-		for (var i = this.rayCasters.length - 1; i >= 0; i--) {
-			for (var n = window.collidableMeshList.length - 1; n >= 0; n--) {
-				const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[n], true )
+	// 	for (var i = 0; i < this.rayCasters.length; i++) {
+	// 		const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[1].children[0], true )
 
-				// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-				if ( collisionResults.length > 0 ) {
-					// this.landed = true;
-					console.log("Collision with vectorLength")
-				}
-			}	
-		}
+	// 		// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+	// 		if ( collisionResults.length > 0 ) {
+	// 			// this.landed = true;
+	// 			console.log("Collision with vectorLength")
+	// 		}
+	// 	}
 
 		// const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
 
@@ -432,23 +433,28 @@ class Helicopter {
 		// 		console.log("Collision with vectorLength")
 		// 	}	
 		// }
-	}
+	// }
 
-	createRayCasters(){
+	raycasterCollisionDetection(){
+		// console.log("createRayCasters");
 
-		console.log("createRayCasters");
-
-		const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
+		const playerOrigin 	 = this.heli.children[1].clone() // Get Box Mesh from Player Group
 
 		for (var i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
 			const localVertex      = playerOrigin.geometry.vertices[i].clone(),
 				  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
 				  directionVector  = globalVertex.sub( playerOrigin.position ),
-				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() );
+				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() ),
+				  collisionResult  = ray.intersectObjects(window.collidableMeshList, true);
 
-			this.rayCasters.push(ray);
+			if ( collisionResult.length > 0 ) {
+				console.log(collisionResult)
+				if ( collisionResult[0].object.name === "helipadStart" && this.start === false || collisionResult[0].object.name !== "helipadStart") {
+					console.log("COLLISION");
+					this.landed = true;
+				}
+			}
 		}
-
 	}
 
 	// collisionDetection(){
@@ -522,11 +528,12 @@ class Helicopter {
 	}
 
 	update(){
-		if ( this.landed == false ) {
+		if ( this.landed === false || this.start === true ) {
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
 			this.updateVelocities();
+			this.raycasterCollisionDetection();
 		}
 		TWEEN.update();
 	}

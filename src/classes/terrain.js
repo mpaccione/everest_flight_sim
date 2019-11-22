@@ -325,48 +325,64 @@ class Helipad {
 	}
 
 	returnHelipadObj(){
-		const fontLoader = new THREE.FontLoader(),
-			  helipadGroup = new THREE.Group();
+		// const fontLoader = new THREE.FontLoader(),
+		// 	  helipadGroup = new THREE.Group();
 
-		fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
-			const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
-				  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
-				  helipadMatArr = [
-				  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
-				  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
-				  	new THREE.MeshBasicMaterial({ color: 0x68696e })
-				  ],
-				  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
-				  helipadTextGeo = new THREE.TextGeometry( this.text, {
-					font: font,
-					size: 80,
-					height: 5,
-					curveSegments: 12,
-					bevelEnabled: false
-				  } ),
-				  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
-				  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
-				  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+		const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+			  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+			  helipadMatArr = [
+			  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+			  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+			  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+			  ],
+			  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) );
 
-			helipad.name = "helipad";
-			helipadText.name = "helipadText"+this.text;
-			helipad.position.set( 0, 0, 0 )
-			helipadText.position.set( -100, 300, 0 );
+			helipad.name = "helipad"+this.text;
+			helipad.position.set( this.x, this.y, this.z )
+
+		return helipad;
+
+		// fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+		// 	const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+		// 		  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+		// 		  helipadMatArr = [
+		// 		  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+		// 		  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+		// 		  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+		// 		  ],
+		// 		  helipadTextGeo = new THREE.TextGeometry( this.text, {
+		// 			font: font,
+		// 			size: 80,
+		// 			height: 5,
+		// 			curveSegments: 12,
+		// 			bevelEnabled: false
+		// 		  } ),
+		// 		  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
+		// 		  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
+		// 		  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+
+		// 	helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
+		// 	helipad.name = "helipad";
+		// 	helipad.position.set( this.x, this.y, this.z )
+
+		// 	helipadText.name = "helipadText"+this.text;
+		// 	helipadText.position.set( -100, 300, 0 );
 			
-			window.helipadCoords.push( { 
-				x: this.x, 
-				y: this.y, 
-				z: this.z, 
-				text: this.text 
-			} );
+			// window.helipadCoords.push( { 
+			// 	x: this.x, 
+			// 	y: this.y, 
+			// 	z: this.z, 
+			// 	text: this.text 
+			// } );
 
-			helipadGroup.add( helipad );
-			helipadGroup.add( helipadText );
-			helipadGroup.position.set( this.x, this.y, this.z );
-			helipadGroup.name = "helipad"+this.text;
-		})
+			// helipadGroup.add( helipad );
+			// helipadGroup.add( helipadText );
+			// helipadGroup.position.set( this.x, this.y, this.z );
+			// helipadGroup.name = "helipad"+this.text;
+		// })
 
-		return helipadGroup;
+		// return helipad;
+		// return helipadGroup;
 	}
 
 }

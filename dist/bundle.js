@@ -199,7 +199,8 @@ const THREE = require('three'),
 ////////////////
 
 // Globals
-window.helipadCoords = []; // Array Of Objects for Helipad Coordinates
+window.helipadCoords = []; 		// Array Of Objects for Helipad Coordinates
+window.collidableMeshList = []; // Array of Collision Meshes
 
 // View
 const scene = new THREE.Scene(),
@@ -216,6 +217,9 @@ const terrain = new Terrain.ProceduralTerrain(),
 	  helipadStart = new Terrain.Helipad( 0, 2000, -2000, "Start", false ),
 	  helipadObjStart = helipadStart.returnHelipadObj(),
 	  helipadObjEnd = helipadEnd.returnHelipadObj();
+
+window.collidableMeshList.push(helipadObjStart);
+window.collidableMeshList.push(helipadObjEnd);
 
 scene.add(terrainObj);
 scene.add(helipadObjStart);
@@ -66123,15 +66127,14 @@ class Helicopter {
 		this.lookDown = false;
 		this.landed = false; // False for initial helipad
 		this.start = false; // Boolean used for initial start
-		this.rayCasters = [];
 
-		setTimeout(() => {
-			this.createRayCasters(); // Wait for things to load a bit
-		}, 800);
+		// setTimeout(() => {
+		// 	this.createRayCasters(); // Wait for things to load a bit
+		// }, 800);
 
-		setInterval(() => {
-			this.collisionDetection(); // Throttling for performance reasons
-		}, 1000);
+		// setInterval(() => {
+		// 	this.collisionDetection(); // Throttling for performance reasons
+		// }, 1000);
 
 		// Set Controls
 		// Arrow Keys for Rotor Thrust
@@ -66153,6 +66156,9 @@ class Helicopter {
 							end = { aY: this.aY+100 };
 
 						this.flightTween(start, end, this, "aY");
+					}
+					if (this.start === false) {
+						this.start = true;
 					}
 					break;
 				case "ArrowRight": // Tail Rotor Thrust Positive
@@ -66466,7 +66472,8 @@ class Helicopter {
 
 	updatePosition(){
 		// Velocity Multiplier - Scaling speeds to different size landscapes
-		const multiplier = 30;
+		const multiplier = 30,
+			  position   = new THREE.Vector3(this.x, this.y, this.z);
 		// Arcade Style & Translate Method
 		// this.aY <= 200 ? // Ground Check Factoring 0 Level with Negative Y Velocity
 			// this.heli.position.y -= this.vY*multiplier : this.heli.position.y += this.vY*multiplier;
@@ -66484,22 +66491,20 @@ class Helicopter {
 		this.z = this.heli.position.z;
 	}
 
-	collisionDetection(){
+	// collisionDetection(){
 
-		console.log("collisionDetection Function")
-		console.log(this.rayCasters);
+	// 	console.log("collisionDetection Function")
+	// 	console.log(this.rayCasters);
 
-		for (var i = this.rayCasters.length - 1; i >= 0; i--) {
-			for (var n = window.collidableMeshList.length - 1; n >= 0; n--) {
-				const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[n], true )
+	// 	for (var i = 0; i < this.rayCasters.length; i++) {
+	// 		const collisionResults = this.rayCasters[i].intersectObject( window.collidableMeshList[1].children[0], true )
 
-				// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
-				if ( collisionResults.length > 0 ) {
-					// this.landed = true;
-					console.log("Collision with vectorLength")
-				}
-			}	
-		}
+	// 		// if ( collisionResults.length > 0 && collisionResults[0].distance < directionVector.length() ) {
+	// 		if ( collisionResults.length > 0 ) {
+	// 			// this.landed = true;
+	// 			console.log("Collision with vectorLength")
+	// 		}
+	// 	}
 
 		// const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
 
@@ -66515,23 +66520,28 @@ class Helicopter {
 		// 		console.log("Collision with vectorLength")
 		// 	}	
 		// }
-	}
+	// }
 
-	createRayCasters(){
+	raycasterCollisionDetection(){
+		// console.log("createRayCasters");
 
-		console.log("createRayCasters");
-
-		const playerOrigin = this.heli.children[1].clone(); // Get Box Mesh from Player Group
+		const playerOrigin 	 = this.heli.children[1].clone() // Get Box Mesh from Player Group
 
 		for (var i = playerOrigin.geometry.vertices.length - 1; i >= 0; i--) {
 			const localVertex      = playerOrigin.geometry.vertices[i].clone(),
 				  globalVertex     = localVertex.applyMatrix4( playerOrigin.matrix ),
 				  directionVector  = globalVertex.sub( playerOrigin.position ),
-				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() );
+				  ray              = new THREE.Raycaster( playerOrigin.position, directionVector.clone().normalize() ),
+				  collisionResult  = ray.intersectObjects(window.collidableMeshList, true);
 
-			this.rayCasters.push(ray);
+			if ( collisionResult.length > 0 ) {
+				console.log(collisionResult)
+				if ( collisionResult[0].object.name === "helipadStart" && this.start === false || collisionResult[0].object.name !== "helipadStart") {
+					console.log("COLLISION");
+					this.landed = true;
+				}
+			}
 		}
-
 	}
 
 	// collisionDetection(){
@@ -66605,11 +66615,12 @@ class Helicopter {
 	}
 
 	update(){
-		if ( this.landed == false ) {
+		if ( this.landed === false || this.start === true ) {
 			this.updateRotation();
 			this.updatePosition();
 			this.updateState();
 			this.updateVelocities();
+			this.raycasterCollisionDetection();
 		}
 		TWEEN.update();
 	}
@@ -66945,48 +66956,64 @@ class Helipad {
 	}
 
 	returnHelipadObj(){
-		const fontLoader = new THREE.FontLoader(),
-			  helipadGroup = new THREE.Group();
+		// const fontLoader = new THREE.FontLoader(),
+		// 	  helipadGroup = new THREE.Group();
 
-		fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
-			const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
-				  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
-				  helipadMatArr = [
-				  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
-				  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
-				  	new THREE.MeshBasicMaterial({ color: 0x68696e })
-				  ],
-				  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
-				  helipadTextGeo = new THREE.TextGeometry( this.text, {
-					font: font,
-					size: 80,
-					height: 5,
-					curveSegments: 12,
-					bevelEnabled: false
-				  } ),
-				  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
-				  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
-				  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+		const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+			  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+			  helipadMatArr = [
+			  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+			  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+			  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+			  ],
+			  helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) );
 
-			helipad.name = "helipad";
-			helipadText.name = "helipadText"+this.text;
-			helipad.position.set( 0, 0, 0 )
-			helipadText.position.set( -100, 300, 0 );
+			helipad.name = "helipad"+this.text;
+			helipad.position.set( this.x, this.y, this.z )
+
+		return helipad;
+
+		// fontLoader.load('./node_modules/three/examples/fonts/helvetiker_regular.typeface.json', ( font ) => {
+		// 	const helipadGeom = new THREE.CylinderBufferGeometry( this.radiusTop, this.radiusBottom, this.radialSegments, this.heightSegments ),
+		// 		  helipadTexture = new THREE.TextureLoader().load('./src/img/helipad2.jpg'),
+		// 		  helipadMatArr = [
+		// 		  	new THREE.MeshBasicMaterial({ color: 0x68696e }),
+		// 		  	new THREE.MeshBasicMaterial({ map: helipadTexture }),
+		// 		  	new THREE.MeshBasicMaterial({ color: 0x68696e })
+		// 		  ],
+		// 		  helipadTextGeo = new THREE.TextGeometry( this.text, {
+		// 			font: font,
+		// 			size: 80,
+		// 			height: 5,
+		// 			curveSegments: 12,
+		// 			bevelEnabled: false
+		// 		  } ),
+		// 		  helipadTextColor = this.enabled == true ? 0x00ff00 : 0xff0000,
+		// 		  helipadTextMat = new THREE.MeshBasicMaterial({ color: helipadTextColor }),
+		// 		  helipadText = new THREE.Mesh( helipadTextGeo, helipadTextMat );
+
+		// 	helipad = new THREE.Mesh( helipadGeom, new THREE.MeshFaceMaterial( helipadMatArr ) ),
+		// 	helipad.name = "helipad";
+		// 	helipad.position.set( this.x, this.y, this.z )
+
+		// 	helipadText.name = "helipadText"+this.text;
+		// 	helipadText.position.set( -100, 300, 0 );
 			
-			window.helipadCoords.push( { 
-				x: this.x, 
-				y: this.y, 
-				z: this.z, 
-				text: this.text 
-			} );
+			// window.helipadCoords.push( { 
+			// 	x: this.x, 
+			// 	y: this.y, 
+			// 	z: this.z, 
+			// 	text: this.text 
+			// } );
 
-			helipadGroup.add( helipad );
-			helipadGroup.add( helipadText );
-			helipadGroup.position.set( this.x, this.y, this.z );
-			helipadGroup.name = "helipad"+this.text;
-		})
+			// helipadGroup.add( helipad );
+			// helipadGroup.add( helipadText );
+			// helipadGroup.position.set( this.x, this.y, this.z );
+			// helipadGroup.name = "helipad"+this.text;
+		// })
 
-		return helipadGroup;
+		// return helipad;
+		// return helipadGroup;
 	}
 
 }
