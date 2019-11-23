@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Everest Flight Simulator</title>
+	</head>
+	<body>
+		<div id="three"></div>
+		<div id="cockpit">
+<!-- 			<div id="hFrame"></div>
+ -->			<!-- <div id="vFrame"></div> -->
+			<div id="instrument-panel"></div>
+		</div>
+	</body>
+</html>
+<style type="text/css">
+	html, body,
+	#three, #three canvas {
+		height: 100%;
+		width: 100%;
+		margin: 0px;
+		padding: 0px;
+		position: relative;
+		overflow: hidden;
+	}
+	#three canvas {
+		position: absolute;
+	}
+	#three-mini {
+		position: fixed;
+		z-index: 9;
+		top: 10px;
+		left: 10px;
+		border: 1px solid white;
+		border-bottom: 0px;
+		background-color: lightgray;
+		height: 200px;
+		width: 200px;
+	}
+	#cockpit {
+		position: fixed;
+		z-index: 9;
+		width: 100%;
+		height: 100%;
+		top: 0;
+		left: 0;
+	}
+	#instrument-panel {
+		position: absolute;
+		width: 600px;
+		height: 300px;
+		top: calc(100% - 175px);
+		left: 50%;
+		transform: translateX(-50%);
+		background-image: url("./src/img/instrument-panel.png");
+		background-repeat: no-repeat;
+		background-size: contain;
+	}
+/*	#instrument-canvas {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		z-index: 999;
+	}*/
+	#hFrame,
+	#vFrame {
+		background-repeat: repeat;
+		background-size: 100px;
+		background-image: url("./src/img/gunmetal-pattern.jpg");
+	}
+	#hFrame {
+		position: absolute;
+		top: calc(100% - 50px);
+		left: 0;
+		height: 50px;
+		width: 100%;
+		background-color: #30373f;
+	}
+	#vFrame {
+		position: absolute;
+		top: 0px;
+		height: 100%;
+		width: 50px;
+		left: calc(50% - 25px);
+		background-color: #30373f;
+	}
+</style>
+
+<script src="dist/bundle.js"></script>
