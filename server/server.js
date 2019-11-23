@@ -70,6 +70,9 @@ app.get('/', function(req, res) {
 // 3,600 KM^2 -> 360,000 Vertex Points
 // 0.1 KM PT Density -> 100 PT's per 1KM^2
 
+// Response Object with Keyname XY
+// Reads from XY.txt
+
 app.get('/terrainData/:indexes', function(req, res){
 	const encoding = req.headers['accept-encoding'], 
 		  reqArr   = req.params.indexes;
