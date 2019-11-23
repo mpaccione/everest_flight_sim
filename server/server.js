@@ -5,13 +5,6 @@ const cors                = require('cors'),
 	  fs                  = require('fs'),
 	  path                = require('path'),
 	  app                 = express(),
-// Globals
-getDirectories = (source) => {
-	return fs.readdirSync(source, { withFileTypes: true })
-			 .filter(dir => dir.isDirectory())
-			 .map(dir => dir.name);
-};
-
 
 // CORS for Local Testing
 
@@ -69,6 +62,14 @@ app.get('/', function(req, res) {
 
 // });
 
+//////////////////////////////////////
+////////// Graph System /////////////
+/////////////////////////////////////
+
+// 90KM Wide (Long) x 40KM Tall (Lat)
+// 3,600 KM^2 -> 360,000 Vertex Points
+// 0.1 KM PT Density -> 100 PT's per 1KM^2
+
 app.get('/terrainData/:indexes', function(req, res){
 	const encoding = req.headers['accept-encoding'], 
 		  reqArr   = req.params.indexes;
@@ -98,7 +99,7 @@ app.get('/terrainData/:indexes', function(req, res){
 });
 
 function fetchFiles(arr, compressionType){
-	const resArr = new Array(arr.length);
+	let resObj;
 
 	for (var i = 0; i < arr.length; i++) {
 		fs.readFile(path.join(__dirname, `/api-data/compressed/${arr[i]}.txt.${compressionType}`), (err, data) => {
@@ -106,7 +107,8 @@ function fetchFiles(arr, compressionType){
 	        	console.warn(err);
 	        	res.status(500).send(new Error(`${compressionType} Compression Data Read Error`));
 	        } else {
-			 	resArr[i] = data; 
+	        	let keyName = arr[i][0].toString() + arr[i][1].toString();
+			 	resObj[keyName] = data;
 	        }
 		});
 	}
@@ -115,7 +117,7 @@ function fetchFiles(arr, compressionType){
 		'Content-Type': 'application/json',
 		'Content-Encoding': `${compressionType}`
 	});
-	res.end(resArr);
+	res.end(resObj);
 }
 
 // Listen
