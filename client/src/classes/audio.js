@@ -13,7 +13,7 @@ function initHelicopterAudio(){
 		let audioCtx = new AudioContext(),
 		    req = new XMLHttpRequest();
 
-		req.open('GET', 'http://localhost/flight_sim/src/audio/helicopter_in_flight', true);
+		req.open('GET', 'http://localhost/flight_sim/client/src/audio/helicopter_in_flight', true);
 		req.responseType = 'arraybuffer';
 
 		// Decode Asynchronously

@@ -235,6 +235,7 @@ class Helicopter {
 	}
 
 	quaternionTween(deg, vector, that, camera, time){
+		console.log("quaternionTween");
 		const sceneCamera = window.scene.getObjectByName(camera),
 			  slerpStart  = sceneCamera.quaternion,
 			  slerpTarget = new THREE.Quaternion().setFromAxisAngle( vector, that.getRadians(deg) ),
@@ -245,6 +246,23 @@ class Helicopter {
 									// console.log(tween.t);
 									sceneCamera.quaternion.slerp( slerpTarget, tween.t );
 								 } ).start();
+
+		// let newQuaternion = new THREE.Quaternion(), 
+		// 	sceneCamera   = window.scene.getObjectByName('heliCam').children[0],
+	 //     	slerpTarget   = new THREE.Quaternion().setFromAxisAngle( vector, that.getRadians(deg) );
+
+	     // console.log("slerpStart");
+	     // console.log(sceneCamera.quaternion);
+	     // console.log("slerpTarget");
+	     // console.log(slerpTarget);
+	     // console.log("newQuaternion")
+	     // console.log(newQuaternion);
+	     // console.log("time");
+	     // console.log(time);
+
+		// THREE.Quaternion.slerp( sceneCamera.quaternion, slerpTarget, newQuaternion, time );
+		// sceneCamera.applyQuaternion(newQuaternion);
+
 	}
 
 	cameraTween(deg, that, camera, time, callback){
