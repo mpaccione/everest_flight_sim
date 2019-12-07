@@ -16,8 +16,7 @@ Branch: master
 
 Game/Simulator I have built to the best of my abilities. Recreating the logic to simulate a helicopter is incredible math and physic intensive. My initial approach is to create a basic more arcade style logic from a basic understanding of vectors, velocity, acceleration, mass, gravity, force, pitch, roll, and yaw. Looks like those high school physics classes paid off :)
 
-![Everest Flight Sim![Everest Flight Simulator](https://github.com/mpaccione/everest_flight_sim/blob/master/client/master-preview.jpg?raw=true)
-ulator](https://github.com/mpaccione/everest_flight_sim/blob/master/master-preview.jpg?raw=true)
+![Everest Flight Simulator](https://github.com/mpaccione/everest_flight_sim/blob/master/client/master-preview.jpg?raw=true)
 
 # Flight Debugger Full Simulation
 
