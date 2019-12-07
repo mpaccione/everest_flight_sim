@@ -48,6 +48,8 @@ Basic simulator, featuring debugger stats, a helicopter model, and 3D plane. Thi
 
 ![Flight Debugger Wireframe Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-plane/flight-debugger-wireframe-preview.png?raw=true)
 
+# Flight Debugger Terrain Grid System
+
 ```
 Branch: debugger-terrain
 ```
