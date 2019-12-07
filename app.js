@@ -13,46 +13,47 @@ const scene = new THREE.Scene(),
 
 let time;
 
-controls.keys = false;
-
 // Grid for Reference
 // Axis Helper X: Red, Y: Green, Z: Blue
 const axisHelper = new THREE.AxisHelper(8000),
 	  gridSize = 8000,
-	  gridDivisions = 10;
+	  gridDivisions = 10,
 	  gridArr =  [];
 
 scene.add(axisHelper);
 
-console.log(terrainData);
+// BOXES 
 
-for (var i = 0; i < 4; i++) {
-	const grid = new THREE.GridHelper(gridSize, gridDivisions);
-	grid.position.set(0, 0, (gridSize * -i))
-	gridArr.push(grid);
-}
-
-for (var i = 0; i < gridArr.length; i++) {
-	scene.add(gridArr[i]);
-}
-
-for (var j = 0; j < 4; j++) {
+for (var j = 0; j < terrainData.length; j++) {
 	const gridTile = terrainData[j];
 	for (var k = 0; k < gridTile.length; k++) {
 		const subGridTile = gridTile[k];
-		// Row
+		// Column
 		for (var a = 0; a < subGridTile.length; a++) {
-			// Column
+			// Row
 			for (var b = 0; b < subGridTile[a].length; b++) {
 				const elevation = subGridTile[a][b]["elevation"],
+					  latitude = subGridTile[a][b]["latitude"],
+					  longitude = subGridTile[a][b]["longitude"],
 					  geometry = new THREE.BoxGeometry( 800, elevation, 800 ),
-					  material = new THREE.MeshBasicMaterial( {wireframe: false, color: colorData(elevation)} ),
+					  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(elevation)} ),
 					  cube = new THREE.Mesh( geometry, material );
 
-				console.log(elevation);
-				console.log(`${0}, ${a*800}, ${b*800}`);
+				// console.log(elevation);
+				// console.log(`${0}, ${a*800}, ${b*800}`);
 
-				cube.position.set( (a*800)-4000, 2000, ((b*800)-4000)+(j*-4000) )
+				cube.userData = {
+					lat: k,
+					long: j, 
+					subLat: b,
+					subLong: a,
+					elevation: elevation,
+					latitude: latitude,
+					longitude: longitude
+				}
+				cube.name = `${k}-${j}-${b}-${a}`;
+				cube.position.set( (a*800)+(j*8000), 2000, (b*-800)+(k*-8000) )
+
 				scene.add( cube );
 			}
 		}
@@ -90,31 +91,103 @@ class PickHelper {
     constructor() {
       this.raycaster = new THREE.Raycaster();
       this.pickedObject = null;
+      this.oldPickedObject = null;
       this.pickedObjectSavedColor = 0;
+      this.currentGrid = null;
+      this.oldGrid = null;
+    }
+
+    gridPick(parentGrid, hex){
+    	for (var b = 0; b < 10; b++) {
+        	for (var a = 0; a < 10; a++) {
+        		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
+        		if (obj) {
+		        	obj.material.color.setHex( hex );
+		        }
+        	}
+        }
+    }
+
+    gridPickOld(parentGrid, hex){
+    	for (var b = 0; b < 10; b++) {
+        	for (var a = 0; a < 10; a++) {
+        		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
+        		if (obj) {
+		        	obj.material.color.setHex( hex );
+		        	obj.material.wireframe = true;
+		        }
+        	}
+        }
+    }
+
+    gridUpdate(newGrid){
+    	if (this.currentGrid !== newGrid) {
+    		// change grid state
+    		if (this.oldGrid !== null) {
+    			this.gridPickOld(this.oldGrid, this.pickedObjectSavedColor);
+    		}
+    		this.oldGrid = this.currentGrid;
+    		this.currentGrid = newGrid;
+    	}
     }
 
     pick(normalizedPosition, scene, camera, time) {
-      // restore the color if there is a picked object
-      if (this.pickedObject) {
-        // this.pickedObject.material.emissive.setHex(this.pickedObjectSavedColor);
-        this.pickedObject.material.color.setHex(this.pickedObjectSavedColor);
-        this.pickedObject = undefined;
-      }
+		// restore the color if there is a picked object
+		if (this.pickedObject) {
+			const gridName = this.pickedObject.name.substring(0, 3);
+			this.gridUpdate(gridName);
+			this.gridPick(gridName, 0x0000FF);
+			this.pickedObject.material.color.setHex(this.pickedObjectSavedColor)
+			this.pickedObject.material.wireframe = false;
+			if (this.oldPickedObject !== null && this.oldPickedObject.name !== this.pickedObject.name) {
+				this.oldPickedObject.material.wireframe = true;
+			}
+			this.oldPickedObject = this.pickedObject;
+			this.pickedObject = undefined;
+		}
 
-      // cast a ray through the frustum
-      this.raycaster.setFromCamera(normalizedPosition, camera);
-      // get the list of objects the ray intersected
-      const intersectedObjects = this.raycaster.intersectObjects(scene.children);
-      if (intersectedObjects.length) {
-        // pick the first object. It's the closest one
-        this.pickedObject = intersectedObjects[0].object;
-        // save its color
-        // this.pickedObjectSavedColor = this.pickedObject.material.emissive.getHex();
-        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
-        // set its emissive color to flashing red/yellow
-        // this.pickedObject.material.emissive.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000);
-        this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000);
-      }
+		// cast a ray through the frustum
+		this.raycaster.setFromCamera(normalizedPosition, camera);
+		// get the list of objects the ray intersected
+		const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+
+    	if (intersectedObjects.length) {
+	        // pick the first object. It's the closest one
+	        this.pickedObject = intersectedObjects[0].object;
+	        const gridName = this.pickedObject.name.substring(0, 3);
+	        // save its color
+	        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
+	        // set its color to red
+	        this.gridUpdate(gridName);
+	       	this.gridPick(gridName, 0x0000FF);
+	       	this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
+	        // Update Debugger
+	        const html = `<ul>
+							<li>Global Grid: [${this.pickedObject.userData.lat}][${this.pickedObject.userData.long}][${this.pickedObject.userData.subLat}][${this.pickedObject.userData.subLong}]</li>
+							<br>
+							<li>Parent Grid: ${this.pickedObject.userData.lat}-${this.pickedObject.userData.long}</li>
+							<li>Sub Grid: ${this.pickedObject.userData.subLat}-${this.pickedObject.userData.subLong}</li>
+							<br>
+							<li>Elevation: ${this.pickedObject.userData.elevation}</li>
+							<li>Latitude: ${this.pickedObject.userData.latitude}</li>
+							<li>Longitude: ${this.pickedObject.userData.longitude}</li>
+						</ul>`;
+
+	        document.querySelector("#debugging-stats").innerHTML = html;
+    	} else {
+	    	const html = `<ul>
+							<li>Global Grid:</li>
+							<br>
+							<li>Parent Grid:</li>
+							<li>Sub Grid:</li>
+							<br>
+							<li>Elevation:</li>
+							<li>Latitude:</li>
+							<li>Longitude:</li>
+						</ul>`;
+
+	        document.querySelector("#debugging-stats").innerHTML = html;
+	    }
     }
 }
 
@@ -166,17 +239,21 @@ window.addEventListener('touchend', clearPickPosition);
 
 // Camera
 camera.name = "camera";
-camera.position.z = 5000;
-camera.position.y = 5000;
-// camera.lookAt(miniHeliGroup.position);
+camera.position.x = 38790;
+camera.position.y = 43700; 
+camera.position.z = 14710;
+camera.lookAt(scene.getObjectByName('4-4-9-9').position);
+
+controls.update();
 
 // Debugging
 window.scene = scene;
 window.camera = camera;
+window.controls = controls;
 document.body.innerHTML += `<div id="debugging-stats"></div>`;
 
 renderer.setSize( window.innerWidth, window.innerHeight );
-renderer.setClearColor(0xffffff, 0.9);
+renderer.setClearColor(0xffffff, 1);
 document.body.appendChild( renderer.domElement );
 
 // Animation Loop
