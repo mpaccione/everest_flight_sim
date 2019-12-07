@@ -53,7 +53,7 @@ More complete testing simulator featuring generated terrain, 3D orientation mode
  
 ![Flight Debugger Simulation Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-wireframe/flight-debugger-simulation-preview.png?raw=true)
 
-# Flight Debugger 3D Plane
+# Flight Debugger Plane
 
 ```
 Branch: debugger-plane
@@ -62,6 +62,8 @@ Branch: debugger-plane
 Basic simulator, featuring debugger stats, a helicopter model, and 3D plane. This was the first debugger I built to create and test the logic/physics for the application.
 
 ![Flight Debugger Wireframe Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-plane/flight-debugger-wireframe-preview.png?raw=true)
+
+# Flight Debugger Terrain Grid System
 
 ```
 Branch: debugger-terrain
