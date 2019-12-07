@@ -63,6 +63,15 @@ Basic simulator, featuring debugger stats, a helicopter model, and 3D plane. Thi
 
 ![Flight Debugger Wireframe Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-plane/flight-debugger-wireframe-preview.png?raw=true)
 
+```
+Branch: debugger-terrain
+```
+
+Terrain Grid System. Included is 10km^2 Green Square, each Blue Square is 1km^2 and each Red Square is 0.1km^2. Dynamic picking.
+
+![Flight Debugger Terrain Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-terrain/flight-debugger-terrain-preview.jpg?raw=true)
+
+
 # Contribute
 
 If you would like to help with either the visual aspects/performance/math simulations please use the github repo features like normal. Your help is much appreciated.
