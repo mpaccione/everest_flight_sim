@@ -287,6 +287,7 @@ class PickHelper {
     }
 
     gridPick(parentGrid, hex){
+    	console.log('gridPick');
     	for (var b = 0; b < 10; b++) {
         	for (var a = 0; a < 10; a++) {
         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
@@ -298,6 +299,7 @@ class PickHelper {
     }
 
     gridPickOld(parentGrid, hex){
+    	console.log('gridPickOld');
     	for (var b = 0; b < 10; b++) {
         	for (var a = 0; a < 10; a++) {
         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
@@ -312,20 +314,24 @@ class PickHelper {
     gridUpdate(newGrid){
     	if (this.currentGrid !== newGrid) {
     		// change grid state
+    		this.oldGrid = this.currentGrid;
     		if (this.oldGrid !== null) {
     			this.gridPickOld(this.oldGrid, this.pickedObjectSavedColor);
     		}
-    		this.oldGrid = this.currentGrid;
     		this.currentGrid = newGrid;
     	}
     }
 
     pick(normalizedPosition, scene, camera, time) {
+    	console.log("this.currentGrid");
+    	console.log(this.currentGrid);
+    	console.log("this.oldGrid");
+    	console.log(this.oldGrid);
 		// restore the color if there is a picked object
 		if (this.pickedObject) {
 			const gridName = this.pickedObject.name.substring(0, 3);
-			this.gridUpdate(gridName);
 			this.gridPick(gridName, 0x0000FF);
+			this.gridUpdate(gridName);
 			this.pickedObject.material.color.setHex(this.pickedObjectSavedColor)
 			this.pickedObject.material.wireframe = false;
 			if (this.oldPickedObject !== null && this.oldPickedObject.name !== this.pickedObject.name) {
@@ -347,8 +353,8 @@ class PickHelper {
 	        // save its color
 	        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
 	        // set its color to red
-	        this.gridUpdate(gridName);
 	       	this.gridPick(gridName, 0x0000FF);
+	       	this.gridUpdate(gridName);
 	       	this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
 	        // Update Debugger
 	        const html = `<ul>
