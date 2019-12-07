@@ -432,6 +432,8 @@ camera.position.x = 38790;
 camera.position.y = 43700; 
 camera.position.z = 14710;
 camera.lookAt(scene.getObjectByName('4-4-9-9').position);
+controls.update();
+camera.lookAt(scene.getObjectByName('4-4-9-9').position);
 
 // Debugging
 window.scene = scene;
