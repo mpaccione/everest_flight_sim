@@ -237,6 +237,8 @@ class Helicopter {
 	}
 
 	debuggingStats(){
+		window.flightSim = { x: this.x, z: this.z }
+		 
 		let html = `<ul>
 						<li>Model: ${this.model}</li>
 						<li>Weight: ${this.weight}</li>

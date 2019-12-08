@@ -593,6 +593,8 @@ const scene = new THREE.Scene(),
 
 let time;
 
+controls.keys = false;
+
 // Group
 const miniHeliGroup = new THREE.Group();
 
@@ -603,19 +605,17 @@ miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
 	miniModel = gltf.scene;
 	miniModel.name = "miniHeli"
 	miniModel.rotation.y = -90 * Math.PI / 180; // Radians
-    miniModel.position.set( 0, 0, 0 );
+    miniModel.position.set( 3200, 0, 3200 );
 
     let miniModelMesh = miniModel.children[0].children[0].children[0],
     	miniModelMeshArr = [ miniModelMesh.children[0], miniModelMesh.children[1], miniModelMesh.children[2] ];
-
-    console.log(miniModelMeshArr);
 
     for (var i = miniModelMeshArr.length - 1; i >= 0; i--) {
     	miniModelMeshArr[i].name = "mesh"+i;		
     	miniModelMeshArr[i].material.wireframe = true;
     }
 
-    miniHeliGroup.add( new THREE.AxesHelper(500) )
+    // miniHeliGroup.add( new THREE.AxesHelper(500) )
 	miniHeliGroup.add( miniModel );
 	scene.add(miniHeliGroup);
 } )
@@ -628,7 +628,7 @@ const player = new Helicopter(miniHeliGroup, "Wireframe", 14000);
 const axisHelper = new THREE.AxisHelper(8000),
 	  gridSize = 8000,
 	  gridDivisions = 10,
-	  gridArr =  [];
+	  gridArr = [];
 
 scene.add(axisHelper);
 
@@ -637,33 +637,15 @@ scene.add(axisHelper);
 for (var j = 0; j < terrainData.length; j++) {
 	const gridTile = terrainData[j];
 	for (var k = 0; k < gridTile.length; k++) {
-		const gridArr = [],
-			  subGridTile = gridTile[k];
+		const subGridTile = gridTile[k],
+			  geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
+			  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(3500)} ),
+			  cube = new THREE.Mesh( geometry, material );
 
-		// Column
-		for (var a = 0; a < subGridTile.length; a++) {
-			// Row
-			for (var b = 0; b < subGridTile[a].length; b++) {
-				const elevation = subGridTile[a][b]["elevation"],
-					  latitude = subGridTile[a][b]["latitude"],
-					  longitude = subGridTile[a][b]["longitude"],
-					  geometry = new THREE.BoxBufferGeometry( 800, elevation, 800 ),
-					  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(elevation)} ),
-					  cube = new THREE.Mesh( geometry, material );
+		cube.position.set( (j*800), 0, (k*800) );
+		cube.name = `${k}-${j}`;
 
-				cube.position.set( (a*800)+(j*8000), 2000, (b*-800)+(k*-8000) );
-
-				gridArr.push(cube);
-			}
-		}
-		// lat -> Z axis
-		// long -> X axis
-		const geom = BufferGeometryUtils.mergeBufferGeometries(gridArr.map(c => c.geometry)),
-			  mat =  new THREE.MeshBasicMaterial( { wireframe: true, color: new THREE.Color( 0x0000FF ) } )
-	    	  combined = new THREE.Mesh(geom, mat);
-
-	    combined.name = `${k}-${j}`;
-		scene.add( combined );
+		scene.add(cube)
 	}
 }
 
@@ -692,115 +674,172 @@ function resizeRendererToDisplaySize(renderer) {
 	return needResize;
 }
 
-class PickHelper {
-    constructor() {
-      this.raycaster = new THREE.Raycaster();
-      this.pickedObject = null;
-      this.oldPickedObject = null;
-      this.pickedObjectSavedColor = 0;
-      this.currentGrid = null;
-      this.oldGrid = null;
-    }
+// Quick and Dirty Global
+let currentGridCoord = [4,4]; 
 
-    gridPick(parentGrid, hex){
-    	console.log('gridPick');
-    	for (var b = 0; b < 10; b++) {
-        	for (var a = 0; a < 10; a++) {
-        		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
-        		if (obj) {
-		        	obj.material.color.setHex( hex );
-		        }
-        	}
-        }
-    }
+colorGrids(currentGridCoord);
+setInterval(function(){
+	gridCheck(currentGridCoord, 800);
+})
 
-    gridPickOld(parentGrid, hex){
-    	console.log('gridPickOld');
-    	for (var b = 0; b < 10; b++) {
-        	for (var a = 0; a < 10; a++) {
-        		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
-        		if (obj) {
-		        	obj.material.color.setHex( hex );
-		        	obj.material.wireframe = true;
-		        }
-        	}
-        }
-    }
+function gridCheck(currentGrid, gridSize){
+	let changed = false;
+	// Latitude
+	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
+		// Increase Latitude Grid Count
+		resetGrid(`${currentGrid[1]}-${currentGrid[0] - 1}`)		
+		currentGridCoord[0] = currentGrid[0] + 1; 
+		changed = true;
+	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
+		// Decrease Latitude Grid Count
+		resetGrid(`${currentGrid[1]}-${currentGrid[0] + 1}`)		
+		currentGridCoord[0] = currentGrid[0] - 1; 
+		changed = true;
+	}	
+	// Longitude
+	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
+		// Increase Longitude Grid Count
+		resetGrid(`${currentGrid[1] - 1}-${currentGrid[0]}`)
+		currentGridCoord[1] = currentGrid[1] + 1; 
+		changed = true;
+	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
+		// Decrease Longitude Grid Count
+		resetGrid(`${currentGrid[1] + 1}-${currentGrid[0]}`)		
+		currentGridCoord[1] = currentGrid[1] - 1;
+		changed = true;
+	}
 
-    gridUpdate(newGrid){
-    	if (this.currentGrid !== newGrid) {
-    		// change grid state
-    		this.oldGrid = this.currentGrid;
-    		if (this.oldGrid !== null) {
-    			this.gridPickOld(this.oldGrid, this.pickedObjectSavedColor);
-    		}
-    		this.currentGrid = newGrid;
-    	}
-    }
-
-    pick(normalizedPosition, scene, camera, time) {
-    	console.log("this.currentGrid");
-    	console.log(this.currentGrid);
-    	console.log("this.oldGrid");
-    	console.log(this.oldGrid);
-		// restore the color if there is a picked object
-		if (this.pickedObject) {
-			const gridName = this.pickedObject.name.substring(0, 3);
-			this.gridPick(gridName, 0x0000FF);
-			this.gridUpdate(gridName);
-			this.pickedObject.material.color.setHex(this.pickedObjectSavedColor)
-			this.pickedObject.material.wireframe = false;
-			if (this.oldPickedObject !== null && this.oldPickedObject.name !== this.pickedObject.name) {
-				this.oldPickedObject.material.wireframe = true;
-			}
-			this.oldPickedObject = this.pickedObject;
-			this.pickedObject = undefined;
-		}
-
-		// cast a ray through the frustum
-		this.raycaster.setFromCamera(normalizedPosition, camera);
-		// get the list of objects the ray intersected
-		const intersectedObjects = this.raycaster.intersectObjects(scene.children);
-
-    	if (intersectedObjects.length) {
-	        // pick the first object. It's the closest one
-	        this.pickedObject = intersectedObjects[0].object;
-	        const gridName = this.pickedObject.name.substring(0, 3);
-	        // save its color
-	        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
-	        // set its color to red
-	       	this.gridPick(gridName, 0x0000FF);
-	       	this.gridUpdate(gridName);
-	       	this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
-	        // Update Debugger
-	        const html = `<ul>
-							<li>Global Grid: [${this.pickedObject.userData.lat}][${this.pickedObject.userData.long}][${this.pickedObject.userData.subLat}][${this.pickedObject.userData.subLong}]</li>
-							<br>
-							<li>Parent Grid: ${this.pickedObject.userData.lat}-${this.pickedObject.userData.long}</li>
-							<li>Sub Grid: ${this.pickedObject.userData.subLat}-${this.pickedObject.userData.subLong}</li>
-							<br>
-							<li>Elevation: ${this.pickedObject.userData.elevation}</li>
-							<li>Latitude: ${this.pickedObject.userData.latitude}</li>
-							<li>Longitude: ${this.pickedObject.userData.longitude}</li>
-						</ul>`;
-
-	        document.querySelector("#debugging-stats").innerHTML = html;
-    	} else {
-	    	const html = `<ul>
-							<li>Global Grid:</li>
-							<br>
-							<li>Parent Grid:</li>
-							<li>Sub Grid:</li>
-							<br>
-							<li>Elevation:</li>
-							<li>Latitude:</li>
-							<li>Longitude:</li>
-						</ul>`;
-
-	        document.querySelector("#debugging-stats").innerHTML = html;
-	    }
-    }
+	if (changed) {
+		colorGrids(currentGridCoord);
+	}
 }
+
+function resetGrid(grid){
+	const obj = scene.getObjectByName(grid);
+	if (obj) {
+		obj.material.wireframe = true;
+		obj.material.color.setHex(0x286400);
+	}
+}
+
+function colorGrids(currentGrid){
+	for (var j = currentGrid[1]-1; j < currentGrid[1]+2; j++) {
+		for (var k = currentGrid[0]-1; k < currentGrid[0]+2; k++) {
+			if (k >= 0 && j >= 0){
+				const obj = scene.getObjectByName(`${k}-${j}`);
+				obj.material.color.setHex(0x0000FF);
+				obj.material.wireframe = false;
+			}
+		}
+	}
+	const obj = scene.getObjectByName(`${currentGrid[0]}-${currentGrid[1]}`);
+	obj.material.color.setHex(0xFF0000);
+	obj.material.wireframe = false;
+}
+
+// class PickHelper {
+//     constructor() {
+//       this.raycaster = new THREE.Raycaster();
+//       this.pickedObject = null;
+//       this.oldPickedObject = null;
+//       this.pickedObjectSavedColor = 0;
+//       this.currentGrid = null;
+//       this.oldGrid = null;
+//     }
+
+//     gridPick(parentGrid, hex){
+//     	for (var b = 0; b < 10; b++) {
+//         	for (var a = 0; a < 10; a++) {
+//         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
+//         		if (obj) {
+// 		        	obj.material.color.setHex( hex );
+// 		        }
+//         	}
+//         }
+//     }
+
+//     gridPickOld(parentGrid, hex){
+//     	for (var b = 0; b < 10; b++) {
+//         	for (var a = 0; a < 10; a++) {
+//         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
+//         		if (obj) {
+// 		        	obj.material.color.setHex( hex );
+// 		        	obj.material.wireframe = true;
+// 		        }
+//         	}
+//         }
+//     }
+
+//     gridUpdate(newGrid){
+//     	if (this.currentGrid !== newGrid) {
+//     		// change grid state
+//     		this.oldGrid = this.currentGrid;
+//     		if (this.oldGrid !== null) {
+//     			this.gridPickOld(this.oldGrid, this.pickedObjectSavedColor);
+//     		}
+//     		this.currentGrid = newGrid;
+//     	}
+//     }
+
+//     pick(normalizedPosition, scene, camera, time) {
+// 		// restore the color if there is a picked object
+// 		if (this.pickedObject) {
+// 			const gridName = this.pickedObject.name.substring(0, 3);
+// 			this.gridPick(gridName, 0x0000FF);
+// 			this.gridUpdate(gridName);
+// 			this.pickedObject.material.color.setHex(this.pickedObjectSavedColor)
+// 			this.pickedObject.material.wireframe = false;
+// 			if (this.oldPickedObject !== null && this.oldPickedObject.name !== this.pickedObject.name) {
+// 				this.oldPickedObject.material.wireframe = true;
+// 			}
+// 			this.oldPickedObject = this.pickedObject;
+// 			this.pickedObject = undefined;
+// 		}
+
+// 		// cast a ray through the frustum
+// 		this.raycaster.setFromCamera(normalizedPosition, camera);
+// 		// get the list of objects the ray intersected
+// 		const intersectedObjects = this.raycaster.intersectObjects(scene.children);
+
+//     	if (intersectedObjects.length) {
+// 	        // pick the first object. It's the closest one
+// 	        this.pickedObject = intersectedObjects[0].object;
+// 	        const gridName = this.pickedObject.name.substring(0, 3);
+// 	        // save its color
+// 	        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
+// 	        // set its color to red
+// 	       	this.gridPick(gridName, 0x0000FF);
+// 	       	this.gridUpdate(gridName);
+// 	       	this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
+// 	        // Update Debugger
+// 	        const html = `<ul>
+// 							<li>Global Grid: [${this.pickedObject.userData.lat}][${this.pickedObject.userData.long}][${this.pickedObject.userData.subLat}][${this.pickedObject.userData.subLong}]</li>
+// 							<br>
+// 							<li>Parent Grid: ${this.pickedObject.userData.lat}-${this.pickedObject.userData.long}</li>
+// 							<li>Sub Grid: ${this.pickedObject.userData.subLat}-${this.pickedObject.userData.subLong}</li>
+// 							<br>
+// 							<li>Elevation: ${this.pickedObject.userData.elevation}</li>
+// 							<li>Latitude: ${this.pickedObject.userData.latitude}</li>
+// 							<li>Longitude: ${this.pickedObject.userData.longitude}</li>
+// 						</ul>`;
+
+// 	        document.querySelector("#debugging-stats").innerHTML = html;
+//     	} else {
+// 	    	const html = `<ul>
+// 							<li>Global Grid:</li>
+// 							<br>
+// 							<li>Parent Grid:</li>
+// 							<li>Sub Grid:</li>
+// 							<br>
+// 							<li>Elevation:</li>
+// 							<li>Latitude:</li>
+// 							<li>Longitude:</li>
+// 						</ul>`;
+
+// 	        document.querySelector("#debugging-stats").innerHTML = html;
+// 	    }
+//     }
+// }
 
 function getCanvasRelativePosition(event) {
 	// const rect = document.querySelectorAll('canvas')[0].getBoundingClientRect();
@@ -827,26 +866,26 @@ function clearPickPosition() {
 }
 
 
-const pickPosition = {x: 0, y: 0};
-const pickHelper = new PickHelper();
-clearPickPosition();
+// const pickPosition = {x: 0, y: 0};
+// const pickHelper = new PickHelper();
+// clearPickPosition();
 
 // Mouse Picker Listeners
-window.addEventListener('mousemove', setPickPosition);
-window.addEventListener('mouseout', clearPickPosition);
-window.addEventListener('mouseleave', clearPickPosition);
+// window.addEventListener('mousemove', setPickPosition);
+// window.addEventListener('mouseout', clearPickPosition);
+// window.addEventListener('mouseleave', clearPickPosition);
 
-window.addEventListener('touchstart', (event) => {
-	// prevent the window from scrolling
-	event.preventDefault();
-	setPickPosition(event.touches[0]);
-}, {passive: false});
+// window.addEventListener('touchstart', (event) => {
+// 	// prevent the window from scrolling
+// 	event.preventDefault();
+// 	setPickPosition(event.touches[0]);
+// }, {passive: false});
 
-window.addEventListener('touchmove', (event) => {
-	setPickPosition(event.touches[0]);
-});
+// window.addEventListener('touchmove', (event) => {
+// 	setPickPosition(event.touches[0]);
+// });
 
-window.addEventListener('touchend', clearPickPosition);
+// window.addEventListener('touchend', clearPickPosition);
 
 // Camera
 camera.name = "camera";
@@ -876,7 +915,7 @@ const animate = function () {
     }
 
     time *= 0.001;
-    pickHelper.pick(pickPosition, scene, camera, time);
+    // pickHelper.pick(pickPosition, scene, camera, time);
 	requestAnimationFrame( animate );
 	player.update();
 	renderer.render( scene, camera );
@@ -55334,6 +55373,8 @@ class Helicopter {
 	}
 
 	debuggingStats(){
+		window.flightSim = { x: this.x, z: this.z }
+		 
 		let html = `<ul>
 						<li>Model: ${this.model}</li>
 						<li>Weight: ${this.weight}</li>
