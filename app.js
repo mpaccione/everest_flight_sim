@@ -498,47 +498,51 @@ setInterval(function(){
 
 function gridCheck(currentGridRef, gridSize){
 	let changed = false,
-		currentGrid = JSON.parse(JSON.stringify(currentGridRef));
+		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
+		resetGridArr = [];
 
 	// Latitude
 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
 		// Increase Latitude Grid Count
-		resetGrid(`${currentGrid[1]}-${currentGrid[0] - 1}`)		
+		resetGridArr.push(`${currentGrid[1] - 1}-${currentGrid[0] - 1}`);
+		resetGridArr.push(`${currentGrid[1] - 1}-${currentGrid[0]}`);
+		resetGridArr.push(`${currentGrid[1] - 1}-${currentGrid[0] + 1}`);		
 		currentGridCoord[1] = currentGrid[1] + 1; 
-		console.log("changed1");
 		changed = true;
 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
 		// Decrease Latitude Grid Count
-		resetGrid(`${currentGrid[1]}-${currentGrid[0] + 1}`)		
+		resetGridArr.push(`${currentGrid[1] + 1}-${currentGrid[0] - 1}`);
+		resetGridArr.push(`${currentGrid[1] + 1}-${currentGrid[0]}`);
+		resetGridArr.push(`${currentGrid[1] + 1}-${currentGrid[0] + 1}`);						
 		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
-		console.log("changed2");
 		changed = true;
 	}	
 	// Longitude
 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
 		// Increase Longitude Grid Count
-		resetGrid(`${currentGrid[1] - 1}-${currentGrid[0]}`)
+		resetGridArr.push(`${currentGrid[1] - 1}-${currentGrid[0] - 1}`);
+		resetGridArr.push(`${currentGrid[1]}-${currentGrid[0] - 1}`);
+		resetGridArr.push(`${currentGrid[1] + 1}-${currentGrid[0] - 1}`);
 		currentGridCoord[0] = currentGrid[0] + 1; 
-		console.log("changed3");
 		changed = true;
 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
 		// Decrease Longitude Grid Count
-		resetGrid(`${currentGrid[1] + 1}-${currentGrid[0]}`)		
+		resetGridArr.push(`${currentGrid[1] - 1}-${currentGrid[0] + 1}`);		
+		resetGridArr.push(`${currentGrid[1]}-${currentGrid[0] + 1}`);
+		resetGridArr.push(`${currentGrid[1] + 1}-${currentGrid[0] + 1}`);				
 		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
-		console.log("changed4");
 		changed = true;
 	}
 
-	console.log("changed "+changed);
-
 	if (changed) {
 		colorGrids(currentGridCoord);
+		for (var i = 0; i < resetGridArr.length; i++) {
+			resetGrid(resetGridArr[i]);
+		}
 	}
 }
 
 function resetGrid(grid){
-	// console.log("resetGrid");
-	// console.log(grid);
 	const obj = scene.getObjectByName(grid);
 	if (obj) {
 		obj.material.wireframe = true;
@@ -547,16 +551,14 @@ function resetGrid(grid){
 }
 
 function colorGrids(currentGrid){
-	// console.log("colorGrids");
-	// console.log(currentGrid);
-	const start1 = (currentGridCoord[0] - 1) //> 0 ? (currentGridCoord[0] - 1) : 0,
-	const start2 = (currentGridCoord[1] - 1) //> 0 ? (currentGridCoord[1] - 1) : 0;
+	const start1 = (currentGridCoord[0] - 1),
+		  start2 = (currentGridCoord[1] - 1);
 
 
 
 	for (var j = start1; j < (start1 + 3); j++) {
 		for (var k = start2; k < (start2 + 3); k++) {
-			console.log(`k:${k}-j:${j}`);
+			// console.log(`k:${k}-j:${j}`);
 			const obj = scene.getObjectByName(`${k}-${j}`);
 			if (obj) {
 				obj.material.color.setHex(0x0000FF);
@@ -564,124 +566,16 @@ function colorGrids(currentGrid){
 			}
 		}
 	}
-	// console.log("currentGrid");
-	// console.log(`${currentGrid[0]}-${currentGrid[1]}`);
+
 	const obj = scene.getObjectByName(`${currentGridCoord[1]}-${currentGridCoord[0]}`);
-	console.log("obj");
-	console.log(obj);
+
 	if (obj){
 		obj.material.color.setHex(0xFF0000);
 		obj.material.wireframe = false;
 	}
 }
 
-// class PickHelper {
-//     constructor() {
-//       this.raycaster = new THREE.Raycaster();
-//       this.pickedObject = null;
-//       this.oldPickedObject = null;
-//       this.pickedObjectSavedColor = 0;
-//       this.currentGrid = null;
-//       this.oldGrid = null;
-//     }
-
-//     gridPick(parentGrid, hex){
-//     	for (var b = 0; b < 10; b++) {
-//         	for (var a = 0; a < 10; a++) {
-//         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
-//         		if (obj) {
-// 		        	obj.material.color.setHex( hex );
-// 		        }
-//         	}
-//         }
-//     }
-
-//     gridPickOld(parentGrid, hex){
-//     	for (var b = 0; b < 10; b++) {
-//         	for (var a = 0; a < 10; a++) {
-//         		const obj = window.scene.getObjectByName(`${parentGrid}-${b}-${a}`);
-//         		if (obj) {
-// 		        	obj.material.color.setHex( hex );
-// 		        	obj.material.wireframe = true;
-// 		        }
-//         	}
-//         }
-//     }
-
-//     gridUpdate(newGrid){
-//     	if (this.currentGrid !== newGrid) {
-//     		// change grid state
-//     		this.oldGrid = this.currentGrid;
-//     		if (this.oldGrid !== null) {
-//     			this.gridPickOld(this.oldGrid, this.pickedObjectSavedColor);
-//     		}
-//     		this.currentGrid = newGrid;
-//     	}
-//     }
-
-//     pick(normalizedPosition, scene, camera, time) {
-// 		// restore the color if there is a picked object
-// 		if (this.pickedObject) {
-// 			const gridName = this.pickedObject.name.substring(0, 3);
-// 			this.gridPick(gridName, 0x0000FF);
-// 			this.gridUpdate(gridName);
-// 			this.pickedObject.material.color.setHex(this.pickedObjectSavedColor)
-// 			this.pickedObject.material.wireframe = false;
-// 			if (this.oldPickedObject !== null && this.oldPickedObject.name !== this.pickedObject.name) {
-// 				this.oldPickedObject.material.wireframe = true;
-// 			}
-// 			this.oldPickedObject = this.pickedObject;
-// 			this.pickedObject = undefined;
-// 		}
-
-// 		// cast a ray through the frustum
-// 		this.raycaster.setFromCamera(normalizedPosition, camera);
-// 		// get the list of objects the ray intersected
-// 		const intersectedObjects = this.raycaster.intersectObjects(scene.children);
-
-//     	if (intersectedObjects.length) {
-// 	        // pick the first object. It's the closest one
-// 	        this.pickedObject = intersectedObjects[0].object;
-// 	        const gridName = this.pickedObject.name.substring(0, 3);
-// 	        // save its color
-// 	        this.pickedObjectSavedColor = this.pickedObject.material.color.getHex();
-// 	        // set its color to red
-// 	       	this.gridPick(gridName, 0x0000FF);
-// 	       	this.gridUpdate(gridName);
-// 	       	this.pickedObject.material.color.setHex((time * 8) % 2 > 1 ? 0xFFFF00 : 0xFF0000)
-// 	        // Update Debugger
-// 	        const html = `<ul>
-// 							<li>Global Grid: [${this.pickedObject.userData.lat}][${this.pickedObject.userData.long}][${this.pickedObject.userData.subLat}][${this.pickedObject.userData.subLong}]</li>
-// 							<br>
-// 							<li>Parent Grid: ${this.pickedObject.userData.lat}-${this.pickedObject.userData.long}</li>
-// 							<li>Sub Grid: ${this.pickedObject.userData.subLat}-${this.pickedObject.userData.subLong}</li>
-// 							<br>
-// 							<li>Elevation: ${this.pickedObject.userData.elevation}</li>
-// 							<li>Latitude: ${this.pickedObject.userData.latitude}</li>
-// 							<li>Longitude: ${this.pickedObject.userData.longitude}</li>
-// 						</ul>`;
-
-// 	        document.querySelector("#debugging-stats").innerHTML = html;
-//     	} else {
-// 	    	const html = `<ul>
-// 							<li>Global Grid:</li>
-// 							<br>
-// 							<li>Parent Grid:</li>
-// 							<li>Sub Grid:</li>
-// 							<br>
-// 							<li>Elevation:</li>
-// 							<li>Latitude:</li>
-// 							<li>Longitude:</li>
-// 						</ul>`;
-
-// 	        document.querySelector("#debugging-stats").innerHTML = html;
-// 	    }
-//     }
-// }
-
 function getCanvasRelativePosition(event) {
-	// const rect = document.querySelectorAll('canvas')[0].getBoundingClientRect();
-
 	return {
 	  x: event.clientX - 0,
 	  y: event.clientY - 0,
@@ -702,28 +596,6 @@ function clearPickPosition() {
 	pickPosition.x = -100000;
 	pickPosition.y = -100000;
 }
-
-
-// const pickPosition = {x: 0, y: 0};
-// const pickHelper = new PickHelper();
-// clearPickPosition();
-
-// Mouse Picker Listeners
-// window.addEventListener('mousemove', setPickPosition);
-// window.addEventListener('mouseout', clearPickPosition);
-// window.addEventListener('mouseleave', clearPickPosition);
-
-// window.addEventListener('touchstart', (event) => {
-// 	// prevent the window from scrolling
-// 	event.preventDefault();
-// 	setPickPosition(event.touches[0]);
-// }, {passive: false});
-
-// window.addEventListener('touchmove', (event) => {
-// 	setPickPosition(event.touches[0]);
-// });
-
-// window.addEventListener('touchend', clearPickPosition);
 
 // Camera
 camera.name = "camera";
