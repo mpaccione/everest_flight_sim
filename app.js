@@ -412,11 +412,12 @@ const miniHeliGroup = new THREE.Group();
 // Load Helicopter Model
 const miniModelLoader = new GLTFLoader();
 
+console.log("UPDATED");
+
 miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
 	miniModel = gltf.scene;
 	miniModel.name = "miniHeli"
 	miniModel.rotation.y = -90 * Math.PI / 180; // Radians
-    miniModel.position.set( 3200, 0, 3200 );
 
     let miniModelMesh = miniModel.children[0].children[0].children[0],
     	miniModelMeshArr = [ miniModelMesh.children[0], miniModelMesh.children[1], miniModelMesh.children[2] ];
@@ -426,8 +427,9 @@ miniModelLoader.load( './src/models/helicopter/scene.gltf', function(gltf){
     	miniModelMeshArr[i].material.wireframe = true;
     }
 
-    // miniHeliGroup.add( new THREE.AxesHelper(500) )
+    miniHeliGroup.add( new THREE.AxesHelper(500) );
 	miniHeliGroup.add( miniModel );
+	miniHeliGroup.position.set( 0, 6000, 0 );
 	scene.add(miniHeliGroup);
 } )
 
@@ -486,39 +488,48 @@ function resizeRendererToDisplaySize(renderer) {
 }
 
 // Quick and Dirty Global
-let currentGridCoord = [4,4]; 
+let currentGridCoord = [0,0]; 
 
 colorGrids(currentGridCoord);
 setInterval(function(){
+	console.log("interval");
 	gridCheck(currentGridCoord, 800);
-})
+}, 2000)
 
-function gridCheck(currentGrid, gridSize){
-	let changed = false;
+function gridCheck(currentGridRef, gridSize){
+	let changed = false,
+		currentGrid = JSON.parse(JSON.stringify(currentGridRef));
+
 	// Latitude
 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
 		// Increase Latitude Grid Count
 		resetGrid(`${currentGrid[1]}-${currentGrid[0] - 1}`)		
-		currentGridCoord[0] = currentGrid[0] + 1; 
+		currentGridCoord[1] = currentGrid[1] + 1; 
+		console.log("changed1");
 		changed = true;
 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
 		// Decrease Latitude Grid Count
 		resetGrid(`${currentGrid[1]}-${currentGrid[0] + 1}`)		
-		currentGridCoord[0] = currentGrid[0] - 1; 
+		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
+		console.log("changed2");
 		changed = true;
 	}	
 	// Longitude
 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
 		// Increase Longitude Grid Count
 		resetGrid(`${currentGrid[1] - 1}-${currentGrid[0]}`)
-		currentGridCoord[1] = currentGrid[1] + 1; 
+		currentGridCoord[0] = currentGrid[0] + 1; 
+		console.log("changed3");
 		changed = true;
 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
 		// Decrease Longitude Grid Count
 		resetGrid(`${currentGrid[1] + 1}-${currentGrid[0]}`)		
-		currentGridCoord[1] = currentGrid[1] - 1;
+		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
+		console.log("changed4");
 		changed = true;
 	}
+
+	console.log("changed "+changed);
 
 	if (changed) {
 		colorGrids(currentGridCoord);
@@ -526,6 +537,8 @@ function gridCheck(currentGrid, gridSize){
 }
 
 function resetGrid(grid){
+	// console.log("resetGrid");
+	// console.log(grid);
 	const obj = scene.getObjectByName(grid);
 	if (obj) {
 		obj.material.wireframe = true;
@@ -534,18 +547,28 @@ function resetGrid(grid){
 }
 
 function colorGrids(currentGrid){
-	for (var j = currentGrid[1]-1; j < currentGrid[1]+2; j++) {
-		for (var k = currentGrid[0]-1; k < currentGrid[0]+2; k++) {
-			if (k >= 0 && j >= 0){
-				const obj = scene.getObjectByName(`${k}-${j}`);
-				obj.material.color.setHex(0x0000FF);
-				obj.material.wireframe = false;
-			}
+	// console.log("colorGrids");
+	// console.log(currentGrid);
+	const start1 = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0,
+		  start2 = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0;
+
+	for (var j = start1; j < (start1 + 2); j++) {
+		for (var k = start2; k < (start2 + 2); k++) {
+			console.log(`${k}-${j}`);
+			const obj = scene.getObjectByName(`${k}-${j}`);
+			obj.material.color.setHex(0x0000FF);
+			obj.material.wireframe = false;
 		}
 	}
-	const obj = scene.getObjectByName(`${currentGrid[0]}-${currentGrid[1]}`);
-	obj.material.color.setHex(0xFF0000);
-	obj.material.wireframe = false;
+	// console.log("currentGrid");
+	// console.log(`${currentGrid[0]}-${currentGrid[1]}`);
+	const obj = scene.getObjectByName(`${currentGrid[1]}-${currentGrid[0]}`);
+	console.log("obj");
+	console.log(obj);
+	if (obj){
+		obj.material.color.setHex(0xFF0000);
+		obj.material.wireframe = false;
+	}
 }
 
 // class PickHelper {

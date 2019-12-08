@@ -17,7 +17,7 @@ class Helicopter {
 		this.model = model;
 		this.weight = weight;
 		this.x = 0;
-		this.y = 0;
+		this.y = 6000;
 		this.z = 0;
 		this.maxAY = 1600;
 		this.maxAX = 3;
