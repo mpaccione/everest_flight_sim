@@ -738,20 +738,24 @@ function resetGrid(grid){
 function colorGrids(currentGrid){
 	// console.log("colorGrids");
 	// console.log(currentGrid);
-	const start1 = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0,
-		  start2 = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0;
+	const start1 = (currentGridCoord[0] - 1) //> 0 ? (currentGridCoord[0] - 1) : 0,
+	const start2 = (currentGridCoord[1] - 1) //> 0 ? (currentGridCoord[1] - 1) : 0;
 
-	for (var j = start1; j < (start1 + 2); j++) {
-		for (var k = start2; k < (start2 + 2); k++) {
-			console.log(`${k}-${j}`);
+
+
+	for (var j = start1; j < (start1 + 3); j++) {
+		for (var k = start2; k < (start2 + 3); k++) {
+			console.log(`k:${k}-j:${j}`);
 			const obj = scene.getObjectByName(`${k}-${j}`);
-			obj.material.color.setHex(0x0000FF);
-			obj.material.wireframe = false;
+			if (obj) {
+				obj.material.color.setHex(0x0000FF);
+				obj.material.wireframe = false;
+			}
 		}
 	}
 	// console.log("currentGrid");
 	// console.log(`${currentGrid[0]}-${currentGrid[1]}`);
-	const obj = scene.getObjectByName(`${currentGrid[1]}-${currentGrid[0]}`);
+	const obj = scene.getObjectByName(`${currentGridCoord[1]}-${currentGridCoord[0]}`);
 	console.log("obj");
 	console.log(obj);
 	if (obj){
