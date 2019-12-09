@@ -63,6 +63,16 @@ Basic simulator, featuring debugger stats, a helicopter model, and 3D plane. Thi
 
 ![Flight Debugger Wireframe Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-plane/flight-debugger-wireframe-preview.png?raw=true)
 
+# Helicopter Terrain Grid Positioning System
+
+```
+Branch: debugger-positioning
+```
+
+Positioning algorithim that tracks the grid radius of the helicopter.
+
+![Flight Debugger Positioning Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-positioning/flight-debugger-positioning-preview.jpg?raw=true)
+
 # Flight Debugger Terrain Grid System
 
 ```
