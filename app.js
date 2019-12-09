@@ -3,7 +3,7 @@ const THREE = require('three');
 const GLTFLoader = require('three-gltf-loader');
 const Helicopter = require('./src/classes/helicopter');
 const OrbitControls = require('three-orbit-controls')(THREE);
-const terrainData = require('./Grid_Output_Everest_10.json');
+const terrainData = require('./Grid_Output_Everest_60.json');
 
 ////////////////////////////////
 ///// THREE BUFFER UTILITY /////
@@ -554,11 +554,8 @@ function colorGrids(currentGrid){
 	const start1 = (currentGridCoord[0] - 1),
 		  start2 = (currentGridCoord[1] - 1);
 
-
-
 	for (var j = start1; j < (start1 + 3); j++) {
 		for (var k = start2; k < (start2 + 3); k++) {
-			// console.log(`k:${k}-j:${j}`);
 			const obj = scene.getObjectByName(`${k}-${j}`);
 			if (obj) {
 				obj.material.color.setHex(0x0000FF);
@@ -572,6 +569,10 @@ function colorGrids(currentGrid){
 	if (obj){
 		obj.material.color.setHex(0xFF0000);
 		obj.material.wireframe = false;
+	}
+
+	if (window.currentGrid) {
+		window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
 	}
 }
 
@@ -615,6 +616,7 @@ document.body.innerHTML += `<div id="debugging-stats"></div>`;
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild( renderer.domElement );
+window.currentGrid = '0-0';
 
 // Animation Loop
 const animate = function () {

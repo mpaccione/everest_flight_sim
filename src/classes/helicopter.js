@@ -243,6 +243,8 @@ class Helicopter {
 						<li>Model: ${this.model}</li>
 						<li>Weight: ${this.weight}</li>
 						<br>
+						<li>Current Grid: ${window.currentGrid}</li>
+						<br>
 						<li>X: ${this.x}</li>
 						<li>Y: ${this.y}</li>
 						<li>Z: ${this.z}</li>
