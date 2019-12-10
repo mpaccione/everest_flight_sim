@@ -30,7 +30,7 @@ app.get('/', function(req, res) {
 const fileName = "Grid_Output_Everest_60",
 	  url = `./data/${fileName}.json`;
 
-readFile(url, fileName);
+// readFile(url, fileName);
 
 function readFile(url, fileName){
 	console.log("readFile");
@@ -136,54 +136,45 @@ function writeToFile(data, fileName){
 // Response Object with Keyname XY
 // Reads from XY.txt
 
-app.get('/terrainData/:indexes', function(req, res){
-	const encoding = req.headers['accept-encoding'], 
-		  reqArr   = req.params.indexes;
+app.get('/data/:dataset', function(req, res){
+	const encoding = req.headers['accept-encoding'];
 
-	if (compArr.length <= 1) {
+	if (encoding.includes('br')) {
 
-		console.warn("Unsupported Content Encoding Headers");
-		res.status(500).send(new Error('Dataset Not Currently Available'));
+		fetchFiles(req.params.dataset, 'br', res);
+
+	} else if (encoding.includes('gzip')) {
+
+		fetchFiles(req.params.dataset, 'gzip', res);
 
 	} else {
-
-		if (encoding.includes('br')) {
-
-			fetchFiles('br');
-
-		} else if (encoding.includes('gzip')) {
-
-			fetchFiles('gzip');
-
-		} else {
-			console.warn("Unsupported Content Encoding Headers");
-			res.status(415).send(new Error('Unsupported Requested Encoding Type'));
-		}
-
+		console.warn("Unsupported Content Encoding Headers");
+		res.status(415).send(new Error('Unsupported Requested Encoding Type'));
 	}
 	
 });
 
-function fetchFiles(arr, compressionType){
+function fetchFiles(dataset, compressionType, res){
 	let resObj;
 
-	for (var i = 0; i < arr.length; i++) {
-		fs.readFile(path.join(__dirname, `/api-data/compressed/${arr[i]}.txt.${compressionType}`), (err, data) => {
-	        if (err) {
-	        	console.warn(err);
-	        	res.status(500).send(new Error(`${compressionType} Compression Data Read Error`));
-	        } else {
-	        	let keyName = arr[i][0].toString() + arr[i][1].toString();
-			 	resObj[keyName] = data;
-	        }
-		});
-	}
+	fs.readFile(path.join(__dirname, `./data/Grid_Output_Everest_${dataset}_TILES.json.${compressionType}`), (err, data) => {
+        if (err) {
+        	console.warn(err);
+        	res.status(500).send(new Error(`${compressionType} Compression Data Read Error`));
+        } else {
+		 	resObj = data;
+        }
+	});
 
 	res.writeHead(200, {
 		'Content-Type': 'application/json',
 		'Content-Encoding': `${compressionType}`
 	});
-	res.end(resObj);
+
+	console.log(`File Path: `+path.join(__dirname, `./data/Grid_Output_Everest_${dataset}_TILES.json.${compressionType}`));
+	console.log(resObj);
+
+	return res.end(resObj);
 }
 
 // Listen
