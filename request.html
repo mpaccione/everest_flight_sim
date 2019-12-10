@@ -3,8 +3,63 @@
 <head>
 	<title>Request & IndexedDB Testing</title>
 </head>
+<script type="text/javascript">
+	function apiCall(){
+		console.log("script loaded");
+		const ajax = new XMLHttpRequest(),
+			  indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+
+		ajax.open("GET", "http://localhost:8080/data/60");
+
+		ajax.addEventListener("load", function(response){
+			const res = JSON.parse(response),
+				  req = indexedDB.open("JSON");
+
+			req.onerror = function(e){
+				console.log("DB Error");
+				console.log(e);
+			}
+
+			req.onupgradeneeded = function(e){
+				const db = e.target.result;
+
+				db.createObjectStore("terrainTiles", {
+					autoIncrement: true
+				})
+			}
+
+			req.onsuccess = function(e){
+				console.log("req.onsuccess");
+				const db = e.target.result,
+					  t = db.transaction(['terrainTiles'], 'readwrite'),
+					  store = t.objectStore('terrainTiles');
+				let   i = 0;
+
+				Object.keys(res).forEach(function(key){
+					const storeReq = store.put(res[key], i);
+
+					document.querySelector("tbody").innerHTML += `<td>${i}</td><td>${key}</td><td>${res[key]}</td>`;
+
+					storeReq.onsucess = function(e){
+						console.log("storeReq.onsuccess");
+					}
+
+					storeReq.onerror = function(e){
+						console.log("storeReq.onerror");
+						console.log(e);
+					}
+
+					i++;
+				})
+
+				
+			}
+		})
+	}
+</script>
 <body>
 	<h1>Indexed DB</h1>
+	<button onClick="apiCall()">Make API Call</button>
 	<table>
 		<thead>
 			<th>Index</th>
@@ -13,60 +68,5 @@
 		</thead>
 		<tbody></tbody>
 	</table>
-	<script type="text/javascript">
-		document.addEventListener("DOMContentLoaded", function(){
-			console.log("script loaded");
-			const ajax = new XMLHttpRequest(),
-				  indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-
-			ajax.open("GET", "http://localhost:8080/data/60");
-
-			ajax.addEventListener("load", function(response){
-				const res = JSON.parse(response),
-					  req = indexedDB.open("JSON");
-
-				req.onerror = function(e){
-					console.log("DB Error");
-					console.log(e);
-				}
-
-				req.onupgradeneeded = function(e){
-					const db = e.target.result;
-
-					db.createObjectStore("terrainTiles", {
-						autoIncrement: true
-					})
-				}
-
-				req.onsuccess = function(e){
-					console.log("req.onsuccess");
-					const db = e.target.result,
-						  t = db.transaction(['terrainTiles'], 'readwrite'),
-						  store = t.objectStore('terrainTiles');
-					let   i = 0;
-
-					Object.keys(res).forEach(function(key){
-						const storeReq = store.put(res[key], i);
-
-						document.querySelector("tbody").innerHTML += `<td>${i}</td><td>${key}</td><td>${res[key]}</td>`;
-
-						storeReq.onsucess = function(e){
-							console.log("storeReq.onsuccess");
-						}
-
-						storeReq.onerror = function(e){
-							console.log("storeReq.onerror");
-							console.log(e);
-						}
-
-						i++;
-					})
-
-					
-				}
-			})
-
-		})
-	</script>
 </body>
 </html>

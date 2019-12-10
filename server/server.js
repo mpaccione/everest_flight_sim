@@ -12,22 +12,22 @@ app.use(cors());
 
 // Compression
 
-app.use('/', expressStaticGzip(path.join(__dirname, 'build'), {
-	enableBrotli: true,
-	orderPreference: ['br', 'gz']
-}))
+// app.use('/', expressStaticGzip(path.join(__dirname, 'build'), {
+// 	enableBrotli: true,
+// 	orderPreference: ['br', 'gz']
+// }))
 
 // Routes
 
-app.get('/', function(req, res) {
-	res.sendFile(path.join(__dirname, 'build', 'index.html'))
-})
+// app.get('/', function(req, res) {
+// 	res.sendFile(path.join(__dirname, 'build', 'index.html'))
+// })
 
 ////////////////////////////////////
 ////////// Format Data /////////////
 ////////////////////////////////////
 
-const fileName = "Grid_Output_Everest_60",
+const fileName = "Grid_Output_Everest_4",
 	  url = `./data/${fileName}.json`;
 
 // readFile(url, fileName);
@@ -138,13 +138,17 @@ function writeToFile(data, fileName){
 
 app.get('/data/:dataset', function(req, res){
 	const encoding = req.headers['accept-encoding'];
+	console.log("accept-encoding");
+	console.log(encoding);
 
 	if (encoding.includes('br')) {
 
+		console.log("brotli compression");
 		fetchFiles(req.params.dataset, 'br', res);
 
 	} else if (encoding.includes('gzip')) {
 
+		console.log("gzip compression");
 		fetchFiles(req.params.dataset, 'gzip', res);
 
 	} else {
@@ -162,19 +166,13 @@ function fetchFiles(dataset, compressionType, res){
         	console.warn(err);
         	res.status(500).send(new Error(`${compressionType} Compression Data Read Error`));
         } else {
-		 	resObj = data;
+		 	res.writeHead(200, {
+				'Content-Type': 'application/json',
+				'Content-Encoding': `${compressionType}`
+			});
+			res.end(data);
         }
 	});
-
-	res.writeHead(200, {
-		'Content-Type': 'application/json',
-		'Content-Encoding': `${compressionType}`
-	});
-
-	console.log(`File Path: `+path.join(__dirname, `./data/Grid_Output_Everest_${dataset}_TILES.json.${compressionType}`));
-	console.log(resObj);
-
-	return res.end(resObj);
 }
 
 // Listen
