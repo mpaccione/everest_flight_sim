@@ -50,12 +50,30 @@ function readFile(url){
 	})	
 }
 
-function formatData(terrainData, gridSize, subGridSize){
+function formatData(data, gridSize, subGridSize){
 	console.log("FORMATTED DATA");
 	console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+	const terrainData = JSON.parse(data);
 	let indexedDBObj = {};
 
-	// console.log(terrainData);
+	// // DATA STRUCTURE DEBUGGER
+	// (function(terrainData){
+	// 	console.log("J Len: "+terrainData.length);
+
+	// 	for (var j = 0; j < terrainData.length; j++) {
+	// 		const gridTile = terrainData[0][j];
+	// 		console.log("K Len: "+gridTile.length);
+	// 		for (var k = 0; k < gridTile.length; k++) {
+	// 			const subGrid = gridTile[k];
+	// 			console.log("A Len: "+subGrid.length);
+	// 			for (var a = 0; a < subGrid.length; a++) {
+	// 				const subGridTile = subGrid[a];
+	// 				console.log("subGridTile");
+	// 				console.log(subGridTile);
+	// 			}
+	// 		}
+	// 	}
+	// }(terrainData);
 
 	for (var j = 0; j < terrainData.length; j++) {
 		const gridTile = terrainData[j];
@@ -66,56 +84,29 @@ function formatData(terrainData, gridSize, subGridSize){
 				average_elevation: null,
 				x_pos: j * gridSize,
 				z_pos: k * gridSize,
-				subgrids: null
+				subgrids: []
 			}
-
 			// Column
 			for (var a = 0; a < subGridTile.length; a++) {
 				// Row
+				indexedDBObj[`${k}-${j}`].subgrids[a] = [];
 				let avgElevation = 0;
-
-				indexedDBObj[`${k}-${j}`][a] = [];
-
+				
 				for (var b = 0; b < subGridTile[a].length; b++) {
-					avgElevation += subGridTile[a][b]["elevation"];
+					avgElevation += parseInt(subGridTile[a][b].elevation);
 
-					indexedDBObj[`${k}-${j}`][a].push({
-						latitude: subGridTile[a][b]["latitude"],
-						longitude: subGridTile[a][b]["longitude"],
-						elevation: subGridTile[a][b]["elevation"],
+					indexedDBObj[`${k}-${j}`].subgrids[a].push({
+						latitude: parseFloat(subGridTile[a][b].latitude),
+						longitude: parseFloat(subGridTile[a][b].longitude),
+						elevation: parseInt(subGridTile[a][b].elevation),
 						full_grid: `${k}-${j}-${b}-${a}`,
-						x_pos: (j * subGridSize) + (a * subGridSize),
-						z_pos: (k * subGridSize) + (b * subGridSize)
-					})						
+						x_pos: (j * subGridSize) + ((a + 1) * subGridSize),
+						z_pos: (k * subGridSize) + ((b + 1) * subGridSize)
+					})	
 
-					// const elevation = subGridTile[a][b]["elevation"],
-					// 	  latitude = subGridTile[a][b]["latitude"],
-					// 	  longitude = subGridTile[a][b]["longitude"],
-					// 	  geometry = new THREE.BoxGeometry( 800, elevation, 800 ),
-					// 	  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(elevation)} ),
-					// 	  cube = new THREE.Mesh( geometry, material );
-
-					// console.log(elevation);
-					// console.log(`${0}, ${a*800}, ${b*800}`);
-
-					// cube.userData = {
-					// 	lat: k,
-					// 	long: j, 
-					// 	subLat: b,
-					// 	subLong: a,
-					// 	elevation: elevation,
-					// 	latitude: latitude,
-					// 	longitude: longitude
-					// }
-					// cube.name = `${k}-${j}-${b}-${a}`;
-					// cube.position.set( (a*800)+(j*8000), 2000, (b*-800)+(k*-8000) )
-
-					// scene.add( cube );
 				}
 
-				if (a === subGridTile.length) {
-					indexedDBObj[`${k}- ${j}`].average_elevation = avgElevation / 100;
-				}
+				indexedDBObj[`${k}-${j}`].average_elevation = (avgElevation / 10);
 
 			}
 			// lat -> Z axis
