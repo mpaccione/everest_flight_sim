@@ -3,68 +3,81 @@
 <head>
 	<title>Request & IndexedDB Testing</title>
 </head>
+<style type="text/css">
+	th {
+		padding: 0px 25px;
+	}
+	td {
+		vertical-align: top !important;
+		padding: 0px 25px;
+	}
+	tr:nth-of-type(even){
+		background-color: lightgray;
+	}
+</style>
 <script type="text/javascript">
-	function apiCall(){
-		console.log("script loaded");
-		const ajax = new XMLHttpRequest(),
-			  indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+	async function apiCall(){
+		const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
+			  response = await fetch("http://localhost:8080/data/4"),
+			  res = await response.json(),
+			  req = indexedDB.open("JSON");
 
-		ajax.open("GET", "http://localhost:8080/data/60");
+		req.onerror = function(e){
+			console.log("DB Error");
+			console.log(e);
+		}
 
-		ajax.addEventListener("load", function(response){
-			const res = JSON.parse(response),
-				  req = indexedDB.open("JSON");
+		req.onupgradeneeded = function(e){
+			const db = e.target.result;
 
-			req.onerror = function(e){
-				console.log("DB Error");
-				console.log(e);
-			}
+			db.createObjectStore("terrainTiles", {
+				autoIncrement: true
+			})
+		}
 
-			req.onupgradeneeded = function(e){
-				const db = e.target.result;
+		req.onsuccess = function(e){
+			console.log("req.onsuccess");
+			const db = e.target.result,
+				  t = db.transaction(['terrainTiles'], 'readwrite'),
+				  store = t.objectStore('terrainTiles');
+			let   n = 0;
 
-				db.createObjectStore("terrainTiles", {
-					autoIncrement: true
-				})
-			}
+			Object.keys(res).forEach(function(key){
+				const storeReq = store.put(res[key], i),
+					  value = res[key];
 
-			req.onsuccess = function(e){
-				console.log("req.onsuccess");
-				const db = e.target.result,
-					  t = db.transaction(['terrainTiles'], 'readwrite'),
-					  store = t.objectStore('terrainTiles');
-				let   i = 0;
+				let subgridItems = "";
 
-				Object.keys(res).forEach(function(key){
-					const storeReq = store.put(res[key], i);
+				for (var i = 0; i < value.subgrids.length; i++) {
+					subgridItems += `<li>${JSON.stringify(value.subgrids[0][i])}</li>`;
+				}
 
-					document.querySelector("tbody").innerHTML += `<td>${i}</td><td>${key}</td><td>${res[key]}</td>`;
+				document.querySelector("tbody").innerHTML += `<td>${n}</td><td>${key}</td><td>${value.average_elevation}</td><td>${subgridItems}</td><td>${value.x_pos}</td><td>${value.z_pos}</td>`;
 
-					storeReq.onsucess = function(e){
-						console.log("storeReq.onsuccess");
-					}
+				storeReq.onsucess = function(e){
+					console.log("storeReq.onsuccess");
+				}
 
-					storeReq.onerror = function(e){
-						console.log("storeReq.onerror");
-						console.log(e);
-					}
+				storeReq.onerror = function(e){
+					console.log("storeReq.onerror");
+					console.log(e);
+				}
 
-					i++;
-				})
-
-				
-			}
-		})
+				n++;
+			})
+		}
 	}
 </script>
 <body>
-	<h1>Indexed DB</h1>
-	<button onClick="apiCall()">Make API Call</button>
+	<h1>Indexed DB <button onClick="apiCall()">Make API Call</button></h1>
 	<table>
 		<thead>
 			<th>Index</th>
 			<th>Key</th>
-			<th>Value</th>
+			<th>Avg. Elevation</th>
+			<th>Subgrids</th>
+			<th>X Pos</th>
+			<th>Z Pos</th>
 		</thead>
 		<tbody></tbody>
 	</table>

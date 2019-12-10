@@ -170,6 +170,7 @@ function fetchFiles(dataset, compressionType, res){
 				'Content-Type': 'application/json',
 				'Content-Encoding': `${compressionType}`
 			});
+			console.log(data);
 			res.end(data);
         }
 	});
