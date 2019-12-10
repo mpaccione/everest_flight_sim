@@ -43,7 +43,7 @@
 			let   n = 0;
 
 			Object.keys(res).forEach(function(key){
-				const storeReq = store.put(res[key], i),
+				const storeReq = store.put(res[key], key),
 					  value = res[key];
 
 				let subgridItems = "";
