@@ -27,11 +27,12 @@ app.get('/', function(req, res) {
 ////////// Format Data /////////////
 ////////////////////////////////////
 
-const url = './data/Grid_Output_Everest_4.json';
+const fileName = "Grid_Output_Everest_60",
+	  url = `./data/${fileName}.json`;
 
-readFile(url);
+readFile(url, fileName);
 
-function readFile(url){
+function readFile(url, fileName){
 	console.log("readFile");
 	let fileContent;
 	fs.readFile(url, 'utf8', function(err, data){
@@ -39,20 +40,18 @@ function readFile(url){
 			throw err;
 		}
 
-		console.log("TERRAIN DATA");
-		console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
-		console.log(data);
-		// console.log(JSON.parse(data.toString()));
-		console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+		// console.log("TERRAIN DATA");
+		// console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+		// console.log(data);
+		// console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
 
-		formatData(data, 100, 10);
-
+		formatData(data, 100, 10, fileName);
 	})	
 }
 
-function formatData(data, gridSize, subGridSize){
-	console.log("FORMATTED DATA");
-	console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+function formatData(data, gridSize, subGridSize, fileName){
+	// console.log("FORMATTED DATA");
+	// console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
 	const terrainData = JSON.parse(data);
 	let indexedDBObj = {};
 
@@ -113,32 +112,17 @@ function formatData(data, gridSize, subGridSize){
 			// long -> X axis		
 		}
 	}
-	console.log(indexedDBObj);
-	console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+	// console.log(indexedDBObj);
+	// console.log("++++++++++++++++++++++++++++++++++++++++++++++++++");
+	writeToFile(indexedDBObj, fileName)
 }
 
-// function writeToFile(data, direction, directory, log, type){
-// 	console.log("writeToFile");
-// 	const timestamp = new Date().getTime();
-// 	let   dataFixed;
-
-// 	dataFixed = type == "csv" ? "LAT,LONG,ALT\n"+data.map(e => e.join(",")).join("\n") : JSON.stringify(data);
-
-// 	fs.writeFile(path.join(__dirname, `/${directory}/Coord_Data_${name}_${timestamp}.${type}`), dataFixed, (err) => {
-// 		err 
-// 		? console.warn(err) 
-// 		: fs.writeFile(path.join(__dirname, `/${directory}/Data_Info_${name}_${timestamp}.json`), JSON.stringify(log), (err) => {
-// 			if (err) {
-// 				console.warn(err);
-// 			} else {
-// 				console.log("LAT, LONG, File Write Successful");
-// 				if (type == "json") {
-// 					getElevationData(data, timestamp);
-// 				}
-// 			}
-// 		  })
-// 	})
-// }
+function writeToFile(data, fileName){
+	console.log("writeToFile");
+	fs.writeFile(path.join(__dirname, `/data/${fileName}_TILES.json`), JSON.stringify(data), (err) => {
+		err ? console.warn(err) : console.log("File Write Complete");
+	})
+}
 
 
 //////////////////////////////////////
