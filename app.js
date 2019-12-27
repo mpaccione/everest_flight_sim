@@ -1,9 +1,8 @@
 // Imports
 const THREE = require('three');
 const GLTFLoader = require('three-gltf-loader');
-const Helicopter = require('./src/classes/helicopter');
 const OrbitControls = require('three-orbit-controls')(THREE);
-const terrainData = require('./Grid_Output_Everest_10.json');
+const terrainData = require('./Grid_Output_Everest_10_1577483108041.json');
 
 // View
 const scene = new THREE.Scene(),
@@ -23,6 +22,8 @@ const axisHelper = new THREE.AxisHelper(8000),
 scene.add(axisHelper);
 
 // BOXES 
+
+console.log(terrainData);
 
 for (var j = 0; j < terrainData.length; j++) {
 	const gridTile = terrainData[j];
@@ -134,10 +135,6 @@ class PickHelper {
     }
 
     pick(normalizedPosition, scene, camera, time) {
-    	console.log("this.currentGrid");
-    	console.log(this.currentGrid);
-    	console.log("this.oldGrid");
-    	console.log(this.oldGrid);
 		// restore the color if there is a picked object
 		if (this.pickedObject) {
 			const gridName = this.pickedObject.name.substring(0, 3);
@@ -248,9 +245,9 @@ camera.name = "camera";
 camera.position.x = 38790;
 camera.position.y = 43700; 
 camera.position.z = 14710;
-camera.lookAt(scene.getObjectByName('4-4-9-9').position);
+//camera.lookAt(scene.getObjectByName('4-4-9-9').position);
 controls.update();
-camera.lookAt(scene.getObjectByName('4-4-9-9').position);
+//camera.lookAt(scene.getObjectByName('4-4-9-9').position);
 
 // Debugging
 window.scene = scene;
