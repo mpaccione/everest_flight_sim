@@ -445,20 +445,20 @@ const axisHelper = new THREE.AxisHelper(8000),
 
 scene.add(axisHelper);
 
-// IndexedDB 
+// Store Values in IndexedDB 
 const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-const dbReq = indexedDB.open("terrainJSON");
+const dbStoreReq = indexedDB.open("terrainJSON");
 
 if (!indexedDB) {
 	alert("You're browser does not support IndexedDB :(");
 }
 
-dbReq.onerror = (e) => {
+dbStoreReq.onerror = (e) => {
 	console.error("DB Error");
 	console.error(e);
 }
 
-dbReq.onupgradeneeded = (e) => {
+dbStoreReq.onupgradeneeded = (e) => {
 	const db = e.target.result;
 
 	db.createObjectStore("grid", {
@@ -466,7 +466,7 @@ dbReq.onupgradeneeded = (e) => {
 	})
 }
 
-dbReq.onsuccess = (e) => {
+dbStoreReq.onsuccess = (e) => {
 	const db = e.target.result;
 	const transaction = db.transaction(["grid"], "readwrite");
 	const store = transaction.objectStore("grid");
@@ -489,7 +489,73 @@ dbReq.onsuccess = (e) => {
 	}
 }
 
-// BOXES 
+// Get Value from IndexedDB
+function getGridByKey(gridKey){
+	console.log(`getGridByKey(${gridKey})`);
+	const dbStoreRead = indexedDB.open("terrainJSON");
+	let res;
+
+	dbStoreRead.onerror = (e) => {
+		console.error("DB Error");
+		console.error(e);
+	}
+
+	dbStoreRead.onsuccess = (e) => {
+		const db = e.target.result;
+		const objectStore = db.transaction(["grid"], "readonly");
+		const storeReq = objectStore.get(gridKey);
+
+		storeReq.onsuccess = (e) => {
+			console.log("storeReq success");
+			res = e.target.result;
+		}
+
+		storeReq.onerror = (e) => {
+			console.error("storeReq error");
+			console.error(e);
+		}
+	}
+
+	return res;
+}
+
+// Get All Values from IndexedDB
+function getFullGrid(){
+	console.log("getFullGrid");
+	const dbStoreRead = indexedDB.open("terrainJSON");
+	let res;
+
+	dbStoreRead.onerror = (e) => {
+		console.error("DB Error");
+		console.error(e);
+	}
+
+	dbStoreRead.onsuccess = (e) => {
+		const db = e.target.result;
+		const objectStore = db.transaction(["grid"], "readonly");
+
+		objectStore.openCursor().onsuccess = (e) => {
+			if (e.target.result) {
+				res += e.target.result;
+				cursor.continue();
+			} else {
+				console.log("No More Entries!");
+			}
+		}
+
+		objectStore.openCursor().onerror = (e) => {
+			console.error("storeReq error");
+			console.error(e);
+		}
+	}
+
+	return res;
+}
+
+console.log(getGridByKey("0-0"));
+console.log(getFullGrid());
+
+// BOXES
 
 for (var j = 0; j < terrainData.length; j++) {
 	const gridTile = terrainData[j];
