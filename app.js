@@ -3,7 +3,7 @@ const THREE = require('three');
 const GLTFLoader = require('three-gltf-loader');
 const Helicopter = require('./src/classes/helicopter');
 const OrbitControls = require('three-orbit-controls')(THREE);
-const terrainData = require('./Grid_Output_Everest_60.json');
+const terrainData = require('./Grid_Output_Everest_60_1577483271471.json');
 
 ////////////////////////////////
 ///// THREE BUFFER UTILITY /////
@@ -444,6 +444,50 @@ const axisHelper = new THREE.AxisHelper(8000),
 	  gridArr = [];
 
 scene.add(axisHelper);
+
+// IndexedDB 
+const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
+const dbReq = indexedDB.open("terrainJSON");
+
+if (!indexedDB) {
+	alert("You're browser does not support IndexedDB :(");
+}
+
+dbReq.onerror = (e) => {
+	console.error("DB Error");
+	console.error(e);
+}
+
+dbReq.onupgradeneeded = (e) => {
+	const db = e.target.result;
+
+	db.createObjectStore("grid", {
+		autoIncrement: false
+	})
+}
+
+dbReq.onsuccess = (e) => {
+	const db = e.target.result;
+	const transaction = db.transaction(["grid"], "readwrite");
+	const store = transaction.objectStore("grid");
+
+	for (var j = 0; j < terrainData.length; j++) {
+		const gridTile = terrainData[j];
+		for (var k = 0; k < gridTile.length; k++) {
+			const subGridTile = gridTile[k];
+			const storeReq = store.add(subGridTile, `${k}-${j}`);
+
+			storeReq.onsuccess = (e) => {
+				console.log("storeReq success");
+			}
+
+			storeReq.onerror = (e) => {
+				console.error("storeReq error");
+				console.error(e);
+			}
+		}
+	}
+}
 
 // BOXES 
 

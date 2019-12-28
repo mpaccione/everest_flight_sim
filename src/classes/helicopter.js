@@ -7,7 +7,7 @@
 // Mx = -H - Mg * θ || Roll moment = -(Longitudinal Force) - Mass*Gravity*Angular Velocity for the pitch angle
 // My = Y + Ttr + Mg * φ || Pitch Moment = Lateral force + Traction force for tail rotor + Mass*Gravity*Angular Velocity for the roll angle
 
-const THREE = require('THREE'),
+const THREE = require('three'),
 	  TWEEN = require('@tweenjs/tween.js');
 
 class Helicopter {
