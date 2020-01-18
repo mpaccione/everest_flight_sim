@@ -439,10 +439,12 @@ const player = new Helicopter(miniHeliGroup, "Wireframe", 14000);
 // Grid for Reference
 // Axis Helper X: Red, Y: Green, Z: Blue
 const axisHelper = new THREE.AxisHelper(8000),
-	  gridSize = 360000,
+	  gridSize = (600 * 800),
 	  gridDivisions = 600,
 	  gridHelper = new THREE.GridHelper( gridSize, gridDivisions ),
 	  gridArr = [];
+
+gridHelper.position.set(((300 * 800) - 400), -1750, ((300 * 800) - 400));
 
 scene.add(axisHelper);
 scene.add(gridHelper);
@@ -574,7 +576,9 @@ function getInitialGrid(){
 	for (var a = latKey - 1; a < latKey + 1; a++) {
 		for (var b = longKey - 1; b < longKey + 1; b++) {
 			// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
-			createGrid(a, b);
+			if (a >= 0 && b >= 0){
+				createGrid(a, b);
+			}
 		}
 	}
 
