@@ -450,13 +450,12 @@ scene.add(axisHelper);
 scene.add(gridHelper);
 
 // Store Values in IndexedDB 
-const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB;
-const dbStoreReq = indexedDB.open("terrainJSON");
+const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
+	  dbStoreReq = indexedDB.open("terrainJSON");
 
 if (!indexedDB) {
 	alert("You're browser does not support IndexedDB :(");
 }
-
 
 dbStoreReq.onerror = (e) => {
 	console.error("DB Error");
@@ -588,23 +587,6 @@ function getInitialGrid(){
 	camera.lookAt(scene.getObjectByName(window.currentGrid).position);
 };
 
-// for (var j = 0; j < terrainData.length; j++) {
-// 	const gridTile = terrainData[j];
-// 	for (var k = 0; k < gridTile.length; k++) {
-// 		const subGridTile = gridTile[k],
-// 			  geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-// 			  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(3500)} ),
-// 			  cube = new THREE.Mesh( geometry, material );
-
-// 		cube.position.set( (j*800), 0, (k*800) );
-// 		cube.name = `${k}-${j}`;
-
-// 		scene.add(cube)
-// 	}
-// }
-
-console.log(scene);
-
 function colorData(meters) {
 	let rgbString = "",
 	    r         = parseInt((meters/8848) * 255),
@@ -628,92 +610,219 @@ function resizeRendererToDisplaySize(renderer) {
 	return needResize;
 }
 
-// Quick and Dirty Global
-let currentGridCoord = [1,1]; 
+// Quick and Dirty Globals
+let currentGridCoord = [1,1];
 
-//colorGrids(currentGridCoord);
-setInterval(function(){
-	console.log("interval");
-	gridCheck(currentGridCoord, 800);
+setInterval(function gridCheck(){
+	const gridSize = 800,
+		  latGrid = currentGrid[1],
+		  longGrid = currentGrid[0];
+	let   latMinus = latGrid - 1,
+		  latPlus = latGrid + 1,
+		  longMinus = longGrid - 1,
+		  longPlus = longGrid + 1,
+		  gridVal1,
+		  gridVal2,
+		  gridVal3,
+		  newPosition,
+		  gridChange = false;
+	
+	// Latitude Change
+	if (window.flightSim.z > (latGrid * gridSize) + gridSize) {
+		// Increase
+		gridVal1 = `${latMinus}-${longMinus}`;
+		gridVal2 = `${latMinus}-${longGrid}`;
+		gridVal3 = `${latMinus}-${longPlus}`;
+		newPosition = [longGrid, latPlus];
+		gridChange = true;
+
+	} else if (window.flightSim.z < (latGrid * gridSize) - gridSize) {
+		// Decrease
+		gridVal1 = `${latPlus}-${longMinus}`;
+		gridVal2 = `${latPlus}-${longGrid}`;
+		gridVal3 = `${latPlus}-${longPlus}`;
+		newPosition = `${longGrid}-${latMinus > 0 ? latMinus : 0}`;
+		gridChange = true;
+	}
+
+	// Longitude Change
+	if (window.flightSim.x > (longGrid * gridSize) + gridSize) {
+		// Increase
+		gridVal1 = `${latMinus}-${longMinus}`;
+		gridVal2 = `${latGrid}-${longMinus}`;
+		gridVal3 = `${latPlus}-${longMinus}`;
+		newPosition = `${longPlus}-${latGrid}`;
+		gridChange = true;
+
+	} else if (window.flightSim.x < (longGrid * gridSize) - gridSize) {
+		// Decrease
+		gridVal1 = `${latMinus}-${longPlus}`;
+		gridVal2 = `${latGrid}-${longPlus}`;
+		gridVal3 = `${latPlus}-${longPlus}`;
+		newPosition = `${longMinus > 0 ? longMinus : 0}-${currentGrid[1]}`;
+		gridChange = true;
+	}
+
+	if (gridChange) {
+		window.dispatchEvent(new CustomEvent('gridChange', {
+			bubbles: true,
+			gridVals: [gridVal1, gridVal2, gridVal3],
+			oldPosition: currentGrid,
+			newPosition: newPosition
+		}));
+	}
+
 }, 2000)
 
-function gridCheck(currentGridRef, gridSize){
-	let changed = false,
-		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
-		resetGridArr = [];
+// function gridCheck(currentGridRef, gridSize){
+// 	let changed = false,
+// 		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
+// 		resetGridArr = [];
 
-	// Latitude
-	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
-		// Increase Latitude Grid Count
-		resetGridArr.push(
-			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-			`${currentGrid[1] - 1}-${currentGrid[0]}`,
-			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`
-		);		
-		currentGridCoord[1] = currentGrid[1] + 1; 
-		changed = true;
-	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
-		// Decrease Latitude Grid Count
-		resetGridArr.push(
-			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`,
-			`${currentGrid[1] + 1}-${currentGrid[0]}`,
-			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-		);				
-		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
-		changed = true;
-	}	
-	// Longitude
-	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
-		// Increase Longitude Grid Count
-		resetGridArr.push(
-			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-			`${currentGrid[1]}-${currentGrid[0] - 1}`,
-			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`
-		);
-		currentGridCoord[0] = currentGrid[0] + 1; 
-		changed = true;
-	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
-		// Decrease Longitude Grid Count
-		resetGridArr.push(
-			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`,
-			`${currentGrid[1]}-${currentGrid[0] + 1}`,
-			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-		);					
-		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
-		changed = true;
-	}
+// 	// Latitude
+// 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
+// 		// Increase Latitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] - 1}-${currentGrid[0]}`,
+// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);		
+// 		currentGridCoord[1] = currentGrid[1] + 1; 
+// 		changed = true;
+// 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
+// 		// Decrease Latitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0]}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);				
+// 		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
+// 		changed = true;
+// 	}	
+// 	// Longitude
+// 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
+// 		// Increase Longitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1]}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);
+// 		currentGridCoord[0] = currentGrid[0] + 1; 
+// 		changed = true;
+// 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
+// 		// Decrease Longitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`,
+// 			`${currentGrid[1]}-${currentGrid[0] + 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);	
+// 		storeOldGridCoords(currentGridCoord);				
+// 		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
+// 		changed = true;
+// 	}
 
-	if (changed) {
-		//colorGrids(currentGridCoord);
-		createGrids(currentGridCoord, gridSize);
-		resetGrids(resetGridArr);
-		if (window.currentGrid) {
-			window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
-		}
-	}
-}
+// 	if (changed) {
+// 		createGrids(currentGridCoord, gridSize);
+// 		resetGrids(resetGridArr);
+// 		changeGridColor(currentGridCoord, 0xff0000, false);
+// 		// Debugging
+// 		if (window.currentGrid) {
+// 			window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
+// 		}
+// 	}
+// }
+
+// function gridCheck(currentGridRef, gridSize){
+// 	let changed = false,
+// 		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
+// 		resetGridArr = [];
+
+// 	// Latitude
+// 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
+// 		// Increase Latitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] - 1}-${currentGrid[0]}`,
+// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);		
+// 		currentGridCoord[1] = currentGrid[1] + 1; 
+// 		changed = true;
+// 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
+// 		// Decrease Latitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0]}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);				
+// 		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
+// 		changed = true;
+// 	}	
+// 	// Longitude
+// 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
+// 		// Increase Longitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1]}-${currentGrid[0] - 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);
+// 		storeOldGridCoords(currentGridCoord);
+// 		currentGridCoord[0] = currentGrid[0] + 1; 
+// 		changed = true;
+// 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
+// 		// Decrease Longitude Grid Count
+// 		resetGridArr.push(
+// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`,
+// 			`${currentGrid[1]}-${currentGrid[0] + 1}`,
+// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
+// 		);
+// 		// changeGridColor(currentGridCoord, "0x649b00", true);	
+// 		storeOldGridCoords(currentGridCoord);				
+// 		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
+// 		changed = true;
+// 	}
+
+// 	if (changed) {
+// 		createGrids(currentGridCoord, gridSize);
+// 		resetGrids(resetGridArr);
+// 		changeGridColor(currentGridCoord, 0xff0000, false);
+// 		// Debugging
+// 		if (window.currentGrid) {
+// 			window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
+// 		}
+// 	}
+// }
 
 function resetGrids(gridArr){
+	console.log("resetGrids - gridArr");
+	console.log(gridArr);
 	for (var i = 0; i < gridArr.length; i++) {
-		const obj = scene.getObjectByName(gridArr[i]);
-		if (obj) {
-			obj.remove();
+		if (scene.getObjectByName(gridArr[i])) {
+			changeGridColor(gridArr[i], 0x649b00, true);
 		}
 	}
 }
 
 function createGrid(latKey, longKey){
 	const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-	  	  material = new THREE.MeshBasicMaterial( {wireframe: true, color: colorData(3500)} ),
+	  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
 	  	  cube = new THREE.Mesh( geometry, material );
 
 	cube.position.set( (latKey*800), 0, (longKey*800) );
 	cube.name = `${latKey}-${longKey}`;
 
 	scene.add(cube);
-	console.log(`latKey: ${latKey}`);
-	console.log(`longKey: ${longKey}`);
-	console.log(`Added Cube: ${latKey}-${longKey}`);
 }
 
 function createGrids(currentGrid){
@@ -724,15 +833,25 @@ function createGrids(currentGrid){
 		for (var k = start2; k < (start2 + 3); k++) {
 			const obj = scene.getObjectByName(`${k}-${j}`);
 			if (!obj) {
-				createGrid(start1, start2);
+				createGrid(j, k);
 			}
 		}
 	}
+}
 
-	// if (obj){
-	// 	obj.material.color.setHex(0xFF0000);
-	// 	obj.material.wireframe = false;
-	// }
+function changeGridColor(gridKey, hexColor, wireframeBoolean){
+	console.log("changeGridColor - gridKey");
+	console.log(gridKey);
+	console.log(`${gridKey[0]}-${gridKey[1]}`);
+	const obj = scene.getObjectByName(`${gridKey[0]}-${gridKey[1]}`);
+	if (obj) {
+		obj.material.color.setHex(hexColor);
+		obj.material.wireframe = wireframeBoolean;
+	}
+}
+
+function storeOldGridCoords(gridKeyArr){
+	pastGridCoords[`${gridKeyArr[0]}-${gridKeyArr[1]}`] = true;
 }
 
 // function colorGrids(currentGrid){
@@ -768,21 +887,6 @@ function getCanvasRelativePosition(event) {
 	};
 }
 
-function setPickPosition(event) {
-	const pos = getCanvasRelativePosition(event);
-	pickPosition.x = (pos.x / window.innerWidth ) *  2 - 1;
-	pickPosition.y = (pos.y / window.innerHeight) * -2 + 1;  // note we flip Y
-}
-
-function clearPickPosition() {
-	// unlike the mouse which always has a position
-	// if the user stops touching the screen we want
-	// to stop picking. For now we just pick a value
-	// unlikely to pick something
-	pickPosition.x = -100000;
-	pickPosition.y = -100000;
-}
-
 // Camera
 camera.name = "camera";
 camera.position.x = 38790;
@@ -799,7 +903,7 @@ document.body.innerHTML += `<div id="debugging-stats"></div>`;
 renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild( renderer.domElement );
-window.currentGrid = '0-0';
+window.currentGrid = '1-1';
 
 // Animation Loop
 const animate = function () {
@@ -809,8 +913,6 @@ const animate = function () {
       camera.updateProjectionMatrix();
     }
 
-    time *= 0.001;
-    // pickHelper.pick(pickPosition, scene, camera, time);
 	requestAnimationFrame( animate );
 	player.update();
 	renderer.render( scene, camera );
