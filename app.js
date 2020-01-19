@@ -3,7 +3,6 @@ const THREE = require('three');
 const GLTFLoader = require('three-gltf-loader');
 const Helicopter = require('./src/classes/helicopter');
 const OrbitControls = require('three-orbit-controls')(THREE);
-const terrainData = require('./Grid_Output_Everest_60_1577483271471.json');
 
 ////////////////////////////////
 ///// THREE BUFFER UTILITY /////
@@ -449,154 +448,6 @@ gridHelper.position.set(((300 * 800) - 400), -1750, ((300 * 800) - 400));
 scene.add(axisHelper);
 scene.add(gridHelper);
 
-// Store Values in IndexedDB 
-const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
-	  dbStoreReq = indexedDB.open("terrainJSON");
-
-if (!indexedDB) {
-	alert("You're browser does not support IndexedDB :(");
-}
-
-dbStoreReq.onerror = (e) => {
-	console.error("DB Error");
-	console.error(e);
-}
-
-dbStoreReq.onupgradeneeded = (e) => {
-	const db = e.target.result;
-
-	db.createObjectStore("grid", {
-		autoIncrement: false
-	})
-}
-
-dbStoreReq.onsuccess = (e) => {
-	const db = e.target.result,
-		  transaction = db.transaction(["grid"], "readwrite"),
-		  store = transaction.objectStore("grid");
-
-	for (var j = 0; j < terrainData.length; j++) {
-		const gridTile = terrainData[j];
-		for (var k = 0; k < gridTile.length; k++) {
-			const subGridTile = gridTile[k],
-				  storeReq = store.add(subGridTile, `${k}-${j}`);
-
-			storeReq.onsuccess = (e) => {
-				console.log("storeReq success");
-			}
-
-			storeReq.onerror = (e) => {
-				console.error("storeReq error");
-				console.error(e);
-			}
-		}
-	}
-
-	// BOXES
-	// getFullGrid();
-	getInitialGrid();
-}
-
-// Get Value from IndexedDB
-function getGridByKeyArr(gridKeyArr){
-	console.log(`getGridByKey(${gridKey})`);
-	const dbStoreRead = indexedDB.open("terrainJSON");
-
-	dbStoreRead.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
-	}
-
-	dbStoreRead.onsuccess = (e) => {
-		const db = e.target.result,
-			  objectStore = db.transaction(["grid"], "readonly"),
-			  storeReq = objectStore.get(gridKey);
-
-		for (var i = 0; i < gridKeyArr.length; i++) {
-			const gridKey = gridKeyArr[i];
-
-			objectStore.get(gridKey).onsuccess = (e) => {
-				console.log(`storeReq success: ${gridKeyArr[i]}`);
-				res = e.target.result;
-			}
-
-			objectStore.get(gridKey).onerror = (e) => {
-				console.error("storeReq error");
-				console.error(e);
-			}
-
-		}
-	}
-}
-
-// Get All Values from IndexedDB
-function getFullGrid(){
-	console.log("getFullGrid");
-	const dbStoreRead = indexedDB.open("terrainJSON");
-
-	dbStoreRead.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
-	}
-
-	dbStoreRead.onsuccess = (e) => {
-		const db = e.target.result,
-			  transaction = db.transaction(["grid"], "readonly"),
-			  objectStore = transaction.objectStore("grid"),
-			  request = objectStore.openCursor();
-
-		request.onsuccess = (e) => {
-			const cursor = e.target.result;
-			if (cursor) {
-				console.log(cursor);
-				cursor.continue();
-			} else {
-				console.log("No More Entries!");
-			}
-		}
-
-		request.onerror = (e) => {
-			console.error("storeReq error");
-			console.error(e);
-		}
-	}
-
-}
-
-// console.log(getGridByKey("0-0"));
-// console.log(getFullGrid());
-
-// BOXES
-function getInitialGrid(){
-	// Minimum Starting Coordinate is 1-1
-	const latKey = window.currentGrid.charAt(0),
-		  longKey = window.currentGrid.charAt(2);
-
-	for (var a = latKey - 1; a < latKey + 1; a++) {
-		for (var b = longKey - 1; b < longKey + 1; b++) {
-			// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
-			if (a >= 0 && b >= 0){
-				createGrid(a, b);
-			}
-		}
-	}
-
-	// Adjusting Camera To Look At Current Grid
-	camera.lookAt(scene.getObjectByName(window.currentGrid).position);
-	controls.update();
-	camera.lookAt(scene.getObjectByName(window.currentGrid).position);
-};
-
-function colorData(meters) {
-	let rgbString = "",
-	    r         = parseInt((meters/8848) * 255),
-	    g         = 255 - r;
-
-	r = r < 0 ? 0 : r;
-	rgbString = `rgb(${r},${g}, 0)`;
-	return rgbString;
-}
-
 function resizeRendererToDisplaySize(renderer) {
 	const canvas = renderer.domElement,
 		  width = canvas.clientWidth,
@@ -609,6 +460,12 @@ function resizeRendererToDisplaySize(renderer) {
 
 	return needResize;
 }
+
+// Init Grid
+window.dispatchEvent(new CustomEvent("populateDB", {
+	bubbles: true,
+	sceneRef: scene
+}))
 
 // Quick and Dirty Globals
 let currentGridCoord = [1,1];
@@ -668,224 +525,13 @@ setInterval(function gridCheck(){
 			bubbles: true,
 			gridVals: [gridVal1, gridVal2, gridVal3],
 			oldPosition: currentGrid,
-			newPosition: newPosition
+			newPosition: newPosition,
+			sceneRef: scene
 		}));
 	}
 
 }, 2000)
 
-// function gridCheck(currentGridRef, gridSize){
-// 	let changed = false,
-// 		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
-// 		resetGridArr = [];
-
-// 	// Latitude
-// 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
-// 		// Increase Latitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] - 1}-${currentGrid[0]}`,
-// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);		
-// 		currentGridCoord[1] = currentGrid[1] + 1; 
-// 		changed = true;
-// 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
-// 		// Decrease Latitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0]}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);				
-// 		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
-// 		changed = true;
-// 	}	
-// 	// Longitude
-// 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
-// 		// Increase Longitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1]}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);
-// 		currentGridCoord[0] = currentGrid[0] + 1; 
-// 		changed = true;
-// 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
-// 		// Decrease Longitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`,
-// 			`${currentGrid[1]}-${currentGrid[0] + 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);	
-// 		storeOldGridCoords(currentGridCoord);				
-// 		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
-// 		changed = true;
-// 	}
-
-// 	if (changed) {
-// 		createGrids(currentGridCoord, gridSize);
-// 		resetGrids(resetGridArr);
-// 		changeGridColor(currentGridCoord, 0xff0000, false);
-// 		// Debugging
-// 		if (window.currentGrid) {
-// 			window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
-// 		}
-// 	}
-// }
-
-// function gridCheck(currentGridRef, gridSize){
-// 	let changed = false,
-// 		currentGrid = JSON.parse(JSON.stringify(currentGridRef)),
-// 		resetGridArr = [];
-
-// 	// Latitude
-// 	if (window.flightSim.z > (currentGrid[1] * gridSize) + gridSize) {
-// 		// Increase Latitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] - 1}-${currentGrid[0]}`,
-// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);		
-// 		currentGridCoord[1] = currentGrid[1] + 1; 
-// 		changed = true;
-// 	} else if (window.flightSim.z < (currentGrid[1] * gridSize) - gridSize) {
-// 		// Decrease Latitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0]}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);				
-// 		currentGridCoord[1] = (currentGrid[1] - 1) > 0 ? (currentGrid[1] - 1) : 0; 
-// 		changed = true;
-// 	}	
-// 	// Longitude
-// 	if (window.flightSim.x > (currentGrid[0] * gridSize) + gridSize) {
-// 		// Increase Longitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1]}-${currentGrid[0] - 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] - 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);
-// 		storeOldGridCoords(currentGridCoord);
-// 		currentGridCoord[0] = currentGrid[0] + 1; 
-// 		changed = true;
-// 	} else if (window.flightSim.x < (currentGrid[0] * gridSize) - gridSize) {
-// 		// Decrease Longitude Grid Count
-// 		resetGridArr.push(
-// 			`${currentGrid[1] - 1}-${currentGrid[0] + 1}`,
-// 			`${currentGrid[1]}-${currentGrid[0] + 1}`,
-// 			`${currentGrid[1] + 1}-${currentGrid[0] + 1}`
-// 		);
-// 		// changeGridColor(currentGridCoord, "0x649b00", true);	
-// 		storeOldGridCoords(currentGridCoord);				
-// 		currentGridCoord[0] = (currentGrid[0] - 1) > 0 ? (currentGrid[0] - 1) : 0;
-// 		changed = true;
-// 	}
-
-// 	if (changed) {
-// 		createGrids(currentGridCoord, gridSize);
-// 		resetGrids(resetGridArr);
-// 		changeGridColor(currentGridCoord, 0xff0000, false);
-// 		// Debugging
-// 		if (window.currentGrid) {
-// 			window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
-// 		}
-// 	}
-// }
-
-function resetGrids(gridArr){
-	console.log("resetGrids - gridArr");
-	console.log(gridArr);
-	for (var i = 0; i < gridArr.length; i++) {
-		if (scene.getObjectByName(gridArr[i])) {
-			changeGridColor(gridArr[i], 0x649b00, true);
-		}
-	}
-}
-
-function createGrid(latKey, longKey){
-	const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-	  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
-	  	  cube = new THREE.Mesh( geometry, material );
-
-	cube.position.set( (latKey*800), 0, (longKey*800) );
-	cube.name = `${latKey}-${longKey}`;
-
-	scene.add(cube);
-}
-
-function createGrids(currentGrid){
-	const start1 = (currentGridCoord[0] - 1),
-		  start2 = (currentGridCoord[1] - 1);
-
-	for (var j = start1; j < (start1 + 3); j++) {
-		for (var k = start2; k < (start2 + 3); k++) {
-			const obj = scene.getObjectByName(`${k}-${j}`);
-			if (!obj) {
-				createGrid(j, k);
-			}
-		}
-	}
-}
-
-function changeGridColor(gridKey, hexColor, wireframeBoolean){
-	console.log("changeGridColor - gridKey");
-	console.log(gridKey);
-	console.log(`${gridKey[0]}-${gridKey[1]}`);
-	const obj = scene.getObjectByName(`${gridKey[0]}-${gridKey[1]}`);
-	if (obj) {
-		obj.material.color.setHex(hexColor);
-		obj.material.wireframe = wireframeBoolean;
-	}
-}
-
-function storeOldGridCoords(gridKeyArr){
-	pastGridCoords[`${gridKeyArr[0]}-${gridKeyArr[1]}`] = true;
-}
-
-// function colorGrids(currentGrid){
-// 	const start1 = (currentGridCoord[0] - 1),
-// 		  start2 = (currentGridCoord[1] - 1);
-
-// 	for (var j = start1; j < (start1 + 3); j++) {
-// 		for (var k = start2; k < (start2 + 3); k++) {
-// 			const obj = scene.getObjectByName(`${k}-${j}`);
-// 			if (obj) {
-// 				obj.material.color.setHex(0x0000FF);
-// 				obj.material.wireframe = false;
-// 			}
-// 		}
-// 	}
-
-// 	const obj = scene.getObjectByName(`${currentGridCoord[1]}-${currentGridCoord[0]}`);
-
-// 	if (obj){
-// 		obj.material.color.setHex(0xFF0000);
-// 		obj.material.wireframe = false;
-// 	}
-
-// 	if (window.currentGrid) {
-// 		window.currentGrid = `${currentGridCoord[1]}-${currentGridCoord[0]}`;
-// 	}
-// }
-
-function getCanvasRelativePosition(event) {
-	return {
-	  x: event.clientX - 0,
-	  y: event.clientY - 0,
-	};
-}
 
 // Camera
 camera.name = "camera";
@@ -904,6 +550,7 @@ renderer.setSize( window.innerWidth, window.innerHeight );
 renderer.setClearColor(0xffffff, 1);
 document.body.appendChild( renderer.domElement );
 window.currentGrid = '1-1';
+
 
 // Animation Loop
 const animate = function () {
