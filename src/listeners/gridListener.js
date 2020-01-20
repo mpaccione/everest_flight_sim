@@ -29,8 +29,6 @@ function gridListener(){
 
 	function populateDB(callback, sceneRef = false){
 		console.log("populateDB");
-		console.log(callback);
-
 		const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
 			  dbStoreReq = indexedDB.open("terrainJSON");
 
@@ -154,16 +152,10 @@ function gridListener(){
 		const latKey = window.currentGrid[1],
 			  longKey = window.currentGrid[0];
 
-		console.log("latKey");
-		console.log(latKey);
-		console.log("longKey");
-		console.log(longKey);
-
 		for (var a = latKey - 1; a < latKey + 2; a++) {
 			for (var b = longKey - 1; b < longKey + 2; b++) {
 				// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
 				if (a >= 0 && b >= 0){
-					console.log(`${b}-${a}`);
 					createGrid(a, b, sceneRef);
 				}
 			}
@@ -180,6 +172,7 @@ function gridListener(){
 
 	window.addEventListener("gridChange", (e) => {
 		console.log("[LISTENER] - gridChange");
+		console.log(e.detail.newPosition);
 		storeOldGridCoords(e.detail.oldPosition);
 		createGrids(e.detail.newPosition, e.detail.sceneRef);
 		resetGrids(e.detail.gridVals, e.detail.sceneRef);
@@ -213,24 +206,29 @@ function gridListener(){
 
 	function createGrid(latKey, longKey, sceneRef = false){
 		console.log("createGrid");
-		const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-		  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
-		  	  cube = new THREE.Mesh( geometry, material );
+		if (sceneRef) {
+			const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
+			  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
+			  	  cube = new THREE.Mesh( geometry, material );
 
-		cube.position.set( (latKey*800), 0, (longKey*800) );
-		cube.name = `${latKey}-${longKey}`;
+			cube.position.set( (latKey*800), 0, (longKey*800) );
+			cube.name = `${latKey}-${longKey}`;
 
-		sceneRef ? sceneRef.add(cube) : console.error("createGrid missing scene reference");
+			scene.getObjectByName(`${latKey}-${longKey}`) 
+			? console.log(`${latKey}-${longKey} already exists, obj not added.`) 
+			: sceneRef.add(cube);
+		} else {
+			console.error("createGrid missing scene reference");
+		}
 	}
 
 	// Reset Grids
 
 	function resetGrids(gridArr, sceneRef = false){
 		console.log("resetGrids");
+		console.log(gridArr);
 		for (var i = 0; i < gridArr.length; i++) {
-			console.log(gridArr[i]);
 			if (sceneRef.getObjectByName(gridArr[i])) {
-				console.log(gridArr[i]);
 				changeGridColor(gridArr[i], 0x649b00, true, sceneRef);
 			}
 		}
@@ -244,8 +242,6 @@ function gridListener(){
 		console.log(gridKey);
 		const obj = sceneRef.getObjectByName(gridKey);
 		if (obj) {
-			console.log("obj");
-			console.log(obj);
 			obj.material.color.setHex(hexColor);
 			obj.material.wireframe = wireframeBoolean;
 		}
