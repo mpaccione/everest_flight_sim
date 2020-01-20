@@ -133,7 +133,7 @@ class Helicopter {
 					if (this.roll > -this.maxRoll) {
 						let start = { roll: this.roll },
 							end = { roll: this.roll-4 };
-						
+
 						this.flightTween(start, end, this, "roll");
 					}
 					break;

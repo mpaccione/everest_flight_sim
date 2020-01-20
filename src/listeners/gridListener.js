@@ -1,3 +1,5 @@
+const THREE = require('three');
+
 /////////////////////////
 // GRID EVENT LISTENER //
 /////////////////////////
@@ -8,224 +10,247 @@
 	2) GRID CHANGE EVENTS - Grid reactions to helicopter movements and grid changes. 
 */
 
-////////////////////
-// GRID DB EVENTS //
-////////////////////
+function gridListener(){
 
-const terrainData = require('./src/terrainData/Grid_Output_Everest_60_1577483271471.json');
+	console.log("[LISTENER INIT] - gridListener");
 
-// Store Values in IndexedDB 
+	////////////////////
+	// GRID DB EVENTS //
+	////////////////////
 
-window.addEventListener("populateGridDB", (e) => {
-	populateDB(e.sceneRef)
-});
+	const terrainData = require('../terrainData/Grid_Output_Everest_60_1577483271471.json');
 
-function populateDB(){
+	// Store Values in IndexedDB 
 
-	const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
-		  dbStoreReq = indexedDB.open("terrainJSON");
+	window.addEventListener("populateGridDB", (e) => {
+		console.log("[LISTENER] - populateGridDB");
+		populateDB(e.detail.callback, e.detail.sceneRef);
+	});
 
-	if (!indexedDB) {
-		alert("You're browser does not support IndexedDB :(");
+	function populateDB(callback, sceneRef = false){
+		console.log("populateDB");
+		console.log(callback);
+
+		const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
+			  dbStoreReq = indexedDB.open("terrainJSON");
+
+		if (!indexedDB) {
+			alert("You're browser does not support IndexedDB :(");
+		}
+
+		dbStoreReq.onerror = (e) => {
+			console.error("DB Error");
+			console.error(e);
+		}
+
+		dbStoreReq.onupgradeneeded = (e) => {
+			const db = e.target.result;
+
+			db.createObjectStore("grid", {
+				autoIncrement: false
+			})
+		}
+
+		dbStoreReq.onsuccess = (e) => {
+			const db = e.target.result,
+				  transaction = db.transaction(["grid"], "readwrite"),
+				  store = transaction.objectStore("grid");
+
+			for (var j = 0; j < terrainData.length; j++) {
+				const gridTile = terrainData[j];
+				for (var k = 0; k < gridTile.length; k++) {
+					const subGridTile = gridTile[k],
+						  storeReq = store.add(subGridTile, `${k}-${j}`);
+
+					storeReq.onsuccess = (e) => {
+						console.log("storeReq success");
+					}
+
+					storeReq.onerror = (e) => {
+						console.error("storeReq error");
+						console.error(e);
+					}
+				}
+			}
+
+			// BOXES
+			getInitialGrid(callback, sceneRef);
+		}
+
 	}
 
-	dbStoreReq.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
-	}
+	// Get Value from IndexedDB
 
-	dbStoreReq.onupgradeneeded = (e) => {
-		const db = e.target.result;
+	function getGridByKeyArr(gridKeyArr){
+		const dbStoreRead = indexedDB.open("terrainJSON");
 
-		db.createObjectStore("grid", {
-			autoIncrement: false
-		})
-	}
+		dbStoreRead.onerror = (e) => {
+			console.error("DB Error");
+			console.error(e);
+		}
 
-	dbStoreReq.onsuccess = (e) => {
-		const db = e.target.result,
-			  transaction = db.transaction(["grid"], "readwrite"),
-			  store = transaction.objectStore("grid");
+		dbStoreRead.onsuccess = (e) => {
+			const db = e.target.result,
+				  objectStore = db.transaction(["grid"], "readonly"),
+				  storeReq = objectStore.get(gridKey);
 
-		for (var j = 0; j < terrainData.length; j++) {
-			const gridTile = terrainData[j];
-			for (var k = 0; k < gridTile.length; k++) {
-				const subGridTile = gridTile[k],
-					  storeReq = store.add(subGridTile, `${k}-${j}`);
+			for (var i = 0; i < gridKeyArr.length; i++) {
+				const gridKey = gridKeyArr[i];
 
-				storeReq.onsuccess = (e) => {
-					console.log("storeReq success");
+				objectStore.get(gridKey).onsuccess = (e) => {
+					console.log(`storeReq success: ${gridKeyArr[i]}`);
+					res = e.target.result;
 				}
 
-				storeReq.onerror = (e) => {
+				objectStore.get(gridKey).onerror = (e) => {
 					console.error("storeReq error");
 					console.error(e);
 				}
+
 			}
 		}
-
-		// BOXES
-		getInitialGrid();
 	}
 
-}
+	// Get All Values from IndexedDB
 
-// Get Value from IndexedDB
+	function getFullGrid(){
+		const dbStoreRead = indexedDB.open("terrainJSON");
 
-function getGridByKeyArr(gridKeyArr){
-	const dbStoreRead = indexedDB.open("terrainJSON");
+		dbStoreRead.onerror = (e) => {
+			console.error("DB Error");
+			console.error(e);
+		}
 
-	dbStoreRead.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
-	}
+		dbStoreRead.onsuccess = (e) => {
+			const db = e.target.result,
+				  transaction = db.transaction(["grid"], "readonly"),
+				  objectStore = transaction.objectStore("grid"),
+				  request = objectStore.openCursor();
 
-	dbStoreRead.onsuccess = (e) => {
-		const db = e.target.result,
-			  objectStore = db.transaction(["grid"], "readonly"),
-			  storeReq = objectStore.get(gridKey);
-
-		for (var i = 0; i < gridKeyArr.length; i++) {
-			const gridKey = gridKeyArr[i];
-
-			objectStore.get(gridKey).onsuccess = (e) => {
-				console.log(`storeReq success: ${gridKeyArr[i]}`);
-				res = e.target.result;
+			request.onsuccess = (e) => {
+				const cursor = e.target.result;
+				if (cursor) {
+					// Only Logs Values Currently
+					console.log(cursor);
+					cursor.continue();
+				} else {
+					console.log("No More Entries!");
+				}
 			}
 
-			objectStore.get(gridKey).onerror = (e) => {
+			request.onerror = (e) => {
 				console.error("storeReq error");
 				console.error(e);
 			}
-
 		}
-	}
-}
 
-// Get All Values from IndexedDB
-
-function getFullGrid(){
-	const dbStoreRead = indexedDB.open("terrainJSON");
-
-	dbStoreRead.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
 	}
 
-	dbStoreRead.onsuccess = (e) => {
-		const db = e.target.result,
-			  transaction = db.transaction(["grid"], "readonly"),
-			  objectStore = transaction.objectStore("grid"),
-			  request = objectStore.openCursor();
+	// Load starting grid 
 
-		request.onsuccess = (e) => {
-			const cursor = e.target.result;
-			if (cursor) {
-				// Only Logs Values Currently
-				console.log(cursor);
-				cursor.continue();
-			} else {
-				console.log("No More Entries!");
+	function getInitialGrid(callback, sceneRef = false){
+		console.log("getInitialGrid");
+		// Minimum Starting Coordinate is 1-1
+		const latKey = window.currentGrid[1],
+			  longKey = window.currentGrid[0];
+
+		console.log("latKey");
+		console.log(latKey);
+		console.log("longKey");
+		console.log(longKey);
+
+		for (var a = latKey - 1; a < latKey + 2; a++) {
+			for (var b = longKey - 1; b < longKey + 2; b++) {
+				// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
+				if (a >= 0 && b >= 0){
+					console.log(`${b}-${a}`);
+					createGrid(a, b, sceneRef);
+				}
 			}
 		}
 
-		request.onerror = (e) => {
-			console.error("storeReq error");
-			console.error(e);
-		}
+		callback();
+	};
+
+	////////////////////////
+	// GRID CHANGE EVENTS //
+	////////////////////////
+
+	let pastGridCoords = {};
+
+	window.addEventListener("gridChange", (e) => {
+		console.log("[LISTENER] - gridChange");
+		storeOldGridCoords(e.detail.oldPosition);
+		createGrids(e.detail.newPosition, e.detail.sceneRef);
+		resetGrids(e.detail.gridVals, e.detail.sceneRef);
+		changeGridColor(e.detail.newPosition, 0xff0000, false, e.detail.sceneRef);
+		window.currentGrid = e.detail.newPosition;
+	});
+
+	// Store Old Grids
+
+	function storeOldGridCoords(gridKeyArr){
+		console.log("storeOldGridCoords");
+		pastGridCoords[`${gridKeyArr[0]}-${gridKeyArr[1]}`] = new Date().getTime();
 	}
 
-}
+	// Create Grids
 
-// Load starting grid 
+	function createGrids(currentGridArr, sceneRef = false){
+		console.log("createGrids");
+		const longStart = (currentGridArr[0] - 1),
+			  latStart = (currentGridArr[1] - 1);
 
-function getInitialGrid(sceneRef = false){
-	// Minimum Starting Coordinate is 1-1
-	const latKey = window.currentGrid.charAt(0),
-		  longKey = window.currentGrid.charAt(2);
-
-	for (var a = latKey - 1; a < latKey + 1; a++) {
-		for (var b = longKey - 1; b < longKey + 1; b++) {
-			// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
-			if (a >= 0 && b >= 0){
-				createGrid(a, b, sceneRef);
+		for (var j = longStart; j < (longStart + 3); j++) {
+			for (var k = latStart; k < (latStart + 3); k++) {
+				const obj = sceneRef.getObjectByName(`${k}-${j}`);
+				if (!obj) {
+					createGrid(j, k, sceneRef);
+				}
 			}
 		}
 	}
 
-	// Adjusting Camera To Look At Current Grid
-	camera.lookAt(scene.getObjectByName(window.currentGrid).position);
-	controls.update();
-	camera.lookAt(scene.getObjectByName(window.currentGrid).position);
-};
+	function createGrid(latKey, longKey, sceneRef = false){
+		console.log("createGrid");
+		const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
+		  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
+		  	  cube = new THREE.Mesh( geometry, material );
 
-////////////////////////
-// GRID CHANGE EVENTS //
-////////////////////////
+		cube.position.set( (latKey*800), 0, (longKey*800) );
+		cube.name = `${latKey}-${longKey}`;
 
-let pastGridCoords = {};
+		sceneRef ? sceneRef.add(cube) : console.error("createGrid missing scene reference");
+	}
 
-window.addEventListener("gridChange", (e) => {
-	storeOldGridCoords(e.oldPosition);
-	createGrids(e.newPosition);
-	resetGrids(e.gridVals);
-	changeGridColor(e.newPosition, 0xff0000, false);
-});
+	// Reset Grids
 
-// Store Old Grids
-
-function storeOldGridCoords(gridKeyArr){
-	pastGridCoords[`${gridKeyArr[0]}-${gridKeyArr[1]}`] = new Date().getTime();
-}
-
-// Create Grids
-
-function createGrids(currentGridArr, sceneRef = false){
-	const longStart = (currentGridArr[0] - 1),
-		  latStart = (currentGridArr[1] - 1);
-
-	for (var j = longStart; j < (longStart + 3); j++) {
-		for (var k = latStart; k < (latStart + 3); k++) {
-			const obj = e.sceneRef.getObjectByName(`${k}-${j}`);
-			if (!obj) {
-				createGrid(j, k, sceneRef);
+	function resetGrids(gridArr, sceneRef = false){
+		console.log("resetGrids");
+		for (var i = 0; i < gridArr.length; i++) {
+			console.log(gridArr[i]);
+			if (sceneRef.getObjectByName(gridArr[i])) {
+				console.log(gridArr[i]);
+				changeGridColor(gridArr[i], 0x649b00, true, sceneRef);
 			}
 		}
 	}
-}
 
-function createGrid(latKey, longKey, sceneRef = false){
-	const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-	  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
-	  	  cube = new THREE.Mesh( geometry, material );
+	// Change Current Grid Color
 
-	cube.position.set( (latKey*800), 0, (longKey*800) );
-	cube.name = `${latKey}-${longKey}`;
-
-	sceneRef ? sceneRef.add(cube) : console.error("createGrid missing scene reference");
-}
-
-// Reset Grids
-
-function resetGrids(gridArr){
-	console.log("resetGrids - gridArr");
-	console.log(gridArr);
-	for (var i = 0; i < gridArr.length; i++) {
-		if (e.sceneRef.getObjectByName(gridArr[i])) {
-			changeGridColor(gridArr[i], 0x649b00, true);
+	function changeGridColor(gridKey, hexColor, wireframeBoolean, sceneRef = false){
+		console.log("changeGridColor");
+		console.log("gridKey");
+		console.log(gridKey);
+		const obj = sceneRef.getObjectByName(gridKey);
+		if (obj) {
+			console.log("obj");
+			console.log(obj);
+			obj.material.color.setHex(hexColor);
+			obj.material.wireframe = wireframeBoolean;
 		}
 	}
+
 }
 
-// Change Current Grid Color
-
-function changeGridColor(gridKey, hexColor, wireframeBoolean){
-	console.log("changeGridColor - gridKey");
-	console.log(gridKey);
-	console.log(`${gridKey[0]}-${gridKey[1]}`);
-	const obj = e.sceneRef.getObjectByName(`${gridKey[0]}-${gridKey[1]}`);
-	if (obj) {
-		obj.material.color.setHex(hexColor);
-		obj.material.wireframe = wireframeBoolean;
-	}
-}
+module.exports = gridListener;
