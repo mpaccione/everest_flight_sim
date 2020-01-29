@@ -8,28 +8,13 @@ I then considered how I could recreate Everest and the surrounding landscapes. I
 
 Using Three.js and some client side Javascript skills I've set out to create this project to the best of my abilities.
 
-# To Load 
-
-Download repo and host on a local server. I use WAMP on mmy Windows machine. Then open Chrome and navigate to the url below.
-
-```
-localhost/flight_sim/react/client
-```
-
-W/S - Pitch Controls
-A/D - Roll Controls
-Q/E - Yaw Controls
-
-Up/Down Arrows    - Increase/Decrease RPM Main Rotor
-Right/Left Arrows - Increase/Decrease RPM Tail Rotor
-
 # Master
 
 ```
 Branch: master
 ```
 
-Game/Simulator I have built to the best of my abilities. Recreating the logic to simulate a helicopter is incredible math and physic intensive. My approach initially is to create a basic more arcade style logic from a basic understanding of vectors, velocity, acceleration, mass, gravity, force, pitch, roll, and yaw. 
+Game/Simulator I have built to the best of my abilities. Recreating the logic to simulate a helicopter is incredible math and physic intensive. My initial approach is to create a basic more arcade style logic from a basic understanding of vectors, velocity, acceleration, mass, gravity, force, pitch, roll, and yaw. Looks like those high school physics classes paid off :)
 
 ![Everest Flight Simulator](https://github.com/mpaccione/everest_flight_sim/blob/master/client/master-preview.jpg?raw=true)
 
@@ -53,7 +38,7 @@ More complete testing simulator featuring generated terrain, 3D orientation mode
  
 ![Flight Debugger Simulation Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-wireframe/flight-debugger-simulation-preview.png?raw=true)
 
-# Flight Debugger Plane
+# Flight Debugger 3D Plane
 
 ```
 Branch: debugger-plane
@@ -63,7 +48,17 @@ Basic simulator, featuring debugger stats, a helicopter model, and 3D plane. Thi
 
 ![Flight Debugger Wireframe Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-plane/flight-debugger-wireframe-preview.png?raw=true)
 
-# Helicopter Terrain Grid Positioning System
+# Terrain Debugger Grid Loading System
+
+```
+Branch: debugger-loader
+```
+
+Grid Loader system that stores data from JSON into IndexedDB. Uses Listeners to update grid positioning and saves old position into memory. Initial loader uses cubes for visualization.
+
+![Terrain Debugger Loader Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-loader/flight-debugger-loader-preview.jpg?raw=true)
+
+# Terrain Debugger Grid Positioning System
 
 ```
 Branch: debugger-positioning
@@ -73,23 +68,21 @@ Positioning algorithim that tracks the grid radius of the helicopter.
 
 ![Flight Debugger Positioning Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-positioning/flight-debugger-positioning-preview.jpg?raw=true)
 
-# Flight Debugger Terrain Grid System
+# Terrain Debugger Grid System
 
 ```
 Branch: debugger-terrain
 ```
 
-Terrain Grid System. Included is 10km^2 Green Square, each Blue Square is 1km^2 and each Red Square is 0.1km^2. Dynamic picking.
+Terrain Grid System. Included is 10km^2 Green Square, each Blue Square is 1km^2 and each Red Square is 0.1km^2. Dynamic picking and Latitude, Longitude, Elevation display.
 
 ![Flight Debugger Terrain Preview Image](https://github.com/mpaccione/everest_flight_sim/blob/debugger-terrain/flight-debugger-terrain-preview.jpg?raw=true)
-
 
 # Contribute
 
 If you would like to help with either the visual aspects/performance/math simulations please use the github repo features like normal. Your help is much appreciated.
 
 ```
-IN CLIENT DIR
 watchify app.js -o dist/bundle.js
 ```
 
