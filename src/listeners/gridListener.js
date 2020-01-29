@@ -197,10 +197,7 @@ function gridListener(){
 
 		for (var j = longStart; j < (longStart + 3); j++) {
 			for (var k = latStart; k < (latStart + 3); k++) {
-				const obj = sceneRef.getObjectByName(`${k}-${j}`);
-				if (!obj) {
-					createGrid(j, k, sceneRef);
-				}
+				createGrid(j, k, sceneRef);
 			}
 		}
 	}
@@ -208,16 +205,17 @@ function gridListener(){
 	function createGrid(latKey, longKey, sceneRef = false){
 		console.log("createGrid");
 		if (sceneRef) {
-			const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-			  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
-			  	  cube = new THREE.Mesh( geometry, material );
+			if (scene.getObjectByName(`${latKey}-${longKey}`)) {
+				changeGridColor(`${latKey}-${longKey}`, 0x0000FF, false, sceneRef); 
+			} else {
+				const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
+				  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
+				  	  cube = new THREE.Mesh( geometry, material );
 
-			cube.position.set( (latKey*800), 0, (longKey*800) );
-			cube.name = `${latKey}-${longKey}`;
-
-			scene.getObjectByName(`${latKey}-${longKey}`) 
-			? changeGridColor(`${latKey}-${longKey}`, 0x0000FF, false, sceneRef) 
-			: sceneRef.add(cube);
+				cube.position.set( (latKey*800), 0, (longKey*800) );
+				cube.name = `${latKey}-${longKey}`;
+				sceneRef.add(cube);
+			}
 		} else {
 			console.error("createGrid missing scene reference");
 		}
