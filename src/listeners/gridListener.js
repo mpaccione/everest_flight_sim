@@ -24,10 +24,10 @@ function gridListener(){
 
 	window.addEventListener("populateGridDB", (e) => {
 		console.log("[LISTENER] - populateGridDB");
-		populateDB(e.detail.callback, e.detail.sceneRef);
+		populateDB(e.detail.callback, e.detail.currentPosition, e.detail.sceneRef);
 	});
 
-	function populateDB(callback, sceneRef = false){
+	function populateDB(callback, currentPosition, sceneRef = false){
 		console.log("populateDB");
 		const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
 			  dbStoreReq = indexedDB.open("terrainJSON");
@@ -72,7 +72,7 @@ function gridListener(){
 			}
 
 			// BOXES
-			getInitialGrid(callback, sceneRef);
+			getInitialGrid(callback, currentPosition, sceneRef);
 		}
 
 	}
@@ -146,7 +146,7 @@ function gridListener(){
 
 	// Load starting grid 
 
-	function getInitialGrid(callback, sceneRef = false){
+	function getInitialGrid(callback, currentPosition, sceneRef = false){
 		console.log("getInitialGrid");
 		// Minimum Starting Coordinate is 1-1
 		const latKey = window.currentGrid[1],
@@ -162,6 +162,7 @@ function gridListener(){
 		}
 
 		callback();
+		changeGridColor(`${currentPosition[0]}-${currentPosition[1]}`, 0xFF0000, false, sceneRef);
 	};
 
 	////////////////////////
@@ -176,7 +177,7 @@ function gridListener(){
 		storeOldGridCoords(e.detail.oldPosition);
 		createGrids(e.detail.newPosition, e.detail.sceneRef);
 		resetGrids(e.detail.gridVals, e.detail.sceneRef);
-		changeGridColor(e.detail.newPosition, 0xff0000, false, e.detail.sceneRef);
+		changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 		window.currentGrid = e.detail.newPosition;
 	});
 
@@ -215,7 +216,7 @@ function gridListener(){
 			cube.name = `${latKey}-${longKey}`;
 
 			scene.getObjectByName(`${latKey}-${longKey}`) 
-			? console.log(`${latKey}-${longKey} already exists, obj not added.`) 
+			? changeGridColor(`${latKey}-${longKey}`, 0x0000FF, false, sceneRef) 
 			: sceneRef.add(cube);
 		} else {
 			console.error("createGrid missing scene reference");

@@ -462,10 +462,14 @@ function resizeRendererToDisplaySize(renderer) {
 	return needResize;
 }
 
+// Quick and Dirty Global
+window.currentGrid = [1,1];
+
 // Init Grid
 window.dispatchEvent(new CustomEvent("populateGridDB", {
 	bubbles: true,
 	detail: {
+		currentPosition: window.currentGrid,
 		sceneRef: scene,
 		callback: function(){
 			// Adjusting Camera To Look At Current Grid
@@ -476,9 +480,6 @@ window.dispatchEvent(new CustomEvent("populateGridDB", {
 		}
 	}
 }))
-
-// Quick and Dirty Global
-window.currentGrid = [1,1];
 
 setInterval(function gridCheck(){
 	console.log("gridCheck");
