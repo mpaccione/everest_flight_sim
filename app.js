@@ -7,7 +7,7 @@ const OrbitControls = require('three-orbit-controls')(THREE);
 
 console.log("[APP INIT]");
 
-gridListener();
+// gridListener();
 
 ////////////////////////////////
 ///// THREE BUFFER UTILITY /////

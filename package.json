@@ -29,5 +29,7 @@
     "three-gltf-loader": "^1.105.0",
     "three-orbit-controls": "^82.1.0"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "jest": "^25.1.0"
+  }
 }
