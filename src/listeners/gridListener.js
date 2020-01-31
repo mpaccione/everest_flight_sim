@@ -25,52 +25,64 @@ window.addEventListener("populateGridDB", (e) => {
 	populateDB(e.detail.callback, e.detail.currentPosition, e.detail.sceneRef);
 });
 
-function populateDB(callback, currentPosition, sceneRef = false){
+async function populateDB(callback, currentPosition, sceneRef = false){
 	console.log("populateDB");
 	const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
-		  dbStoreReq = indexedDB.open("terrainJSON");
+		  dbs = await indexedDB.databases(),
+		  dbExists = dbs.map(db => db.name).includes("terrainJSON"); 
 
 	if (!indexedDB) {
 		alert("You're browser does not support IndexedDB :(");
-	}
+	} else {
 
-	dbStoreReq.onerror = (e) => {
-		console.error("DB Error");
-		console.error(e);
-	}
+		if (!dbExists) {
+			console.log("indexedDB data not loaded");
+			const dbStoreReq = indexedDB.open("terrainJSON");
 
-	dbStoreReq.onupgradeneeded = (e) => {
-		const db = e.target.result;
-
-		db.createObjectStore("grid", {
-			autoIncrement: false
-		})
-	}
-
-	dbStoreReq.onsuccess = (e) => {
-		const db = e.target.result,
-			  transaction = db.transaction(["grid"], "readwrite"),
-			  store = transaction.objectStore("grid");
-
-		for (var j = 0; j < terrainData.length; j++) {
-			const gridTile = terrainData[j];
-			for (var k = 0; k < gridTile.length; k++) {
-				const subGridTile = gridTile[k],
-					  storeReq = store.add(subGridTile, `${k}-${j}`);
-
-				storeReq.onsuccess = (e) => {
-					console.log("storeReq success");
-				}
-
-				storeReq.onerror = (e) => {
-					console.error("storeReq error");
-					console.error(e);
-				}
+			dbStoreReq.onerror = (e) => {
+				console.error("DB Error");
+				console.error(e);
 			}
+
+			dbStoreReq.onupgradeneeded = (e) => {
+				const db = e.target.result;
+
+				db.createObjectStore("grid", {
+					autoIncrement: false
+				})
+			}
+
+			dbStoreReq.onsuccess = (e) => {
+				const db = e.target.result,
+					  transaction = db.transaction(["grid"], "readwrite"),
+					  store = transaction.objectStore("grid");
+
+				for (var j = 0; j < terrainData.length; j++) {
+					const gridTile = terrainData[j];
+					for (var k = 0; k < gridTile.length; k++) {
+						const subGridTile = gridTile[k],
+							  storeReq = store.add(subGridTile, `${k}-${j}`);
+
+						storeReq.onsuccess = (e) => {
+							console.log("storeReq success");
+						}
+
+						storeReq.onerror = (e) => {
+							console.error("storeReq error");
+							console.error(e);
+						}
+					}
+				}
+
+				// BOXES
+				getInitialGrid(callback, currentPosition, sceneRef);
+			}
+
+		} else {
+			// BOXES
+			getInitialGrid(callback, currentPosition, sceneRef);
 		}
 
-		// BOXES
-		getInitialGrid(callback, currentPosition, sceneRef);
 	}
 
 }
