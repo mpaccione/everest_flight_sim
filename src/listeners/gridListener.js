@@ -263,6 +263,7 @@ function changeGridColor(gridKey, hexColor, wireframeBoolean, sceneRef = false){
 	}
 }
 
+// Exports for Testing
 module.exports = {
 	storeOldGridCoords,
 	createGrid,

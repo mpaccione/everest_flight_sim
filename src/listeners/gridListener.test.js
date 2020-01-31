@@ -10,7 +10,7 @@ const {
 } = require("./gridListener");
 
 // storeOldGridCoords
-
+/////////////////////
 // input: gridKeyArr
 // output: object with grid keys and timestamp value
 test('gridKeyArr input: [1,1], should output: {} with 1-1 key and date timestamp value', () => {
@@ -21,7 +21,7 @@ test('gridKeyArr input: [1,1], should output: {} with 1-1 key and date timestamp
 })
 
 // createGrid
-
+/////////////
 // input: latKey, longKey
 // output: 3D Cube Object
 test('createGrid input: latKey, longKey integers, should output Three.js Cube Object', () => {
@@ -33,7 +33,7 @@ test('createGrid input: latKey, longKey integers, should output Three.js Cube Ob
 })
 
 // changeGridColor
-
+//////////////////
 // input: gridKey, hexColor, wireframeBoolean, sceneRef
 // output: boolean, true for success, false for error finding object.
 test('changeGridColor input: gridKey, hexColor, wireframeBoolean, sceneRef, should output truthy boolean if object exists', () => {
