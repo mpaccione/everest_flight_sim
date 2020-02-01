@@ -75,6 +75,7 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 				}
 
 				// BOXES
+
 				getInitialGrid(callback, currentPosition, sceneRef);
 			}
 
@@ -89,8 +90,12 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 
 // Get Value from IndexedDB
 
-function getGridByKeyArr(gridKeyArr){
-	const dbStoreRead = indexedDB.open("terrainJSON");
+function getGridByKeyArr(gridKeys, sceneRef = false){
+	const dbStoreRead = indexedDB.open("terrainJSON"),
+		  res = new Array(gridKeys.length);
+
+	console.log("getGridByKeyArr");
+	console.log(gridKeys);
 
 	dbStoreRead.onerror = (e) => {
 		console.error("DB Error");
@@ -98,19 +103,20 @@ function getGridByKeyArr(gridKeyArr){
 	}
 
 	dbStoreRead.onsuccess = (e) => {
-		const db = e.target.result,
-			  objectStore = db.transaction(["grid"], "readonly"),
-			  storeReq = objectStore.get(gridKey);
+		const db = e.target.result;
+		for (var i = 0; i < gridKeys.length; i++) {
+			const objectStore = db.transaction(["grid"], "readonly"),
+				  storeReq = objectStore.get(gridKeys[i]);
 
-		for (var i = 0; i < gridKeyArr.length; i++) {
-			const gridKey = gridKeyArr[i];
+			console.log(`dbStoreRead Success, gridKey[${i}]`);
 
-			objectStore.get(gridKey).onsuccess = (e) => {
+			objectStore.get(gridKeys[i]).onsuccess = (e) => {
 				console.log(`storeReq success: ${gridKeyArr[i]}`);
-				res = e.target.result;
+				// Adds 3D planes with read data
+				sceneRef.add(createTile(gridKeys[i], e.target.result, sceneRef));
 			}
 
-			objectStore.get(gridKey).onerror = (e) => {
+			objectStore.get(gridKeys[i]).onerror = (e) => {
 				console.error("storeReq error");
 				console.error(e);
 			}
@@ -156,23 +162,30 @@ function getFullGrid(){
 
 // Load starting grid 
 
-function getInitialGrid(callback, currentPosition, sceneRef = false){
+function getInitialGrid(callback, currentPosition, data = false, sceneRef = false){
 	console.log("getInitialGrid");
 	// Minimum Starting Coordinate is 1-1
 	const latKey = window.currentGrid[1],
 		  longKey = window.currentGrid[0];
+	let   gridKeys = [];
 
 	for (var a = latKey - 1; a < latKey + 2; a++) {
 		for (var b = longKey - 1; b < longKey + 2; b++) {
 			// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
 			if (a >= 0 && b >= 0){
-				sceneRef.add(createGrid(a, b, sceneRef));
+				// a - latkey, b - longkey
+				gridKeys.push([b, a]);
+				// sceneRef.add(createTile(a, b, data, sceneRef));
 			}
 		}
 	}
 
-	callback();
-	changeGridColor(`${currentPosition[0]}-${currentPosition[1]}`, 0xFF0000, false, sceneRef);
+	console.log(gridKeys);
+
+	getGridByKeyArr(gridKeys, sceneRef);
+	// callback from populateGridDB Emitted Event
+	// callback();
+	// changeGridColor(`${currentPosition[0]}-${currentPosition[1]}`, 0xFF0000, false, sceneRef);
 };
 
 ////////////////////////
@@ -185,9 +198,9 @@ window.addEventListener("gridChange", (e) => {
 	console.log("[LISTENER] - gridChange");
 
 	pastGridCoords = storeOldGridCoords(e.detail.oldPosition);
-	createGrids(e.detail.newPosition, e.detail.sceneRef);
-	resetGrids(e.detail.gridVals, e.detail.sceneRef);
-	changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
+	createTiles(e.detail.newPosition, e.detail.sceneRef);
+	resetTiles(e.detail.gridVals, e.detail.sceneRef);
+	//changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 	window.currentGrid = e.detail.newPosition;
 });
 
@@ -200,51 +213,82 @@ function storeOldGridCoords(gridKeyArr, pastGridCoordObj){
 	return obj;
 }
 
-// Create Grids
+// Create Tiles
 
-function createGrids(currentGridArr, sceneRef = false){
+function createTiles(currentGridArr, sceneRef = false){
 	console.log("createGrids");
 	const longStart = (currentGridArr[0] - 1),
-		  latStart = (currentGridArr[1] - 1);
+		  latStart = (currentGridArr[1] - 1),
+		  gridKeyArr = [];
 
 	for (var j = longStart; j < (longStart + 3); j++) {
 		for (var k = latStart; k < (latStart + 3); k++) {
-			// Producing Three.js Type Error - Non Blocking
-			// Returning Undefined Initially? But not in console logging.
-			// console.log(createGrid(j, k, sceneRef));
-			sceneRef.add(createGrid(j, k, sceneRef));
+			gridKeyArr.push(`${k}-${j}`);
 		}
 	}
+
+	// Gets data from DB and loops createTile to add to Scene
+	getGridByKeyArr(gridKeyArr);
 }
 
-function createGrid(latKey, longKey, sceneRef = false){
-	console.log("createGrid");
+function createTile(gridKey, data, sceneRef){
+	console.log("createTile");
 	if (sceneRef) {
-		if (sceneRef.getObjectByName(`${latKey}-${longKey}`)) {
-			changeGridColor(`${latKey}-${longKey}`, 0x0000FF, false, sceneRef); 
-		} else {
-			const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
-			  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
-			  	  cube = new THREE.Mesh( geometry, material );
+		if (!sceneRef.getObjectByName(`${gridKey[1]}-${gridKey[0]}`)) { // Lat-Long
+			const geometry = new THREE.PlaneBufferGeometry( 800, 10, 10, 10 ),
+				  material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} ),
+				  plane = new THREE.Mesh( geometry, material );
+			let   vertices = plane.geometry.attributes.position.array;
 
-			cube.position.set( (latKey*800), 0, (longKey*800) );
-			cube.name = `${latKey}-${longKey}`;
-			
-			return cube;
+			plane.name = `${gridKey[1]}-${gridKey[0]}`;
+			// plane.geometry.attributes.position.needsUpdate = true;
+			// plane.geometry.attributes.color.needsUpdate = true;
+
+			// Code from another branch - for visualization - not accurate 
+			// geometry.rotateX( - Math.PI / 2 );
+
+			// for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
+			// 	vertices[ j + 1 ] = this.data[ i ];
+			// }
+
+			for (var a = 0; a < data; a++) {
+				for (var b = 0; b < data[a].length; b++) {
+					data[a][b] = vertices[a+b]; 
+				}
+			}
+
+			return plane;
 		}
-	} else {
-		console.error("createGrid missing scene reference");
 	}
 }
+
+// function createGrid(latKey, longKey, sceneRef = false){
+// 	console.log("createGrid");
+// 	if (sceneRef) {
+// 		if (sceneRef.getObjectByName(`${latKey}-${longKey}`)) {
+// 			changeGridColor(`${latKey}-${longKey}`, 0x0000FF, false, sceneRef); 
+// 		} else {
+// 			const geometry = new THREE.BoxBufferGeometry( 800, 3500, 800 ),
+// 			  	  material = new THREE.MeshBasicMaterial({ wireframe: false, color: 0x0000FF }),
+// 			  	  cube = new THREE.Mesh( geometry, material );
+
+// 			cube.position.set( (latKey*800), 0, (longKey*800) );
+// 			cube.name = `${latKey}-${longKey}`;
+			
+// 			return cube;
+// 		}
+// 	} else {
+// 		console.error("createGrid missing scene reference");
+// 	}
+// }
 
 // Reset Grids
 
-function resetGrids(gridArr, sceneRef = false){
-	console.log("resetGrids");
+function resetTiles(gridArr, sceneRef = false){
+	console.log("resetTiles");
 	for (var i = 0; i < gridArr.length; i++) {
-		if (sceneRef.getObjectByName(gridArr[i])) {
-			changeGridColor(gridArr[i], 0x649b00, true, sceneRef);
-		}
+		const tile = sceneRef.getObjectByName(gridArr[i]);
+		tile ? tile.remove() : false;
 	}
 }
 
@@ -266,7 +310,7 @@ function changeGridColor(gridKey, hexColor, wireframeBoolean, sceneRef = false){
 // Exports for Testing
 module.exports = {
 	storeOldGridCoords,
-	createGrid,
-	resetGrids,
+	createTile,
+	resetTiles,
 	changeGridColor
 }
