@@ -96,8 +96,6 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
 	const dbStoreRead = indexedDB.open("terrainJSON");
 
-	console.log(callback);
-
 	dbStoreRead.onerror = (e) => {
 		console.error("DB Error");
 		console.error(e);
@@ -115,14 +113,10 @@ function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
 			(function(i){
 				// wrapped to preserve correct state of i val in loop of async
 				storeReq.onsuccess = (e) => {
-					console.log(`storeReq success: ${gridKey}`);
-					console.log(sceneRef);
 					// Adds 3D planes with read data
 					sceneRef.add(createTile(gridKey, e.target.result, sceneRef));
-					
+
 					if (i === (gridKeys.length-1) && callback !== false && typeof callback === 'function') {
-						console.log("callback");
-						console.log(callback);
 						callback();
 					}
 				}
@@ -212,10 +206,8 @@ let pastGridCoords = {};
 
 window.addEventListener("gridChange", (e) => {
 	console.log("[LISTENER] - gridChange");
-
 	pastGridCoords = storeOldGridCoords(e.detail.oldPosition);
 	createTiles(e.detail.newPosition, e.detail.sceneRef, function(){
-		console.log("CALLBACK EXEC");
 		changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 		changeGridColor(`${e.detail.oldPosition[0]}-${e.detail.oldPosition[1]}`, 0x0000ff, true, e.detail.sceneRef);
 	});
@@ -259,13 +251,15 @@ function createTile(gridKey, data, sceneRef){
 			const geometry = new THREE.PlaneBufferGeometry( 800, 800, 9, 9 ),
 				  material = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: true, side: THREE.DoubleSide} ),
 				  plane = new THREE.Mesh( geometry, material ),
-				  rotation = 90 * Math.PI / 180;
+				  rotation = 90 * Math.PI / 180,
+				  gridKeyArr = gridKey.split("-");
 			let   vertices = plane.geometry.attributes.position.array;
 
 			console.log(`Tile Created: ${gridKey}`); 
+			console.log(gridKeyArr);
 
 			plane.name = `${gridKey}`;
-			plane.position.set( (parseInt(gridKey[2])*800) /*Lat*/, 0, (parseInt(gridKey[0])*800) /*Long*/ );
+			plane.position.set( (parseInt(gridKeyArr[1])*800) /*Lat*/, 0, (parseInt(gridKeyArr[0])*800) /*Long*/ );
 			plane.rotateX(rotation);
 
 			// plane.geometry.attributes.position.needsUpdate = true;
