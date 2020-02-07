@@ -491,10 +491,8 @@ setInterval(function gridCheck(){
 		  latPlus = latGrid + 1,
 		  longMinus = longGrid - 1,
 		  longPlus = longGrid + 1,
-		  gridVal1,
-		  gridVal2,
-		  gridVal3,
 		  newPosition = [latGrid, longGrid],
+		  gridVals = [],
 		  gridChange = false;
 	
 	// Latitude Change
@@ -502,9 +500,11 @@ setInterval(function gridCheck(){
 		console.log("GRID CHANGE - LAT++");
 		console.log(`z: ${window.flightSim.z} > (${latGrid} * ${gridSize}) - ${gridSize}`);
 		// Increase
-		gridVal1 = `${latMinus}-${longMinus}`;
-		gridVal2 = `${latMinus}-${longGrid}`;
-		gridVal3 = `${latMinus}-${longPlus}`;
+		gridVals.push(
+			`${latMinus}-${longMinus}`,
+			`${latMinus}-${longGrid}`,
+			`${latMinus}-${longPlus}`
+		);
 		newPosition[0] = latPlus;
 		gridChange = true;
 
@@ -512,9 +512,11 @@ setInterval(function gridCheck(){
 		console.log("GRID CHANGE - LAT--");
 		console.log(`z: ${window.flightSim.z} < (${latGrid} * ${gridSize}) - ${gridSize}`);
 		// Decrease
-		gridVal1 = `${latPlus}-${longMinus}`;
-		gridVal2 = `${latPlus}-${longGrid}`;
-		gridVal3 = `${latPlus}-${longPlus}`;
+		gridVals.push(
+			`${latPlus}-${longMinus}`,
+			`${latPlus}-${longGrid}`,
+			`${latPlus}-${longPlus}`
+		);
 		newPosition[0] = latMinus > 0 ? latMinus : 0;
 		gridChange = true;
 	}
@@ -524,9 +526,11 @@ setInterval(function gridCheck(){
 		console.log("GRID CHANGE - LONG++");
 		console.log(`x: ${window.flightSim.x} > (${longGrid} * ${gridSize}) - ${gridSize}`);
 		// Increase
-		gridVal1 = `${latMinus}-${longMinus}`;
-		gridVal2 = `${latGrid}-${longMinus}`;
-		gridVal3 = `${latPlus}-${longMinus}`;
+		gridVals.push(
+			`${latMinus}-${longMinus}`,
+			`${latGrid}-${longMinus}`,
+			`${latPlus}-${longMinus}`
+		);
 		newPosition[1] = longPlus;
 		gridChange = true;
 
@@ -534,9 +538,11 @@ setInterval(function gridCheck(){
 		console.log("GRID CHANGE - LONG--");
 		console.log(`x: ${window.flightSim.x} < (${longGrid} * ${gridSize}) - ${gridSize}`);
 		// Decrease
-		gridVal1 = `${latMinus}-${longPlus}`;
-		gridVal2 = `${latGrid}-${longPlus}`;
-		gridVal3 = `${latPlus}-${longPlus}`;
+		gridVals.push(
+			`${latMinus}-${longPlus}`,
+			`${latGrid}-${longPlus}`,
+			`${latPlus}-${longPlus}`
+		);
 		newPosition[1] = longMinus > 0 ? longMinus : 0;
 		gridChange = true;
 	}
@@ -545,7 +551,7 @@ setInterval(function gridCheck(){
 		window.dispatchEvent(new CustomEvent('gridChange', {
 			bubbles: true,
 			detail: {
-				gridVals: [gridVal1, gridVal2, gridVal3],
+				gridVals,
 				oldPosition: currentGrid,
 				newPosition: newPosition,
 				sceneRef: scene

@@ -96,6 +96,8 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
 	const dbStoreRead = indexedDB.open("terrainJSON");
 
+	console.log(callback);
+
 	dbStoreRead.onerror = (e) => {
 		console.error("DB Error");
 		console.error(e);
@@ -110,21 +112,26 @@ function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
 				  objectStore = transaction.objectStore("grid"),
 				  storeReq = objectStore.get(gridKey);
 
-			storeReq.onsuccess = (e) => {
-				console.log(`storeReq success: ${gridKey}`);
-				// Adds 3D planes with read data
-				sceneRef.add(createTile(gridKey, e.target.result, sceneRef));
-				if (i === gridKeys.length && callback !== false && callback === typeof 'function') {
-					console.log("callback");
-					console.log(callback);
-					callback();
+			(function(i){
+				// wrapped to preserve correct state of i val in loop of async
+				storeReq.onsuccess = (e) => {
+					console.log(`storeReq success: ${gridKey}`);
+					console.log(sceneRef);
+					// Adds 3D planes with read data
+					sceneRef.add(createTile(gridKey, e.target.result, sceneRef));
+					
+					if (i === (gridKeys.length-1) && callback !== false && typeof callback === 'function') {
+						console.log("callback");
+						console.log(callback);
+						callback();
+					}
 				}
-			}
 
-			storeReq.onerror = (e) => {
-				console.error("storeReq error");
-				console.error(e);
-			}
+				storeReq.onerror = (e) => {
+					console.error("storeReq error");
+					console.error(e);
+				}
+			})(i);
 		}
 	}
 }
@@ -207,10 +214,12 @@ window.addEventListener("gridChange", (e) => {
 	console.log("[LISTENER] - gridChange");
 
 	pastGridCoords = storeOldGridCoords(e.detail.oldPosition);
-	createTiles(e.detail.newPosition, e.detail.sceneRef);
+	createTiles(e.detail.newPosition, e.detail.sceneRef, function(){
+		console.log("CALLBACK EXEC");
+		changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
+		changeGridColor(`${e.detail.oldPosition[0]}-${e.detail.oldPosition[1]}`, 0x0000ff, true, e.detail.sceneRef);
+	});
 	resetTiles(e.detail.gridVals, e.detail.sceneRef);
-	// changeGridColor(`${e.detail.newPosition[1]}-${e.detail.newPosition[0]}`, 0xff0000, false, e.detail.sceneRef);
-	// changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 	window.currentGrid = e.detail.newPosition;
 });
 
@@ -226,7 +235,7 @@ function storeOldGridCoords(gridKeyArr, pastGridCoordObj){
 
 // Create Tiles
 
-function createTiles(currentGridArr, sceneRef = false){
+function createTiles(currentGridArr, sceneRef = false, callback = false){
 	console.log("createGrids");
 	const longStart = (currentGridArr[0] - 1),
 		  latStart = (currentGridArr[1] - 1),
@@ -240,7 +249,7 @@ function createTiles(currentGridArr, sceneRef = false){
 	}
 
 	// Gets data from DB and loops createTile to add to Scene
-	getGridDataByKeys(gridKeys, sceneRef, changeGridColor(`${window.currentGrid[0]}-${window.currentGrid[1]}`, 0xFF0000, false, sceneRef));
+	getGridDataByKeys(gridKeys, sceneRef, callback);
 }
 
 function createTile(gridKey, data, sceneRef){
