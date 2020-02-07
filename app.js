@@ -485,8 +485,8 @@ setInterval(function gridCheck(){
 	console.log("gridCheck");
 
 	const gridSize = 800,
-		  latGrid = window.currentGrid[1],
-		  longGrid = window.currentGrid[0];
+		  latGrid = window.currentGrid[0],
+		  longGrid = window.currentGrid[1];
 	let   latMinus = latGrid - 1,
 		  latPlus = latGrid + 1,
 		  longMinus = longGrid - 1,
@@ -494,46 +494,54 @@ setInterval(function gridCheck(){
 		  gridVal1,
 		  gridVal2,
 		  gridVal3,
-		  newPosition,
+		  newPosition = [latGrid, longGrid],
 		  gridChange = false;
 	
 	// Latitude Change
 	if (window.flightSim.z > (latGrid * gridSize) + gridSize) {
+		console.log("GRID CHANGE - LAT++");
+		console.log(`z: ${window.flightSim.z} > (${latGrid} * ${gridSize}) - ${gridSize}`);
 		// Increase
-		gridVal1 = `${longMinus}-${latMinus}`;
-		gridVal2 = `${longGrid}-${latMinus}`;
-		gridVal3 = `${longPlus}-${latMinus}`;
-		newPosition = [longGrid, latPlus];
+		gridVal1 = `${latMinus}-${longMinus}`;
+		gridVal2 = `${latMinus}-${longGrid}`;
+		gridVal3 = `${latMinus}-${longPlus}`;
+		newPosition[0] = latPlus;
 		gridChange = true;
 
 	} else if (window.flightSim.z < (latGrid * gridSize) - gridSize) {
+		console.log("GRID CHANGE - LAT--");
+		console.log(`z: ${window.flightSim.z} < (${latGrid} * ${gridSize}) - ${gridSize}`);
 		// Decrease
-		gridVal1 = `${longMinus}-${latPlus}`;
-		gridVal2 = `${longGrid}-${latPlus}`;
-		gridVal3 = `${longPlus}-${latPlus}`;
-		newPosition = [longGrid, latMinus > 0 ? latMinus : 0];
+		gridVal1 = `${latPlus}-${longMinus}`;
+		gridVal2 = `${latPlus}-${longGrid}`;
+		gridVal3 = `${latPlus}-${longPlus}`;
+		newPosition[0] = latMinus > 0 ? latMinus : 0;
 		gridChange = true;
 	}
 
 	// Longitude Change
 	if (window.flightSim.x > (longGrid * gridSize) + gridSize) {
+		console.log("GRID CHANGE - LONG++");
+		console.log(`x: ${window.flightSim.x} > (${longGrid} * ${gridSize}) - ${gridSize}`);
 		// Increase
-		gridVal1 = `${longMinus}-${latMinus}`;
-		gridVal2 = `${longMinus}-${latGrid}`;
-		gridVal3 = `${longMinus}-${latPlus}`;
-		newPosition = [longPlus, latGrid];
+		gridVal1 = `${latMinus}-${longMinus}`;
+		gridVal2 = `${latGrid}-${longMinus}`;
+		gridVal3 = `${latPlus}-${longMinus}`;
+		newPosition[1] = longPlus;
 		gridChange = true;
 
 	} else if (window.flightSim.x < (longGrid * gridSize) - gridSize) {
+		console.log("GRID CHANGE - LONG--");
+		console.log(`x: ${window.flightSim.x} < (${longGrid} * ${gridSize}) - ${gridSize}`);
 		// Decrease
-		gridVal1 = `${longPlus}-${latMinus}`;
-		gridVal2 = `${longPlus}-${latGrid}`;
-		gridVal3 = `${longPlus}-${latPlus}`;
-		newPosition = [longMinus > 0 ? longMinus : 0, currentGrid[1]];
+		gridVal1 = `${latMinus}-${longPlus}`;
+		gridVal2 = `${latGrid}-${longPlus}`;
+		gridVal3 = `${latPlus}-${longPlus}`;
+		newPosition[1] = longMinus > 0 ? longMinus : 0;
 		gridChange = true;
 	}
 
-	if (gridChange) {
+	if (gridChange === true) {
 		window.dispatchEvent(new CustomEvent('gridChange', {
 			bubbles: true,
 			detail: {

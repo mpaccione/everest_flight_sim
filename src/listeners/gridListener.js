@@ -27,6 +27,8 @@ window.addEventListener("populateGridDB", (e) => {
 
 async function populateDB(callback, currentPosition, sceneRef = false){
 	console.log("populateDB");
+	console.log("sceneRef");
+	console.log(sceneRef);
 	const indexedDB = window.indexedDB || window.webkitIndexedDB || window.mozIndexedDB,
 		  dbs = await indexedDB.databases(),
 		  dbExists = dbs.map(db => db.name).includes("terrainJSON"); 
@@ -80,6 +82,7 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 			}
 
 		} else {
+			console.log("indexedDB Data Already Loaded");
 			// BOXES
 			getInitialGrid(callback, currentPosition, sceneRef);
 		}
@@ -90,12 +93,8 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 
 // Get Value from IndexedDB
 
-function getGridByKeyArr(gridKeys, sceneRef = false){
-	const dbStoreRead = indexedDB.open("terrainJSON"),
-		  res = new Array(gridKeys.length);
-
-	console.log("getGridByKeyArr");
-	console.log(gridKeys);
+function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
+	const dbStoreRead = indexedDB.open("terrainJSON");
 
 	dbStoreRead.onerror = (e) => {
 		console.error("DB Error");
@@ -104,23 +103,28 @@ function getGridByKeyArr(gridKeys, sceneRef = false){
 
 	dbStoreRead.onsuccess = (e) => {
 		const db = e.target.result;
+
 		for (var i = 0; i < gridKeys.length; i++) {
-			const objectStore = db.transaction(["grid"], "readonly"),
-				  storeReq = objectStore.get(gridKeys[i]);
+			const gridKey = gridKeys[i],
+				  transaction = db.transaction(["grid"], "readonly"),
+				  objectStore = transaction.objectStore("grid"),
+				  storeReq = objectStore.get(gridKey);
 
-			console.log(`dbStoreRead Success, gridKey[${i}]`);
-
-			objectStore.get(gridKeys[i]).onsuccess = (e) => {
-				console.log(`storeReq success: ${gridKeyArr[i]}`);
+			storeReq.onsuccess = (e) => {
+				console.log(`storeReq success: ${gridKey}`);
 				// Adds 3D planes with read data
-				sceneRef.add(createTile(gridKeys[i], e.target.result, sceneRef));
+				sceneRef.add(createTile(gridKey, e.target.result, sceneRef));
+				if (i === gridKeys.length && callback !== false && callback === typeof 'function') {
+					console.log("callback");
+					console.log(callback);
+					callback();
+				}
 			}
 
-			objectStore.get(gridKeys[i]).onerror = (e) => {
+			storeReq.onerror = (e) => {
 				console.error("storeReq error");
 				console.error(e);
 			}
-
 		}
 	}
 }
@@ -162,8 +166,10 @@ function getFullGrid(){
 
 // Load starting grid 
 
-function getInitialGrid(callback, currentPosition, data = false, sceneRef = false){
+function getInitialGrid(callback, currentPosition, sceneRef = false, data = false,){
 	console.log("getInitialGrid");
+	console.log("sceneRef");
+	console.log(sceneRef);
 	// Minimum Starting Coordinate is 1-1
 	const latKey = window.currentGrid[1],
 		  longKey = window.currentGrid[0];
@@ -174,18 +180,21 @@ function getInitialGrid(callback, currentPosition, data = false, sceneRef = fals
 			// Creating Grid Boxes - Not Actively Loading Vertex Data into Planes
 			if (a >= 0 && b >= 0){
 				// a - latkey, b - longkey
-				gridKeys.push([b, a]);
+				gridKeys.push(`${a}-${b}`);
 				// sceneRef.add(createTile(a, b, data, sceneRef));
 			}
 		}
 	}
 
-	console.log(gridKeys);
+	getGridDataByKeys(gridKeys, sceneRef);
 
-	getGridByKeyArr(gridKeys, sceneRef);
+	// One off for highlighting initial starting position
+	setTimeout(function(){
+		changeGridColor(`${latKey}-${longKey}`, 0xFF0000, false, sceneRef)
+	}, 2000);
+
 	// callback from populateGridDB Emitted Event
 	// callback();
-	// changeGridColor(`${currentPosition[0]}-${currentPosition[1]}`, 0xFF0000, false, sceneRef);
 };
 
 ////////////////////////
@@ -200,7 +209,8 @@ window.addEventListener("gridChange", (e) => {
 	pastGridCoords = storeOldGridCoords(e.detail.oldPosition);
 	createTiles(e.detail.newPosition, e.detail.sceneRef);
 	resetTiles(e.detail.gridVals, e.detail.sceneRef);
-	//changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
+	// changeGridColor(`${e.detail.newPosition[1]}-${e.detail.newPosition[0]}`, 0xff0000, false, e.detail.sceneRef);
+	// changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 	window.currentGrid = e.detail.newPosition;
 });
 
@@ -209,6 +219,7 @@ window.addEventListener("gridChange", (e) => {
 function storeOldGridCoords(gridKeyArr, pastGridCoordObj){
 	console.log("storeOldGridCoords");
 	let obj = Object.assign({}, pastGridCoordObj);
+	// obj[`${gridKeyArr[1]}-${gridKeyArr[0]}`] = new Date().getTime();
 	obj[`${gridKeyArr[0]}-${gridKeyArr[1]}`] = new Date().getTime();
 	return obj;
 }
@@ -219,43 +230,61 @@ function createTiles(currentGridArr, sceneRef = false){
 	console.log("createGrids");
 	const longStart = (currentGridArr[0] - 1),
 		  latStart = (currentGridArr[1] - 1),
-		  gridKeyArr = [];
+		  gridKeys = [];
 
-	for (var j = longStart; j < (longStart + 3); j++) {
-		for (var k = latStart; k < (latStart + 3); k++) {
-			gridKeyArr.push(`${k}-${j}`);
+	for (var long = longStart; long < (longStart + 3); long++) {
+		for (var lat = latStart; lat < (latStart + 3); lat++) {
+			//gridKeys.push(`${lat}-${long}`);
+			gridKeys.push(`${long}-${lat}`);
 		}
 	}
 
 	// Gets data from DB and loops createTile to add to Scene
-	getGridByKeyArr(gridKeyArr);
+	getGridDataByKeys(gridKeys, sceneRef, changeGridColor(`${window.currentGrid[0]}-${window.currentGrid[1]}`, 0xFF0000, false, sceneRef));
 }
 
 function createTile(gridKey, data, sceneRef){
 	console.log("createTile");
 	if (sceneRef) {
-		if (!sceneRef.getObjectByName(`${gridKey[1]}-${gridKey[0]}`)) { // Lat-Long
-			const geometry = new THREE.PlaneBufferGeometry( 800, 10, 10, 10 ),
-				  material = new THREE.MeshBasicMaterial( {color: 0xffff00, side: THREE.DoubleSide} ),
-				  plane = new THREE.Mesh( geometry, material );
+		if (!sceneRef.getObjectByName(`${gridKey}`)) { // Lat-Long
+			const geometry = new THREE.PlaneBufferGeometry( 800, 800, 9, 9 ),
+				  material = new THREE.MeshBasicMaterial( {color: 0x0000ff, wireframe: true, side: THREE.DoubleSide} ),
+				  plane = new THREE.Mesh( geometry, material ),
+				  rotation = 90 * Math.PI / 180;
 			let   vertices = plane.geometry.attributes.position.array;
 
-			plane.name = `${gridKey[1]}-${gridKey[0]}`;
+			console.log(`Tile Created: ${gridKey}`); 
+
+			plane.name = `${gridKey}`;
+			plane.position.set( (parseInt(gridKey[2])*800) /*Lat*/, 0, (parseInt(gridKey[0])*800) /*Long*/ );
+			plane.rotateX(rotation);
+
 			// plane.geometry.attributes.position.needsUpdate = true;
 			// plane.geometry.attributes.color.needsUpdate = true;
 
 			// Code from another branch - for visualization - not accurate 
 			// geometry.rotateX( - Math.PI / 2 );
 
-			// for ( var i = 0, j = 0, l = vertices.length; i < l; i ++, j += 3 ) {
-			// 	vertices[ j + 1 ] = this.data[ i ];
-			// }
+			// console.log("DATA");
+			// console.log(data);
+			// console.log("VERTICES");
+			// console.log(vertices);
 
-			for (var a = 0; a < data; a++) {
-				for (var b = 0; b < data[a].length; b++) {
-					data[a][b] = vertices[a+b]; 
-				}
-			}
+			// let a = 0,
+			// 	b = 0;
+
+			// for ( var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3 ) {
+			// 	if (a < data.length) {
+			// 		console.log(`vertices[${j}], data[${a}][${b}]`);
+			// 		vertices[j+2] -= data[a][b].elevation;
+			// 		b++;
+
+			// 		if (b === 10) {
+			// 			b = 0;
+			// 			a += 1;
+			// 		}
+			// 	}
+			// }
 
 			return plane;
 		}
@@ -286,10 +315,18 @@ function createTile(gridKey, data, sceneRef){
 
 function resetTiles(gridArr, sceneRef = false){
 	console.log("resetTiles");
+	console.log(gridArr);
+
 	for (var i = 0; i < gridArr.length; i++) {
-		const tile = sceneRef.getObjectByName(gridArr[i]);
-		tile ? tile.remove() : false;
+		if (sceneRef.getObjectByName(gridArr[i])) {
+			changeGridColor(gridArr[i], 0x649b00, true, sceneRef);
+		}
 	}
+
+	// for (var i = 0; i < gridArr.length; i++) {
+	// 	const tile = sceneRef.getObjectByName(gridArr[i]);
+	// 	tile ? tile.remove() : false;
+	// }
 }
 
 // Change Current Grid Color
