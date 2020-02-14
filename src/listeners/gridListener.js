@@ -23,6 +23,7 @@ const terrainData = require('../terrainData/Grid_Output_Everest_60_1577483271471
 window.addEventListener("populateGridDB", (e) => {
 	console.log("[LISTENER] - populateGridDB");
 	populateDB(e.detail.callback, e.detail.currentPosition, e.detail.sceneRef);
+	//connectTiles(e.detail.currentPosition, e.detail.sceneRef);
 });
 
 async function populateDB(callback, currentPosition, sceneRef = false){
@@ -77,7 +78,6 @@ async function populateDB(callback, currentPosition, sceneRef = false){
 				}
 
 				// BOXES
-
 				getInitialGrid(callback, currentPosition, sceneRef);
 			}
 
@@ -115,8 +115,12 @@ function getGridDataByKeys(gridKeys, sceneRef = false, callback = false){
 				storeReq.onsuccess = (e) => {
 					// Adds 3D planes with read data
 					sceneRef.add(createTile(gridKey, e.target.result, sceneRef));
-
+					console.log(`i: ${i}, gridKeysLength: ${gridKeys.length-1}`);
+					console.log(callback);
+					console.log(callback !== false);
+					console.log(typeof callback === 'function');
 					if (i === (gridKeys.length-1) && callback !== false && typeof callback === 'function') {
+						console.log("TILE DATA LOADED");
 						callback();
 					}
 				}
@@ -167,7 +171,7 @@ function getFullGrid(){
 
 // Load starting grid 
 
-function getInitialGrid(callback, currentPosition, sceneRef = false, data = false,){
+function getInitialGrid(callback, currentPosition, sceneRef = false, data = false){
 	console.log("getInitialGrid");
 	console.log("sceneRef");
 	console.log(sceneRef);
@@ -187,7 +191,7 @@ function getInitialGrid(callback, currentPosition, sceneRef = false, data = fals
 		}
 	}
 
-	getGridDataByKeys(gridKeys, sceneRef);
+	getGridDataByKeys(gridKeys, sceneRef, connectTiles(window.currentGrid, sceneRef));
 
 	// One off for highlighting initial starting position
 	setTimeout(function(){
@@ -210,8 +214,10 @@ window.addEventListener("gridChange", (e) => {
 	createTiles(e.detail.newPosition, e.detail.sceneRef, function(){
 		changeGridColor(`${e.detail.newPosition[0]}-${e.detail.newPosition[1]}`, 0xff0000, false, e.detail.sceneRef);
 		changeGridColor(`${e.detail.oldPosition[0]}-${e.detail.oldPosition[1]}`, 0x0000ff, true, e.detail.sceneRef);
+		connectTiles(e.detail.oldPosition, e.detail.sceneRef);
 	});
 	resetTiles(e.detail.gridVals, e.detail.sceneRef);
+	//connectTiles(e.detail.newPosition, e.detail.sceneRef);
 	window.currentGrid = e.detail.newPosition;
 });
 
@@ -256,7 +262,6 @@ function createTile(gridKey, data, sceneRef){
 			let   vertices = plane.geometry.attributes.position.array;
 
 			console.log(`Tile Created: ${gridKey}`); 
-			console.log(gridKeyArr);
 
 			plane.name = `${gridKey}`;
 			plane.position.set( (parseInt(gridKeyArr[1])*800) /*Lat*/, 0, (parseInt(gridKeyArr[0])*800) /*Long*/ );
@@ -273,21 +278,22 @@ function createTile(gridKey, data, sceneRef){
 			// console.log("VERTICES");
 			// console.log(vertices);
 
-			// let a = 0,
-			// 	b = 0;
+			let a = 0,
+				b = 0;
 
-			// for ( var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3 ) {
-			// 	if (a < data.length) {
-			// 		console.log(`vertices[${j}], data[${a}][${b}]`);
-			// 		vertices[j+2] -= data[a][b].elevation;
-			// 		b++;
+			for ( var i = 0, j = 0, l = vertices.length; i < l; i++, j += 3 ) {
+				if (a < data.length) {
+					//console.log(`vertices[${j}], data[${a}][${b}]`);
+					//console.log(vertices[j]);
+					vertices[j+2] -= data[a][b].elevation;
+					b++;
 
-			// 		if (b === 10) {
-			// 			b = 0;
-			// 			a += 1;
-			// 		}
-			// 	}
-			// }
+					if (b === 10) {
+						b = 0;
+						a += 1;
+					}
+				}
+			}
 
 			return plane;
 		}
@@ -330,6 +336,49 @@ function resetTiles(gridArr, sceneRef = false){
 	// 	const tile = sceneRef.getObjectByName(gridArr[i]);
 	// 	tile ? tile.remove() : false;
 	// }
+}
+
+// Connect Tiles Vertices
+
+// IN PROGRESS 
+function connectTiles(currGridKey, sceneRef){
+	console.log("connectTiles");
+	console.log("currGridKey");
+	// Current Tile Connection
+	for (var lat = 0; lat < currGridKey[0]+2; lat++) {
+		for (var long = 0; long < currGridKey[1]+2; long++) {
+			const currentTile = sceneRef.getObjectByName(`${lat}-${long}`); 
+			// Current Grid Tile Per Loop
+			if (currentTile) {
+				const currentTileVerts = currentTile.geometry.attributes.position.array,
+					  latPlusTile = sceneRef.getObjectByName(`${lat}-${long+1}`),
+					  longPlusTile = sceneRef.getObjectByName(`${lat+1}-${long}`);
+
+				// Connect Latitudinally
+				if (latPlusTile) {
+					const latPlusTileVerts = latPlusTile.geometry.attributes.position.array;
+					for (var y = 0; y < currentTileVerts.length; y+=27) {
+						const newVertHeight = (currentTileVerts[y] + latPlusTileVerts[y]) / 2;
+						latPlusTileVerts[y] = newVertHeight;
+						currentTileVerts[y] = newVertHeight;
+					}
+				}
+				// Connection Longitudinally
+				if (longPlusTile) {
+					const longPlusTileVerts = longPlusTile.geometry.attributes.position.array;
+					for (var x = 0; x < currentTileVerts.length; x+=3) {
+						const newVertHeight = (currentTileVerts[x] + longPlusTileVerts[x]) / 2;
+						longPlusTileVerts[x] = newVertHeight;
+						currentTileVerts[x] = newVertHeight;
+					}
+				}		
+			}
+		}
+	}
+
+	// Corner Tile Connection
+
+
 }
 
 // Change Current Grid Color
