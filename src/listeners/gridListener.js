@@ -362,6 +362,10 @@ function connectTiles(currGridKey, sceneRef){
 						latPlusTileVerts[y] = newVertHeight;
 						currentTileVerts[y] = newVertHeight;
 					}
+					latPlusTile.geometry.attributes.position.needsUpdate = true;
+					currentTile.geometry.attributes.position.needsUpdate = true;
+					latPlusTile.geometry.computeBoundingSphere();
+					currentTile.geometry.computeBoundingSphere();
 				}
 				// Connection Longitudinally
 				if (longPlusTile) {
@@ -371,6 +375,10 @@ function connectTiles(currGridKey, sceneRef){
 						longPlusTileVerts[x] = newVertHeight;
 						currentTileVerts[x] = newVertHeight;
 					}
+					longPlusTile.geometry.attributes.position.needsUpdate = true;
+					currentTile.geometry.attributes.position.needsUpdate = true;
+					longPlusTile.geometry.computeBoundingSphere();
+					currentTile.geometry.computeBoundingSphere();
 				}		
 			}
 		}
