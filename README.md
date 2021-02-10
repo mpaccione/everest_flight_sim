@@ -1,4 +1,4 @@
-# Welcome to the Everest Flight Sim wiki!
+# Welcome to the Everest Flight Sim wiki! ( On Hold )
 
 After an Everest Trek in Nepal, I was inspired to emulate the experience I had. 
 
