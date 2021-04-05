@@ -301,4 +301,4 @@ class Helicopter {
   }
 }
 
-module.exports = Helicopter;
+export default { Helicopter };

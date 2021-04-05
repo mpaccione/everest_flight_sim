@@ -15,7 +15,7 @@ console.log("[LISTENER INIT] - gridListener");
 // GRID DB EVENTS //
 ////////////////////
 
-const terrainData = require("../terrainData/Grid_Output_Everest_60_1577483271471.json");
+import terrainData from "../terrainData/Grid_Output_Everest_60_1577483271471.json";
 
 // Store Values in IndexedDB
 
@@ -439,9 +439,4 @@ function changeGridColor(
 }
 
 // Exports for Testing
-module.exports = {
-  storeOldGridCoords,
-  createTile,
-  resetTiles,
-  changeGridColor,
-};
+export { storeOldGridCoords, createTile, resetTiles, changeGridColor };

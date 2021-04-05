@@ -10,6 +10,7 @@ export default {
     publicPath: "/",
     filename: "./dist/bundle.js",
   },
+  watch: true,
   resolve: {
     // alias: {
     //   classes: dirname + "/src/classes/",
