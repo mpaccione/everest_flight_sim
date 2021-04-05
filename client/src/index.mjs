@@ -1,11 +1,11 @@
 // Imports
-import THREE from "three";
+import * as THREE from "three";
 import GLTFLoader from "three-gltf-loader";
-import Helicopter from "./classes/helicopter";
-import gridListener from "./listeners/gridListener";
+import Helicopter from "./classes/helicopter.mjs";
+import gridListener from "./listeners/gridListener.mjs";
 import OrbitControls from "three-orbit-controls";
-import { Threebox } from "threebox-plugin/dist/threebox";
-import { config } from "./config.js";
+import { Threebox } from "threebox-plugin/dist/threebox.js";
+import config from "./config.js";
 import MapboxGL from "mapbox-gl";
 
 console.log("[APP INIT]");

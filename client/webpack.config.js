@@ -1,19 +1,29 @@
+let dirname = "C:/Projects/everest_flight_sim/client";
+console.log({ dirname });
+
 // webpack.config.js
 export default {
   mode: "development",
-  entry: ["./src/index.js", "./src/index.css"],
+  entry: ["./src/index.mjs", "./src/index.css"],
   output: {
-    path: __dirname,
+    path: dirname,
     publicPath: "/",
     filename: "./dist/bundle.js",
+  },
+  resolve: {
+    // alias: {
+    //   classes: dirname + "/src/classes/",
+    //   listeners: dirname + "/src/listeners/",
+    // },
+    modules: [dirname + "/node_modules"],
   },
   module: {
     rules: [
       {
-        test: /\.js$/,
+        test: /\.(js|mjs)$/,
         exclude: /node_modules/,
         use: {
-          loader: "script-loader",
+          loader: "babel-loader",
         },
       },
       {
