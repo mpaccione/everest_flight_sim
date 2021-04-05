@@ -1,0 +1,26 @@
+html,
+body,
+canvas {
+  height: 100%;
+  width: 100%;
+  margin: 0px;
+  padding: 0px;
+  position: relative;
+  overflow: hidden;
+}
+canvas {
+  position: absolute;
+}
+#debugging-stats {
+  background-color: transparent;
+  padding: 25px;
+  position: fixed;
+  color: black;
+  top: 10px;
+  left: 10px;
+  z-index: 9;
+}
+#debugging-stats ul {
+  padding-left: 0px;
+  list-style-type: none;
+}

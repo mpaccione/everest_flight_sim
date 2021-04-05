@@ -1,0 +1,26 @@
+{
+  "name": "flight_sim_server",
+  "version": "1.0.0",
+  "description": "Everest Flight Simulator Server",
+  "main": "index.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mpaccione/everest_flight_sim.git"
+  },
+  "keywords": [
+    "three.js",
+    "flight-simulator"
+  ],
+  "author": "Michael Paccione",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mpaccione/everest_flight_sim/issues"
+  },
+  "homepage": "https://github.com/mpaccione/everest_flight_sim#readme",
+  "dependencies": {
+    "express": "^4.17.1"
+  }
+}
