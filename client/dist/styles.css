@@ -1,6 +1,6 @@
 html,
 body,
-canvas {
+#threeCanvas {
   height: 100%;
   width: 100%;
   margin: 0px;
@@ -8,7 +8,7 @@ canvas {
   position: relative;
   overflow: hidden;
 }
-canvas {
+#threeCanvas {
   position: absolute;
 }
 #debugging-stats {
@@ -24,3 +24,4 @@ canvas {
   padding-left: 0px;
   list-style-type: none;
 }
+

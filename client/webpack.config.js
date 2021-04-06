@@ -1,10 +1,12 @@
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+
 let dirname = "C:/Projects/everest_flight_sim/client";
 console.log({ dirname });
 
 // webpack.config.js
 export default {
   mode: "development",
-  entry: ["./src/index.mjs", "./src/index.css"],
+  entry: ["./src/index.mjs", "./src/styles.css"],
   output: {
     path: dirname,
     publicPath: "/",
@@ -12,12 +14,13 @@ export default {
   },
   watch: true,
   resolve: {
-    // alias: {
-    //   classes: dirname + "/src/classes/",
-    //   listeners: dirname + "/src/listeners/",
-    // },
-    modules: [dirname + "/node_modules"],
+    modules: [dirname + "/node_modules/"],
   },
+  plugins: [
+    new MiniCssExtractPlugin({
+      filename: "./dist/styles.css",
+    }),
+  ],
   module: {
     rules: [
       {
@@ -29,19 +32,7 @@ export default {
       },
       {
         test: /\.css$/,
-        use: [
-          {
-            loader: "style-loader",
-          },
-          {
-            loader: "css-loader",
-            options: {
-              modules: true,
-              importLoaders: 1,
-              sourceMap: true,
-            },
-          },
-        ],
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
     ],
   },
