@@ -48,7 +48,7 @@ const queryMapbox = async () => {
   /////////////////////////////////////
   // Downloads Tileset Covering BBOX //
   /////////////////////////////////////
-  downloadTileset(twoHundredFiftySixTileArr, "everest-rgb");
+  downloadTileset(twoHundredFiftySixTileArr, "everest");
   async function downloadTileset(tilesetArr, filename) {
     tilesetArr.forEach((childArr1, index1) => {
       childArr1.forEach((childArr2, index2) => {
@@ -63,7 +63,7 @@ const queryMapbox = async () => {
     async function getTileImage(tile, index1, index2, index3, index4) {
       // RGB TILE
       try {
-        const path = `./data/rgb/${filename}-${index1}-${index2}-${index3}-${index4}.png`;
+        const path = `./data/rgb/${filename}-rgb-${index1}-${index2}-${index3}-${index4}.png`;
         // Check if File Exists - if not download
         if (!fs.existsSync(path)) {
           const response = await fetch(
@@ -83,7 +83,7 @@ const queryMapbox = async () => {
 
       // TERRAIN TILE
       try {
-        const path = `./data/satellite/${filename}-${index1}-${index2}-${index3}-${index4}.jpg`
+        const path = `./data/satellite/${filename}-texture-${index1}-${index2}-${index3}-${index4}.jpg`
         // Check if File Exists - if not download
         if (!fs.existsSync(path)) {
           const response = await fetch(
