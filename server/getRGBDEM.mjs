@@ -63,34 +63,39 @@ const queryMapbox = async () => {
     async function getTileImage(tile, index1, index2, index3, index4) {
       // RGB TILE
       try {
-        const response = await fetch(
-          `https://api.mapbox.com/v4/mapbox.terrain-rgb/${tile[2]}/${tile[0]}/${tile[1]}@2x.pngraw?access_token=${process.env.ACCESS_TOKEN}`
-        );
+        const path = `./data/rgb/${filename}-${index1}-${index2}-${index3}-${index4}.png`;
+        // Check if File Exists - if not download
+        if (!fs.existsSync(path)) {
+          const response = await fetch(
+            `https://api.mapbox.com/v4/mapbox.terrain-rgb/${tile[2]}/${tile[0]}/${tile[1]}@2x.pngraw?access_token=${process.env.ACCESS_TOKEN}`
+          );
 
-        const fileStream = fs.createWriteStream(
-          `./data/rgb/${filename}-${index1}-${index2}-${index3}-${index4}.png`
-        );
-        response.body.pipe(fileStream);
-        response.body.on("error", (err) => {
-          console.error(err);
-        });
+          // Create File
+          const fileStream = fs.createWriteStream(path);
+          response.body.pipe(fileStream);
+          response.body.on("error", (err) => {
+            console.error(err);
+          });
+        }
       } catch (err) {
         console.error(err);
       }
 
       // TERRAIN TILE
       try {
-        const response = await fetch(
-          `https://api.mapbox.com/v4/mapbox.satellite/${tile[2]}/${tile[0]}/${tile[1]}@2x.jpg?access_token=${process.env.ACCESS_TOKEN}`
-        );
+        const path = `./data/satellite/${filename}-${index1}-${index2}-${index3}-${index4}.jpg`
+        // Check if File Exists - if not download
+        if (!fs.existsSync(path)) {
+          const response = await fetch(
+            `https://api.mapbox.com/v4/mapbox.satellite/${tile[2]}/${tile[0]}/${tile[1]}@2x.jpg?access_token=${process.env.ACCESS_TOKEN}`
+          );
 
-        const fileStream = fs.createWriteStream(
-          `./data/satellite/${filename}-${index1}-${index2}-${index3}-${index4}.jpg`
-        );
-        response.body.pipe(fileStream);
-        response.body.on("error", (err) => {
-          console.error(err);
-        });
+          const fileStream = fs.createWriteStream(path);
+          response.body.pipe(fileStream);
+          response.body.on("error", (err) => {
+            console.error(err);
+          });
+        }
       } catch (err) {
         console.error(err);
       }
