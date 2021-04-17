@@ -20,37 +20,60 @@ const queryMapbox = async () => {
     bottomRight.long,
     bottomRight.lat,
   ]);
-  // Get Higher Zoom Level
+
+  // Get 4 Tiles
+  const fourTileArr = tilebelt.getChildren(bboxTile);
+
+  // Get 16 Tiles
+  const sixteenTileArr = fourTileArr.map((tile) => {
+    return tilebelt.getChildren(tile);
+  });
+
+  // Get 64 Tiles
+  const sixtyFourTileArr = sixteenTileArr.map((tileArr) => {
+    return tileArr.map((tile) => {
+      return tilebelt.getChildren(tile);
+    });
+  });
+
+  // Get 256 Tiles
+  const twoHundredFiftySixTileArr = sixtyFourTileArr.map((tileArr1) => {
+    return tileArr1.map((tileArr2) => {
+      return tileArr2.map((tile) => {
+        return tilebelt.getChildren(tile);
+      });
+    });
+  });
 
   /////////////////////////////////////
   // Downloads Tileset Covering BBOX //
   /////////////////////////////////////
-  downloadTileset(bboxTile, "everest-rgb");
-  async function downloadTileset(bboxTile, filename) {
-    const tilesetArr = tilebelt.getChildren(bboxTile);
-    let count = 0;
+  downloadTileset(twoHundredFiftySixTileArr, "everest-rgb");
+  async function downloadTileset(tilesetArr, filename) {
+    tilesetArr.forEach((childArr1, index1) => {
+      childArr1.forEach((childArr2, index2) => {
+        childArr2.forEach((childArr3, index3) => {
+          childArr3.forEach((tile, index4) => {
+            getTileImage(tile, index1, index2, index3, index4);
+          });
+        });
+      });
+    });
 
-    (async function recursiveAJAX(tile, index) {
+    async function getTileImage(tile, index1, index2, index3, index4) {
       // RGB TILE
       try {
         const response = await fetch(
           `https://api.mapbox.com/v4/mapbox.terrain-rgb/${tile[2]}/${tile[0]}/${tile[1]}@2x.pngraw?access_token=${process.env.ACCESS_TOKEN}`
         );
 
-        await new Promise((resolve, reject) => {
-          const fileStream = fs.createWriteStream(
-            `./data/rgb/${filename}-${index}.png`
-          );
-          response.body.pipe(fileStream);
-          response.body.on("error", (err) => {
-            reject(err);
-          });
-          fileStream.on("finish", function () {
-            resolve();
-          });
+        const fileStream = fs.createWriteStream(
+          `./data/rgb/${filename}-${index1}-${index2}-${index3}-${index4}.png`
+        );
+        response.body.pipe(fileStream);
+        response.body.on("error", (err) => {
+          console.error(err);
         });
-
-        console.log({ response });
       } catch (err) {
         console.error(err);
       }
@@ -61,29 +84,17 @@ const queryMapbox = async () => {
           `https://api.mapbox.com/v4/mapbox.satellite/${tile[2]}/${tile[0]}/${tile[1]}@2x.jpg?access_token=${process.env.ACCESS_TOKEN}`
         );
 
-        await new Promise((resolve, reject) => {
-          const fileStream = fs.createWriteStream(
-            `./data/satellite/${filename}-${index}.jpg`
-          );
-          response.body.pipe(fileStream);
-          response.body.on("error", (err) => {
-            reject(err);
-          });
-          fileStream.on("finish", function () {
-            resolve();
-            // Iterate until all tiles are complete
-            if (tilesetArr.length > 0) {
-              count++;
-              recursiveAJAX(tilesetArr.shift(), count);
-            }
-          });
+        const fileStream = fs.createWriteStream(
+          `./data/satellite/${filename}-${index1}-${index2}-${index3}-${index4}.jpg`
+        );
+        response.body.pipe(fileStream);
+        response.body.on("error", (err) => {
+          console.error(err);
         });
-
-        console.log({ response });
       } catch (err) {
         console.error(err);
       }
-    })(tilesetArr.shift(), 0);
+    }
   }
 
   /////////////////////////////////////////
