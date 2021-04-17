@@ -31,6 +31,7 @@ const queryMapbox = async () => {
     let count = 0;
 
     (async function recursiveAJAX(tile, index) {
+      // RGB TILE
       try {
         const response = await fetch(
           `https://api.mapbox.com/v4/mapbox.terrain-rgb/${tile[2]}/${tile[0]}/${tile[1]}@2x.pngraw?access_token=${process.env.ACCESS_TOKEN}`
@@ -38,7 +39,31 @@ const queryMapbox = async () => {
 
         await new Promise((resolve, reject) => {
           const fileStream = fs.createWriteStream(
-            `./data/${filename}-${index}.png`
+            `./data/rgb/${filename}-${index}.png`
+          );
+          response.body.pipe(fileStream);
+          response.body.on("error", (err) => {
+            reject(err);
+          });
+          fileStream.on("finish", function () {
+            resolve();
+          });
+        });
+
+        console.log({ response });
+      } catch (err) {
+        console.error(err);
+      }
+
+      // TERRAIN TILE
+      try {
+        const response = await fetch(
+          `https://api.mapbox.com/v4/mapbox.satellite/${tile[2]}/${tile[0]}/${tile[1]}@2x.jpg?access_token=${process.env.ACCESS_TOKEN}`
+        );
+
+        await new Promise((resolve, reject) => {
+          const fileStream = fs.createWriteStream(
+            `./data/satellite/${filename}-${index}.jpg`
           );
           response.body.pipe(fileStream);
           response.body.on("error", (err) => {
@@ -79,7 +104,7 @@ const queryMapbox = async () => {
       );
 
       await new Promise((resolve, reject) => {
-        const fileStream = fs.createWriteStream(`./data/${filename}.png`);
+        const fileStream = fs.createWriteStream(`./data/rgb/${filename}.png`);
         response.body.pipe(fileStream);
         response.body.on("error", (err) => {
           reject(err);
