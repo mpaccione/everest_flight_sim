@@ -16,11 +16,11 @@ async function getPixels(imagePath) {
 
         // Initialize a new Canvas with the same dimensions
         // as the image, and get a 2D drawing context for it.
-        const canvas = new Canvas(img.width, img.height);
+        const canvas = Canvas.createCanvas(img.width, img.height);
         const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, img.width / 4, img.height / 4);
 
-        const imgData = context.getImageData(0, 0, img.width, img.height);
+        const imgData = ctx.getImageData(0, 0, img.width, img.height);
         return imgData;
       }
     );
@@ -37,6 +37,7 @@ function rgbToHeight(r, g, b) {
 export const tileToMesh = async (rgbTilePath, textureTilePath) => {
   try {
     const pixels = await getPixels(rgbTilePath);
+    console.log({pixels})
     const planeSize = parseInt(Math.sqrt(pixels.length / 4));
     console.log({planeSize})
 
